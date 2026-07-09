@@ -1,0 +1,60 @@
+# configs/models.yaml
+# alias -> checkpoint + eval flags.  See CLAUDE.md §2.
+# Checkpoint HASH is ground truth, not the nickname (§2). run_one.py records the
+# resolved commit/revision hash of whatever actually loaded into MANIFEST.json.
+
+smolvla:
+  # Primary workhorse (~0.45B). Gets the FULL grid (§2 budget rule).
+  # NOTE (§9): smolvla_base is pretrained on SO-101, not LIBERO -> zero-shot on
+  # LIBERO is poor. Use the LIBERO-finetuned checkpoint for real numbers.
+  hf_repo: "HuggingFaceVLA/smolvla_libero"     # finetuned; base is lerobot/smolvla_base
+  base_repo: "lerobot/smolvla_base"
+  params: 0.45e9
+  env: "vla-smolvla"
+  framework: "lerobot"
+  policy_class: "lerobot.policies.smolvla.modeling_smolvla.SmolVLAPolicy"
+  eval_flags:
+    device: "cuda:0"
+    dtype: "bfloat16"
+
+openvla:
+  hf_repo: "openvla/openvla-7b-finetuned-libero-goal"    # suite-specific; -{spatial,object,goal,10}
+  params: 7.0e9
+  env: "vla-openvla"
+  framework: "openvla"
+  eval_flags:
+    unnorm_key: "libero_goal_no_noops"
+    load_in_4bit: false            # enable on OOM (§9)
+    center_crop: true
+
+openvla_oft:
+  hf_repo: "moojink/openvla-7b-oft-finetuned-libero-goal"
+  params: 7.5e9
+  env: "vla-oft"
+  framework: "openvla_oft"
+  eval_flags:
+    use_l1_regression: true
+    use_diffusion: false
+    num_images_in_input: 2
+    use_proprio: true
+    center_crop: true
+    use_film: false                # plain OFT checkpoint (§6.3)
+    unnorm_key: "libero_goal_no_noops"
+
+openvla_oft_film:
+  # RQ1.3 "FiLM-conditioned OFT+". MUST point at a checkpoint TRAINED with FiLM.
+  # Mismatched use_film / checkpoint = silent garbage (§2, §6.3).
+  # VERIFY the FiLM checkpoint exists on the OFT HF/repo before trusting results;
+  # left null until confirmed rather than guessed (§12: missing > invented).
+  hf_repo: null                    # TODO: confirm FiLM-trained ckpt id in GATE 4
+  params: 7.5e9
+  env: "vla-oft"
+  framework: "openvla_oft"
+  eval_flags:
+    use_l1_regression: true
+    use_diffusion: false
+    num_images_in_input: 2
+    use_proprio: true
+    center_crop: true
+    use_film: true                 # requires FiLM-trained ckpt above
+    unnorm_key: "libero_goal_no_noops"

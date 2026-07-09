@@ -1,0 +1,61 @@
+# configs/perturbations.yaml
+# Causal-probe (RQ1) definitions consumed by perturb/make_instructions.py (§5).
+# Scene is NEVER touched — only the instruction string changes (§5, §12).
+#
+# O = object noun, A = action verb, derived from LIBERO bddl / task metadata,
+# cross-checked against LIBERO-Para/metrics/libero_para_metadata.csv (§5).
+
+suite: libero_goal          # causal probes valid only here (+ libero_10) — §12
+
+conditions:
+
+  original:
+    kind: control
+    desc: "Instruction I unchanged."
+
+  blank:
+    kind: destructive
+    desc: "Empty string ''."
+    string: ""
+
+  nonsense:
+    kind: destructive
+    desc: >
+      Grammatical-but-meaningless token salad, length-matched to I so
+      degradation is not a sequence-length artifact (§5). Out-of-domain
+      nouns/verbs shuffled into an imperative frame.
+    length_match: true
+    match_tolerance_tokens: 2
+    # deterministic per (task, global seed) so runs are reproducible
+
+  wrong_object:
+    kind: misleading
+    desc: >
+      Replace O with a DIFFERENT object that EXISTS in the same scene, so the
+      instruction is physically executable, not impossible (§5).
+    source: same_scene_objects        # from bddl object list of the shared Goal scene
+
+  wrong_action:
+    kind: misleading
+    desc: "Replace A with a different valid verb for the same object O (§5)."
+    source: valid_verbs_for_object
+
+  wrong_task:
+    kind: misleading
+    desc: >
+      Substitute the FULL instruction of another LIBERO-Goal task sharing the
+      identical scene (cleanest RQ1.2 probe — both grounded in same pixels, §5).
+    source: other_goal_task_instruction
+
+  repeated:
+    kind: benign
+    desc: "I concatenated with itself to probe robustness to redundancy (§5)."
+    template: "{I} {I}"
+
+# Provenance: every generated string + how it was derived is written to
+# perturb/generated/<suite>.jsonl (§5) for audit/reproducibility.
+provenance_out: "perturb/generated/{suite}.jsonl"
+
+# Assertion required by §5/§12: for the same (task, seed), the env reset-state
+# hash MUST be identical across ALL conditions. run_one.py enforces this.
+assert_fixed_scene: true

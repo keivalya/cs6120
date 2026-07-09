@@ -1,0 +1,9 @@
+# heavy clones (their own repos) and generated artifacts
+LIBERO-Para/
+results/**/*.jsonl
+report/figures/*.png
+*.lock.txt
+hf_home/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
