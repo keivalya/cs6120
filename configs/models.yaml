@@ -1,5 +1,13 @@
 # configs/models.yaml
 # alias -> checkpoint + eval flags.  See CLAUDE.md §2.
+#
+# ENV NOTE (deviation from §6.1): mainline LeRobot (0.6.1) now requires
+# Python >=3.12, so vla-smolvla was built with python=3.12 (not 3.10 as §6.1
+# pinned, which predates that bump). Also needed at build time: cmake<4
+# (cmake 4.x rejects egl_probe's cmake_minimum_required) and pip pkg num2words
+# (SmolVLM processor dep). Resolved versions in envs/vla-smolvla.lock.txt.
+# Smoke-verified: HuggingFaceVLA/smolvla_libero -> libero_goal TSR=1.0 on
+# tasks {1,7}, seed 7 (see results/smolvla/libero_goal/original/seed7/).
 # Checkpoint HASH is ground truth, not the nickname (§2). run_one.py records the
 # resolved commit/revision hash of whatever actually loaded into MANIFEST.json.
 

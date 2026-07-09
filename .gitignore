@@ -7,3 +7,8 @@ hf_home/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+lerobot/
+envs/build_*.log
+envs/smoke_eval.log
+envs/gate2_runone.log
+results/**/episodes.jsonl

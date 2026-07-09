@@ -6,7 +6,20 @@
       "Bash(python3 -c ' *)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git -c user.name=vla-study -c user.email=pandya.kei@northeastern.edu commit -q -m 'GATE 1: scaffold, configs, LIBERO-Para backbone *)"
+      "Bash(git -c user.name=vla-study -c user.email=pandya.kei@northeastern.edu commit -q -m 'GATE 1: scaffold, configs, LIBERO-Para backbone *)",
+      "Bash(conda env *)",
+      "Bash(conda create *)",
+      "Bash(echo \"create exit: $?\")",
+      "Bash(/home/pandya.kei/.conda/envs/vla-smolvla/bin/python --version)",
+      "Read(//home/pandya.kei/.conda/envs/vla-smolvla/**)",
+      "Bash(echo \"metrics create exit: $?\")",
+      "Bash(/home/pandya.kei/.conda/envs/libero-para-metrics/bin/python --version)",
+      "Bash(/home/pandya.kei/.conda/envs/vla-smolvla/bin/python -m pip show lerobot)",
+      "Bash(env -i PATH=/usr/bin:/bin HOME=/home/pandya.kei /home/pandya.kei/.conda/envs/vla-smolvla/bin/python -m pip show lerobot)",
+      "Bash(export SCRATCH=/scratch/pandya.kei HF_HOME=/scratch/pandya.kei/hf_home PIP_CACHE_DIR=/scratch/pandya.kei/.pip_cache)",
+      "Bash(conda run *)",
+      "Bash(echo \"pip exit: $?\")",
+      "Bash(tee -a /home/pandya.kei/CS6120/envs/build_smolvla_pip.log)"
     ]
   }
 }

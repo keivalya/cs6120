@@ -1,1 +1,21 @@
-{"runs": []}
+{
+  "runs": [
+    {
+      "model": "smolvla",
+      "suite": "libero_goal",
+      "condition": "original",
+      "seed": 7,
+      "n_episodes": 3,
+      "status": "OK",
+      "n_success": 6,
+      "tsr": 1.0,
+      "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
+      "repo_sha": "3437c741f96f4d4c65f274274c95883d8d7f3275",
+      "lerobot_sha": "e40b58a8dfa9e7b86918c374791599d070518d11",
+      "node": "d4053",
+      "gpu": "NVIDIA H200",
+      "wall_s": 168.4,
+      "timestamp": "2026-07-09T00:47:54"
+    }
+  ]
+}
