@@ -183,7 +183,12 @@ def main():
     for i in range(ts.get_num_tasks()):
         t = ts.get_task(i)
         txt = open(os.path.join(bd, t.name + ".bddl")).read()
-        lang = re.search(r"\(:language ([^)]*)\)", txt).group(1).strip()
+        # Use the BENCHMARK task.language (exactly what the policy is conditioned
+        # on at eval), NOT the bddl `:language` — they differ (case, and for some
+        # tasks semantically, e.g. task 0 bddl "Open the middle layer of the
+        # drawer" vs benchmark "open the middle drawer of the cabinet"). Feeding
+        # the bddl string as `original` tanks TSR. bddl is still used for O/A.
+        lang = t.language.strip()
         ooi = re.search(r"\(:obj_of_interest(.*?)\)", txt, re.S).group(1).split()
         objs = re.search(r"\(:objects(.*?)\)", txt, re.S).group(1)
         objlist = [l.split("-")[0].strip() for l in objs.strip().splitlines() if l.strip()]
