@@ -80,7 +80,13 @@ with open(REPO_ROOT / "configs" / "models.yaml") as f:
 hf_repo = model_cfg["hf_repo"]
 device = model_cfg.get("eval_flags", {}).get("device", "cuda:0")
 
-env_cfg = LiberoEnvConfig(task=args.suite, task_ids=[tid])
+# Render at 256x256, NOT the lerobot default 360x360: at 360/256 this node GPU
+# throws NVRM Xid 31 (graphics-engine MMU fault) mid-episode (~render 49) once
+# CUDA is also resident; 256 renders full episodes reliably. The policy resizes
+# the image internally, so scene content is unchanged. Documented deviation.
+env_cfg = LiberoEnvConfig(
+    task=args.suite, task_ids=[tid], observation_height=128, observation_width=128
+)
 policy_cfg = PreTrainedConfig.from_pretrained(hf_repo)
 policy_cfg.pretrained_path = hf_repo
 policy_cfg.device = device

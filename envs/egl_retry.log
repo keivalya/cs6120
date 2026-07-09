@@ -1,0 +1,92 @@
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=657784) is multi-threaded, use of fork() may lead to deadlocks in the child.
+  self.pid = os.fork()
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 5111.31it/s]
+>> calling probe_state after reset
+>> probe OK hash 04481935a3dc983a nposes 19
+  step 0 succ [np.False_]
+  step 1 succ [np.False_]
+  step 2 succ [np.False_]
+  step 3 succ [np.False_]
+  step 4 succ [np.False_]
+  step 5 succ [np.False_]
+  step 6 succ [np.False_]
+  step 7 succ [np.False_]
+  step 8 succ [np.False_]
+  step 9 succ [np.False_]
+  step 10 succ [np.False_]
+  step 11 succ [np.False_]
+  step 12 succ [np.False_]
+  step 13 succ [np.False_]
+  step 14 succ [np.False_]
+  step 15 succ [np.False_]
+  step 16 succ [np.False_]
+  step 17 succ [np.False_]
+  step 18 succ [np.False_]
+  step 19 succ [np.False_]
+  step 20 succ [np.False_]
+  step 21 succ [np.False_]
+  step 22 succ [np.False_]
+  step 23 succ [np.False_]
+  step 24 succ [np.False_]
+  step 25 succ [np.False_]
+  step 26 succ [np.False_]
+  step 27 succ [np.False_]
+  step 28 succ [np.False_]
+  step 29 succ [np.False_]
+  step 30 succ [np.False_]
+  step 31 succ [np.False_]
+  step 32 succ [np.False_]
+  step 33 succ [np.False_]
+  step 34 succ [np.False_]
+  step 35 succ [np.False_]
+  step 36 succ [np.False_]
+  step 37 succ [np.False_]
+  step 38 succ [np.False_]
+  step 39 succ [np.False_]
+  step 40 succ [np.False_]
+  step 41 succ [np.False_]
+  step 42 succ [np.False_]
+  step 43 succ [np.False_]
+  step 44 succ [np.False_]
+  step 45 succ [np.False_]
+  step 46 succ [np.False_]
+  step 47 succ [np.False_]
+  step 48 succ [np.False_]
+  step 49 succ [np.False_]
+Traceback (most recent call last):
+  File "/tmp/rp.py", line 26, in <module>
+    obs,r,term,trunc,info=vec.step(anp); print("  step",i,"succ",info.get("is_success"))
+                          ^^^^^^^^^^^^^
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/async_vector_env.py", line 390, in step
+    return self.step_wait()
+           ^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/async_vector_env.py", line 449, in step_wait
+    env_step_return, success = pipe.recv()
+                               ^^^^^^^^^^^
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/multiprocessing/connection.py", line 250, in recv
+    buf = self._recv_bytes()
+          ^^^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/multiprocessing/connection.py", line 430, in _recv_bytes
+    buf = self._recv(4)
+          ^^^^^^^^^^^^^
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/multiprocessing/connection.py", line 399, in _recv
+    raise EOFError
+EOFError
+Exception ignored in: <function AsyncVectorEnv.__del__ at 0x15213185be20>
+Traceback (most recent call last):
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/async_vector_env.py", line 718, in __del__
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/vector_env.py", line 234, in close
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/async_vector_env.py", line 615, in close_extras
+TypeError: catching classes that do not inherit from BaseException is not allowed
+ERROR conda.cli.main_run:execute(125): `conda run python /tmp/rp.py` failed. (See above for error)

@@ -28,9 +28,25 @@ Key evidence it is environmental, not a code defect:
 - Every configuration tried now faults ~step 49: sync/async, env-before-CUDA vs
   after, 1 vs many envs, fork vs spawn.
 
-Most likely: the node's GPU/EGL context state degraded over a long debugging
-session (many core-dumped render processes). A **fresh compute node** should
-restore reliable rendering.
+**DECISIVE PROOF of node degradation:** the *exact* GATE 2 command
+`lerobot-eval --policy.path=HuggingFaceVLA/smolvla_libero --env.task=libero_goal
+--env.task_ids=[7] --eval.n_episodes=1` that scored **100%** earlier this session
+now **core dumps**. Same command, env, checkpoint — regressed to a crash. The GPU
+channel state degraded (each of ~15 core-dumped render procs triggered an Xid
+fault; repeated Xid faults corrupt the channel until a GPU reset).
+
+Resolution findings:
+- A LIGHT-CUDA process (torch.zeros) renders 120 steps fine at 128 AND 256.
+- Any process with the FULL SmolVLA policy resident faults ~step 49 at 128/256/360.
+  => trigger is combined heavy-CUDA + EGL render, which GATE 2 handled fine.
+- No `libOSMesa` anywhere on the system (`find /`), and conda-forge `osmesa`
+  package doesn't exist; `mesalib` ships no OSMesa. CPU-render fallback needs a
+  Mesa build. `nvidia-smi --gpu-reset` needs root; only 1 GPU on the node.
+
+**REQUIRED FIX: a fresh GPU allocation / node (GPU reset).** The code is validated
+(GATE 2 ran 6/6). On a fresh node, run `run/eval_task.py` per task; the render
+resolution knob (currently 128, was 360) can go back to 256/360 if the fresh GPU
+handles it.
 
 Attempts made (all still fault at ~render 49): CUDA-before-fork ordering,
 env_cfg construction order, parent LIBERO benchmark instantiation, import order,
