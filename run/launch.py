@@ -1,16 +1,13 @@
 #!/usr/bin/env python
 """run/launch.py — autonomous sweep driver (CLAUDE.md §8).
 
-Reads a list of (model, suite, condition, seed, n_episodes) cells (from
---conditions on the CLI; GATE 4 extends to configs/grid.yaml), and for each cell:
-  - SKIPS it if results/.../seed<k>/summary.json already has n_episodes >= requested
-    (idempotent / resumable, §8.2),
-  - else dispatches run/run_one.py in the current conda env,
-  - on error, run_one writes error.json and returns nonzero; we log and CONTINUE
-    (§8.6 — one bad cell never halts the sweep).
-
-A global --deadline_s wall budget stops STARTING new cells once exceeded, so a
-compute-time cap is never blown; completed cells remain valid (§12).
+Drives the reliable per-task runner run/eval_task.py: one process per LIBERO task
+(one EGL context = the stable rendering mode on this stack), each process sweeping
+all requested conditions. Idempotent/resumable: a (task, per-condition) cell is
+skipped if its results/.../<cond>/seed<k>/task<tid>.jsonl already has >= requested
+episodes. A global --deadline_s wall budget stops starting new tasks so a compute
+cap is never blown (§12). After the sweep, run run/aggregate.py to build the
+per-condition summary.json/episodes.jsonl + MANIFEST + scene-fixed check.
 """
 from __future__ import annotations
 
@@ -24,61 +21,63 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def cell_done(results_root: Path, model, suite, condition, seed, n_episodes) -> bool:
-    s = results_root / model / suite / condition / f"seed{seed}" / "summary.json"
-    if not s.exists():
-        return False
-    try:
-        d = json.loads(s.read_text())
-        return d.get("n_episodes", 0) >= n_episodes and d.get("tsr") is not None
-    except Exception:
-        return False
+def task_conditions_done(results_root, model, suite, seed, task_id, conditions, n_episodes):
+    """True iff every scene-valid condition for this task already has >= n_episodes."""
+    for cond in conditions:
+        f = results_root / model / suite / cond / f"seed{seed}" / f"task{task_id}.jsonl"
+        if not f.exists():
+            return False
+        n = sum(1 for _ in f.read_text().splitlines() if _.strip())
+        if n < n_episodes:
+            return False
+    return True
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="smolvla")
     ap.add_argument("--suite", default="libero_goal")
-    ap.add_argument("--conditions", required=True, help="comma-sep ordered conditions")
+    ap.add_argument("--conditions", required=True, help="comma-sep conditions")
+    ap.add_argument("--task_ids", default="0,1,2,3,4,5,6,7,8,9")
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--n_episodes", type=int, default=2)
-    ap.add_argument("--task_ids", default=None)
     ap.add_argument("--max_steps", type=int, default=300)
-    ap.add_argument("--deadline_s", type=float, default=None, help="stop starting cells past this wall budget")
+    ap.add_argument("--obs_hw", type=int, default=360)
+    ap.add_argument("--deadline_s", type=float, default=None)
     ap.add_argument("--results_root", default=str(REPO_ROOT / "results"))
+    ap.add_argument("--aggregate", action="store_true", help="run aggregate.py at the end")
     args = ap.parse_args()
 
     conditions = [c.strip() for c in args.conditions.split(",") if c.strip()]
+    task_ids = [int(x) for x in args.task_ids.split(",")]
     results_root = Path(args.results_root)
     t0 = time.time()
 
-    log = []
-    for cond in conditions:
+    for tid in task_ids:
         elapsed = time.time() - t0
         if args.deadline_s is not None and elapsed > args.deadline_s:
-            done = [l["condition"] for l in log if l["status"] in ("OK", "SKIP")]
-            print(f"[launch] DEADLINE reached ({elapsed:.0f}s > {args.deadline_s}s); "
-                  f"stopping before condition={cond}. Completed: {done}")
+            print(f"[launch] DEADLINE ({elapsed:.0f}s); stopping before task {tid}", flush=True)
             break
-        if cell_done(results_root, args.model, args.suite, cond, args.seed, args.n_episodes):
-            print(f"[launch] SKIP (done): {args.model}/{args.suite}/{cond}/seed{args.seed}")
-            log.append({"condition": cond, "status": "SKIP"})
+        if task_conditions_done(results_root, args.model, args.suite, args.seed, tid, conditions, args.n_episodes):
+            print(f"[launch] SKIP task {tid} (done)", flush=True)
             continue
-
         cmd = [
-            sys.executable, str(REPO_ROOT / "run" / "run_one.py"),
-            "--model", args.model, "--suite", args.suite, "--condition", cond,
-            "--seed", str(args.seed), "--n_episodes", str(args.n_episodes),
-            "--max_steps", str(args.max_steps), "--results_root", str(results_root),
+            sys.executable, str(REPO_ROOT / "run" / "eval_task.py"),
+            "--model", args.model, "--suite", args.suite, "--task_id", str(tid),
+            "--conditions", ",".join(conditions), "--seed", str(args.seed),
+            "--n_episodes", str(args.n_episodes), "--max_steps", str(args.max_steps),
+            "--obs_hw", str(args.obs_hw), "--results_root", str(results_root),
         ]
-        if args.task_ids:
-            cmd += ["--task_ids", args.task_ids]
-        print(f"[launch] RUN {cond} (elapsed {elapsed:.0f}s)", flush=True)
-        r = subprocess.run(cmd)
-        log.append({"condition": cond, "status": "OK" if r.returncode == 0 else "FAILED"})
-        print(f"[launch] {cond} -> rc={r.returncode} (elapsed {time.time()-t0:.0f}s)", flush=True)
+        print(f"[launch] RUN task {tid} (elapsed {elapsed:.0f}s)", flush=True)
+        rc = subprocess.run(cmd).returncode
+        print(f"[launch] task {tid} rc={rc} (elapsed {time.time()-t0:.0f}s)", flush=True)
 
-    print(f"[launch] DONE. total elapsed {time.time()-t0:.0f}s. summary: {log}")
+    if args.aggregate:
+        print("[launch] aggregating...", flush=True)
+        subprocess.run([sys.executable, str(REPO_ROOT / "run" / "aggregate.py"),
+                        "--model", args.model, "--suite", args.suite,
+                        "--results_root", str(results_root)])
+    print(f"[launch] DONE total {time.time()-t0:.0f}s", flush=True)
 
 
 if __name__ == "__main__":

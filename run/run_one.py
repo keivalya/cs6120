@@ -15,6 +15,12 @@ and appends one line to MANIFEST.json (atomic + flock).
 
 Currently implements the `lerobot` framework (SmolVLA). 7B frameworks are added
 in GATE 4 behind the same CLI + output contract.
+
+NOTE: for SmolVLA the RELIABLE entry point is run/eval_task.py (ONE process per
+task = one EGL context), driven by run/launch.py and aggregated by
+run/aggregate.py. This run_one.py builds many env contexts in one process, which
+aborts the MuJoCo-EGL renderer on this stack; it is kept for the CLI/contract
+and for frameworks that don't hit the multi-context issue.
 """
 from __future__ import annotations
 

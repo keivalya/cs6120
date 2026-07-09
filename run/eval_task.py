@@ -41,6 +41,7 @@ ap.add_argument("--conditions", required=True)
 ap.add_argument("--seed", type=int, default=7)
 ap.add_argument("--n_episodes", type=int, default=2)
 ap.add_argument("--max_steps", type=int, default=300)
+ap.add_argument("--obs_hw", type=int, default=256, help="render resolution (H=W)")
 ap.add_argument("--results_root", default=str(REPO_ROOT / "results"))
 args = ap.parse_args()
 
@@ -80,12 +81,14 @@ with open(REPO_ROOT / "configs" / "models.yaml") as f:
 hf_repo = model_cfg["hf_repo"]
 device = model_cfg.get("eval_flags", {}).get("device", "cuda:0")
 
-# Render at 256x256, NOT the lerobot default 360x360: at 360/256 this node GPU
-# throws NVRM Xid 31 (graphics-engine MMU fault) mid-episode (~render 49) once
-# CUDA is also resident; 256 renders full episodes reliably. The policy resizes
-# the image internally, so scene content is unchanged. Documented deviation.
+# Render at --obs_hw (default 256), not the lerobot default 360: on a degraded
+# GPU channel, 360 triggered NVRM Xid 31 (graphics-engine MMU fault) mid-episode
+# once CUDA was resident. 256 is a standard policy input size; the policy resizes
+# internally so scene content is unchanged. On a healthy GPU 360 also works (it
+# gave TSR=1.0 in the GATE 2 smoke) — bump --obs_hw if preferred.
 env_cfg = LiberoEnvConfig(
-    task=args.suite, task_ids=[tid], observation_height=128, observation_width=128
+    task=args.suite, task_ids=[tid],
+    observation_height=args.obs_hw, observation_width=args.obs_hw,
 )
 policy_cfg = PreTrainedConfig.from_pretrained(hf_repo)
 policy_cfg.pretrained_path = hf_repo
