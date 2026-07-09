@@ -237,6 +237,51 @@
       "gpu": "NVIDIA H200",
       "wall_s": 58.9,
       "timestamp": "2026-07-09T04:43:40"
+    },
+    {
+      "model": "smolvla",
+      "suite": "libero_goal",
+      "condition": "blank",
+      "seed": 7,
+      "n_episodes": 2,
+      "status": "OK",
+      "n_success": 0,
+      "tsr": 0.0,
+      "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
+      "repo_sha": "e7126686b98d4a03f9153ae056650b95fce20488",
+      "lerobot_sha": "e40b58a8dfa9e7b86918c374791599d070518d11",
+      "runner": "eval_task.py+aggregate",
+      "timestamp": "2026-07-09T18:12:23"
+    },
+    {
+      "model": "smolvla",
+      "suite": "libero_goal",
+      "condition": "nonsense",
+      "seed": 7,
+      "n_episodes": 2,
+      "status": "OK",
+      "n_success": 0,
+      "tsr": 0.0,
+      "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
+      "repo_sha": "e7126686b98d4a03f9153ae056650b95fce20488",
+      "lerobot_sha": "e40b58a8dfa9e7b86918c374791599d070518d11",
+      "runner": "eval_task.py+aggregate",
+      "timestamp": "2026-07-09T18:12:23"
+    },
+    {
+      "model": "smolvla",
+      "suite": "libero_goal",
+      "condition": "original",
+      "seed": 7,
+      "n_episodes": 2,
+      "status": "OK",
+      "n_success": 17,
+      "tsr": 0.85,
+      "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
+      "repo_sha": "e7126686b98d4a03f9153ae056650b95fce20488",
+      "lerobot_sha": "e40b58a8dfa9e7b86918c374791599d070518d11",
+      "runner": "eval_task.py+aggregate",
+      "timestamp": "2026-07-09T18:12:23"
     }
   ]
 }

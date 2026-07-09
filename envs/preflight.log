@@ -1,0 +1,18 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:   0%|          | 1/489 [00:00<04:03,  2.00it/s]Loading weights:   8%|▊         | 41/489 [00:00<00:04, 90.13it/s]Loading weights:  13%|█▎        | 65/489 [00:00<00:03, 117.82it/s]Loading weights:  18%|█▊        | 87/489 [00:00<00:02, 139.32it/s]Loading weights:  22%|██▏       | 108/489 [00:00<00:02, 156.21it/s]Loading weights:  26%|██▋       | 129/489 [00:01<00:02, 160.54it/s]Loading weights:  31%|███       | 150/489 [00:01<00:02, 167.95it/s]Loading weights:  35%|███▌      | 173/489 [00:01<00:01, 182.22it/s]Loading weights:  40%|███▉      | 194/489 [00:01<00:01, 174.79it/s]Loading weights:  45%|████▍     | 219/489 [00:01<00:01, 190.99it/s]Loading weights:  49%|████▉     | 240/489 [00:01<00:01, 185.49it/s]Loading weights:  53%|█████▎    | 260/489 [00:01<00:01, 182.55it/s]Loading weights:  58%|█████▊    | 284/489 [00:01<00:01, 195.78it/s]Loading weights:  66%|██████▋   | 325/489 [00:01<00:00, 243.64it/s]Loading weights:  76%|███████▋  | 373/489 [00:02<00:00, 296.32it/s]Loading weights:  88%|████████▊ | 429/489 [00:02<00:00, 361.83it/s]Loading weights:  98%|█████████▊| 477/489 [00:02<00:00, 389.32it/s]Loading weights: 100%|██████████| 489/489 [00:02<00:00, 211.12it/s]
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[1]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=1 | n_envs=1
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+PREFLIGHT HEALTHY: 60 policy+render steps at 360x360
