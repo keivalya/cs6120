@@ -1,0 +1,45 @@
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=528986) is multi-threaded, use of fork() may lead to deadlocks in the child.
+  self.pid = os.fork()
+[eval_flat] forked 1 render workers
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 5237.69it/s]
+[eval_flat] policy + processors ready
+Traceback (most recent call last):
+  File "/home/pandya.kei/CS6120/run/eval_flat.py", line 180, in <module>
+    r = run_episode(vec, instr, args.seed, ep)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/CS6120/run/eval_flat.py", line 142, in run_episode
+    obs, _, term, trunc, info = vec.step(action.to("cpu").numpy())
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/async_vector_env.py", line 390, in step
+    return self.step_wait()
+           ^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/async_vector_env.py", line 449, in step_wait
+    env_step_return, success = pipe.recv()
+                               ^^^^^^^^^^^
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/multiprocessing/connection.py", line 250, in recv
+    buf = self._recv_bytes()
+          ^^^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/multiprocessing/connection.py", line 430, in _recv_bytes
+    buf = self._recv(4)
+          ^^^^^^^^^^^^^
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/multiprocessing/connection.py", line 399, in _recv
+    raise EOFError
+EOFError
+Exception ignored in: <function AsyncVectorEnv.__del__ at 0x148a4b020220>
+Traceback (most recent call last):
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/async_vector_env.py", line 718, in __del__
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/vector_env.py", line 234, in close
+  File "/home/pandya.kei/.local/lib/python3.12/site-packages/gymnasium/vector/async_vector_env.py", line 615, in close_extras
+TypeError: catching classes that do not inherit from BaseException is not allowed
+ERROR conda.cli.main_run:execute(125): `conda run python run/eval_flat.py --model smolvla --suite libero_goal --conditions original --seed 7 --n_episodes 1 --task_ids 1` failed. (See above for error)
