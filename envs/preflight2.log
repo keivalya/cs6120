@@ -1,0 +1,89 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:   0%|          | 1/489 [00:00<04:23,  1.85it/s]Loading weights:   8%|▊         | 38/489 [00:00<00:05, 75.58it/s]Loading weights:  12%|█▏        | 57/489 [00:00<00:04, 92.62it/s]Loading weights:  15%|█▌        | 74/489 [00:00<00:03, 106.67it/s]Loading weights:  18%|█▊        | 90/489 [00:01<00:03, 115.32it/s]Loading weights:  21%|██▏       | 105/489 [00:01<00:03, 113.22it/s]Loading weights:  24%|██▍       | 119/489 [00:01<00:03, 115.49it/s]Loading weights:  27%|██▋       | 133/489 [00:01<00:02, 118.75it/s]Loading weights:  30%|███       | 149/489 [00:01<00:02, 121.08it/s]Loading weights:  34%|███▍      | 167/489 [00:01<00:02, 133.41it/s]Loading weights:  37%|███▋      | 182/489 [00:01<00:02, 130.28it/s]Loading weights:  40%|████      | 196/489 [00:01<00:02, 130.75it/s]Loading weights:  43%|████▎     | 210/489 [00:01<00:02, 132.08it/s]Loading weights:  46%|████▋     | 227/489 [00:02<00:01, 140.54it/s]Loading weights:  49%|████▉     | 242/489 [00:02<00:01, 134.40it/s]Loading weights:  53%|█████▎    | 258/489 [00:02<00:01, 130.69it/s]Loading weights:  56%|█████▋    | 276/489 [00:02<00:01, 134.42it/s]Loading weights:  62%|██████▏   | 301/489 [00:02<00:01, 157.94it/s]Loading weights:  69%|██████▊   | 335/489 [00:02<00:00, 204.00it/s]Loading weights:  75%|███████▌  | 369/489 [00:02<00:00, 237.54it/s]Loading weights:  82%|████████▏ | 399/489 [00:02<00:00, 244.62it/s]Loading weights:  88%|████████▊ | 429/489 [00:03<00:00, 232.85it/s]Loading weights:  93%|█████████▎| 455/489 [00:03<00:00, 238.85it/s]Loading weights:  98%|█████████▊| 480/489 [00:03<00:00, 240.84it/s]Loading weights: 100%|██████████| 489/489 [00:03<00:00, 150.74it/s]
+/home/pandya.kei/.local/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU0 Tesla P100-PCIE-12GB which is of cuda capability 6.0.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (7.0) - (12.0)
+    
+  queued_call()
+/home/pandya.kei/.local/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Please install PyTorch with a following CUDA
+    configurations:  12.6 following instructions at
+    https://pytorch.org/get-started/locally/
+    
+  queued_call()
+/home/pandya.kei/.local/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU1 Tesla P100-PCIE-12GB which is of cuda capability 6.0.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (7.0) - (12.0)
+    
+  queued_call()
+/home/pandya.kei/.local/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU2 Tesla P100-PCIE-12GB which is of cuda capability 6.0.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (7.0) - (12.0)
+    
+  queued_call()
+/home/pandya.kei/.local/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+    Found GPU3 Tesla P100-PCIE-12GB which is of cuda capability 6.0.
+    Minimum and Maximum cuda capability supported by this version of PyTorch is
+    (7.0) - (12.0)
+    
+  queued_call()
+/home/pandya.kei/.local/lib/python3.12/site-packages/torch/cuda/__init__.py:435: UserWarning: 
+Tesla P100-PCIE-12GB with CUDA capability sm_60 is not compatible with the current PyTorch installation.
+The current PyTorch install supports CUDA capabilities sm_70 sm_75 sm_80 sm_86 sm_90 sm_100 sm_120.
+If you want to use the Tesla P100-PCIE-12GB GPU with PyTorch, please check the instructions at https://pytorch.org/get-started/locally/
+
+  queued_call()
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[1]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=1 | n_envs=1
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+Traceback (most recent call last):
+  File "/home/pandya.kei/CS6120/run/preflight.py", line 59, in <module>
+    o = pre(o)
+        ^^^^^^
+  File "/home/pandya.kei/CS6120/lerobot/src/lerobot/processor/pipeline.py", line 299, in __call__
+    transformed_transition = self._forward(transition)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/CS6120/lerobot/src/lerobot/processor/pipeline.py", line 316, in _forward
+    transition = processor_step(transition)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/CS6120/lerobot/src/lerobot/processor/normalize_processor.py", line 475, in __call__
+    new_transition[TransitionKey.OBSERVATION] = self._normalize_observation(
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/CS6120/lerobot/src/lerobot/processor/normalize_processor.py", line 284, in _normalize_observation
+    new_observation[key] = self._apply_transform(tensor, key, feature.type, inverse=inverse)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pandya.kei/CS6120/lerobot/src/lerobot/processor/normalize_processor.py", line 359, in _apply_transform
+    denom = std + self.eps
+            ~~~~^~~~~~~~~~
+torch.AcceleratorError: CUDA error: no kernel image is available for execution on the device
+Search for `cudaErrorNoKernelImageForDevice' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Exception ignored in: <function MjRenderContext.__del__ at 0x145383ef2160>
+Traceback (most recent call last):
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/utils/binding_utils.py", line 199, in __del__
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/renderers/context/egl_context.py", line 147, in free
+TypeError: 'NoneType' object is not callable
+Exception ignored in: <function EGLGLContext.__del__ at 0x145383ef2020>
+Traceback (most recent call last):
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/renderers/context/egl_context.py", line 155, in __del__
+  File "/home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/renderers/context/egl_context.py", line 147, in free
+TypeError: 'NoneType' object is not callable
+ERROR conda.cli.main_run:execute(125): `conda run python run/preflight.py --obs_hw 360 --steps 60` failed. (See above for error)

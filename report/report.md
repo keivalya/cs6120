@@ -42,6 +42,44 @@ RQ2 (paraphrase) are pending. RQ1.3 (CSS vs model/scale across OpenVLA-7B,
 OpenVLA-OFT, OFT+FiLM) requires building those envs (GATE 4). Numbers here trace
 to `results/smolvla/libero_goal/{original,blank,nonsense}/seed7/` — no fabrication.
 
+## RQ1.2 — Misleading instructions: Follow / Ignore / Fail + OAR (PARTIAL)
+
+**Question (§1):** under a *wrong* instruction on the fixed scene, does the robot
+follow the wrong instruction (Follow), do the true task anyway (Ignore → OAR), or
+fail (Fail)? High OAR would mean the policy reads pixels, not words.
+
+**Status: PARTIAL** — tasks 0–7 complete (+task 8 partial), seed 7, n_episodes=2.
+Tasks 8–9 pending a compatible GPU (the last allocated node has Tesla P100 /
+sm_60, unsupported by torch 2.10). Ignore/OAR is exact (env success = true task
+achieved); Follow is detected only for `wrong_object` via a movable-object
+displacement heuristic (`wrong_action`/`wrong_task` Follow is under-counted —
+needs per-task goal-predicate eval; see analyze/css.py).
+
+| condition | n | Ignore (OAR) | Follow | Fail |
+|-----------|---|--------------|--------|------|
+| `wrong_object` (swap object noun, in-scene) | 12 | **0.08** | 0.33 | 0.58 |
+| `wrong_action` (swap verb) | 18 | **0.50** | 0.00* | 0.50 |
+| `wrong_task` (another Goal task's instruction) | 17 | **0.00** | 0.00* | 1.00 |
+| `repeated` (benign: instruction doubled) | 16 | TSR **0.06** | — | — |
+
+\* Follow under-counted for these (heuristic limitation).
+
+**Preliminary reading (consistent with RQ1.1 CSS≈1.0):**
+- **Object noun is strongly binding** — `wrong_object` OAR=0.08: naming a different
+  (in-scene) object almost never leaves the true task done; it often drives the
+  gripper to the wrongly-named object (Follow≈0.33).
+- **Action verb is weaker** — `wrong_action` OAR=0.50: the policy frequently does
+  the original action despite the swapped verb, i.e. the *object* dominates the
+  *verb* (matches LIBERO-Para's object-dominance prior — but this is our measured value).
+- **A fully wrong task instruction is destructive** — `wrong_task` OAR=0.00,
+  Fail=1.00: the policy does not fall back to the true task; it reads the words.
+- **Fragility to benign redundancy** — `repeated` TSR=0.06 (vs original 0.85):
+  duplicating the identical instruction collapses success. Notable robustness gap.
+
+Numbers trace to `results/smolvla/libero_goal/{wrong_*,repeated}/seed7/`. Will be
+refreshed to the full 10-task grid once an sm_70+ GPU is available (idempotent
+resume finishes tasks 8–9).
+
 ### Reproduce
 ```
 # fresh GPU: preflight then sweep+aggregate+csv

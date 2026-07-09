@@ -1,0 +1,262 @@
+[launch] RUN task 0 (elapsed 0s)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 5019.25it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[eval_task 0] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[0]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=0 | n_envs=1
+[eval_task 0] env ready
+[eval_task 0] skip wrong_object (no scene-valid probe)
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 0 wrong_action ep0] success=True steps=299
+[eval_task 0 wrong_action ep1] success=False steps=300
+[eval_task 0 wrong_task ep0] success=False steps=300
+[eval_task 0 wrong_task ep1] success=False steps=300
+[eval_task 0 repeated ep0] success=False steps=300
+[eval_task 0 repeated ep1] success=False steps=300
+[eval_task 0] DONE
+[launch] task 0 rc=0 (elapsed 520s)
+[launch] RUN task 1 (elapsed 520s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 4898.41it/s]
+[eval_task 1] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[1]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=1 | n_envs=1
+[eval_task 1] env ready
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 1 wrong_object ep0] success=False steps=300
+[eval_task 1 wrong_object ep1] success=False steps=300
+[eval_task 1 wrong_action ep0] success=True steps=77
+[eval_task 1 wrong_action ep1] success=False steps=300
+[eval_task 1 wrong_task ep0] success=False steps=300
+[eval_task 1 wrong_task ep1] success=False steps=300
+[eval_task 1 repeated ep0] success=True steps=179
+[eval_task 1 repeated ep1] success=False steps=300
+[eval_task 1] DONE
+[launch] task 1 rc=0 (elapsed 1154s)
+[launch] RUN task 2 (elapsed 1154s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:   1%|          | 3/489 [00:00<00:55,  8.80it/s]Loading weights:  10%|█         | 50/489 [00:00<00:03, 143.84it/s]Loading weights:  16%|█▌        | 78/489 [00:00<00:02, 143.81it/s]Loading weights:  20%|██        | 100/489 [00:00<00:02, 157.91it/s]Loading weights:  25%|██▍       | 121/489 [00:00<00:02, 166.18it/s]Loading weights:  29%|██▉       | 141/489 [00:00<00:02, 163.45it/s]Loading weights:  33%|███▎      | 160/489 [00:01<00:01, 169.55it/s]Loading weights:  37%|███▋      | 182/489 [00:01<00:01, 179.25it/s]Loading weights:  42%|████▏     | 203/489 [00:01<00:01, 177.00it/s]Loading weights:  45%|████▌     | 222/489 [00:01<00:01, 178.60it/s]Loading weights:  50%|████▉     | 244/489 [00:01<00:01, 183.86it/s]Loading weights:  54%|█████▍    | 266/489 [00:01<00:01, 183.01it/s]Loading weights:  59%|█████▉    | 289/489 [00:01<00:01, 190.28it/s]Loading weights: 100%|██████████| 489/489 [00:01<00:00, 271.95it/s]
+[eval_task 2] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[2]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=2 | n_envs=1
+[eval_task 2] env ready
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 2 wrong_object ep0] success=False steps=300
+[eval_task 2 wrong_object ep1] success=False steps=300
+[eval_task 2 wrong_action ep0] success=True steps=88
+[eval_task 2 wrong_action ep1] success=True steps=112
+[eval_task 2 wrong_task ep0] success=False steps=300
+[eval_task 2 wrong_task ep1] success=False steps=300
+[eval_task 2 repeated ep0] success=False steps=300
+[eval_task 2 repeated ep1] success=False steps=300
+[eval_task 2] DONE
+[launch] task 2 rc=0 (elapsed 1794s)
+[launch] RUN task 3 (elapsed 1794s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:   1%|          | 3/489 [00:00<00:42, 11.36it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 1796.31it/s]
+[eval_task 3] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[3]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=3 | n_envs=1
+[eval_task 3] env ready
+[eval_task 3] skip wrong_object (no scene-valid probe)
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 3 wrong_action ep0] success=False steps=300
+[eval_task 3 wrong_action ep1] success=False steps=300
+[eval_task 3 wrong_task ep0] success=False steps=300
+[eval_task 3 wrong_task ep1] success=False steps=300
+[eval_task 3 repeated ep0] success=False steps=300
+[eval_task 3 repeated ep1] success=False steps=300
+[eval_task 3] DONE
+[launch] task 3 rc=0 (elapsed 2315s)
+[launch] RUN task 4 (elapsed 2315s)
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 4960.32it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[eval_task 4] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[4]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=4 | n_envs=1
+[eval_task 4] env ready
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 4 wrong_object ep0] success=False steps=300
+[eval_task 4 wrong_object ep1] success=False steps=300
+[eval_task 4 wrong_action ep0] success=True steps=104
+[eval_task 4 wrong_action ep1] success=False steps=300
+[eval_task 4 wrong_task ep0] success=False steps=300
+[eval_task 4 wrong_task ep1] success=False steps=300
+[eval_task 4 repeated ep0] success=False steps=300
+[eval_task 4 repeated ep1] success=False steps=300
+[eval_task 4] DONE
+[launch] task 4 rc=0 (elapsed 2973s)
+[launch] RUN task 5 (elapsed 2973s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 5227.49it/s]
+[eval_task 5] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[5]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=5 | n_envs=1
+[eval_task 5] env ready
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 5 wrong_object ep0] success=False steps=300
+[eval_task 5 wrong_object ep1] success=False steps=300
+[eval_task 5 wrong_action ep0] success=False steps=300
+[eval_task 5 wrong_action ep1] success=False steps=300
+[eval_task 5 wrong_task ep0] success=False steps=300
+[eval_task 5 wrong_task ep1] success=False steps=300
+[eval_task 5 repeated ep0] success=False steps=300
+[eval_task 5 repeated ep1] success=False steps=300
+[eval_task 5] DONE
+[launch] task 5 rc=0 (elapsed 3673s)
+[launch] RUN task 6 (elapsed 3673s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:  98%|█████████▊| 477/489 [00:00<00:00, 4765.57it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 4853.31it/s]
+[eval_task 6] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[6]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=6 | n_envs=1
+[eval_task 6] env ready
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 6 wrong_object ep0] success=False steps=300
+[eval_task 6 wrong_object ep1] success=False steps=300
+[eval_task 6 wrong_action ep0] success=False steps=300
+[eval_task 6 wrong_action ep1] success=False steps=300
+[eval_task 6 wrong_task ep0] success=False steps=300
+[eval_task 6 wrong_task ep1] success=False steps=300
+[eval_task 6 repeated ep0] success=False steps=300
+[eval_task 6 repeated ep1] success=False steps=300
+[eval_task 6] DONE
+[launch] task 6 rc=0 (elapsed 4353s)
+[launch] RUN task 7 (elapsed 4353s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 5097.39it/s]
+[eval_task 7] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[7]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=7 | n_envs=1
+[eval_task 7] env ready
+[eval_task 7] skip wrong_object (no scene-valid probe)
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 7 wrong_action ep0] success=True steps=188
+[eval_task 7 wrong_action ep1] success=True steps=142
+[eval_task 7 wrong_task ep0] success=False steps=300
+[eval_task 7 wrong_task ep1] success=False steps=300
+[eval_task 7 repeated ep0] success=False steps=300
+[eval_task 7 repeated ep1] success=False steps=300
+[eval_task 7] DONE
+[launch] task 7 rc=0 (elapsed 4812s)
+[launch] RUN task 8 (elapsed 4812s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights: 100%|█████████▉| 488/489 [00:00<00:00, 4878.98it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 4879.40it/s]
+[eval_task 8] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[8]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=8 | n_envs=1
+[eval_task 8] env ready
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 8 wrong_object ep0] success=True steps=94
+[eval_task 8 wrong_object ep1] success=False steps=300
+[eval_task 8 wrong_action ep0] success=True steps=77
+[eval_task 8 wrong_action ep1] success=True steps=76
+[eval_task 8 wrong_task ep0] success=False steps=300
