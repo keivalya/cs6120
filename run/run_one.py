@@ -137,6 +137,9 @@ def load_instructions(suite: str, condition: str) -> dict[int, str] | None:
         for line in f:
             rec = json.loads(line)
             if rec.get("condition") == condition:
+                # skip probes that could not be made scene-valid (instruction=null)
+                if rec.get("skip") or rec.get("instruction") is None:
+                    continue
                 mapping[int(rec["task_id"])] = rec["instruction"]
     if not mapping:
         raise ValueError(f"No entries for condition={condition!r} in {gen}")
@@ -147,18 +150,55 @@ def load_instructions(suite: str, condition: str) -> dict[int, str] | None:
 # lerobot framework (SmolVLA)
 # --------------------------------------------------------------------------- #
 def run_lerobot(args, model_cfg: dict) -> dict:
+    # Import the LIBERO-backed probe env (which imports `libero`) FIRST, before
+    # any lerobot.policies/transformers imports, and matching the module-order of
+    # the known-good standalone path. Importing heavy torch/policy modules into
+    # the parent before `libero` can perturb GL global state inherited by forked
+    # AsyncVectorEnv workers (SIGABRT in robosuite read_pixels).
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from _libero_probe import make_probe_vec
+
     from lerobot.configs.policies import PreTrainedConfig
-    from lerobot.envs import make_env, make_env_pre_post_processors, preprocess_observation
+    from lerobot.envs import make_env_pre_post_processors, preprocess_observation
     from lerobot.envs.configs import LiberoEnv as LiberoEnvConfig
     from lerobot.policies import make_policy, make_pre_post_processors
     from lerobot.utils.constants import ACTION
 
     device = model_cfg.get("eval_flags", {}).get("device", "cuda:0")
     hf_repo = model_cfg["hf_repo"]
-
-    env_cfg = LiberoEnvConfig(task=args.suite, task_ids=args.task_ids)
     max_steps = args.max_steps
 
+    instr_map = load_instructions(args.suite, args.condition)
+
+    # Task metadata (true language, name) comes from the generated instructions
+    # jsonl — NOT by instantiating the LIBERO benchmark in this (parent) process.
+    # Instantiating LIBERO here touches MuJoCo/GL global state that a forked
+    # AsyncVectorEnv worker then inherits, corrupting its EGL context and aborting
+    # in robosuite read_pixels. The benchmark is only ever built inside workers.
+    gen = REPO_ROOT / "perturb" / "generated" / f"{args.suite}.jsonl"
+    true_langs, task_names = {}, {}
+    with open(gen) as f:
+        for line in f:
+            r = json.loads(line)
+            if r["condition"] == "original":
+                true_langs[int(r["task_id"])] = r["instruction"]
+                task_names[int(r["task_id"])] = r["task_name"]
+    all_ids = sorted(true_langs) if args.task_ids is None else list(args.task_ids)
+    run_ids = [i for i in all_ids if instr_map is None or int(i) in instr_map]
+
+    # CRITICAL ORDERING (§9-style fix): fork ALL AsyncVectorEnv rendering workers
+    # BEFORE initializing CUDA in this process. Each worker owns its own EGL
+    # context in its own process; if the policy inits CUDA first, forked workers
+    # inherit a broken CUDA/GL state and abort (SIGABRT in robosuite read_pixels).
+    # So env-workers first, policy (CUDA) second.
+    probe_vecs = {i: make_probe_vec(args.suite, int(i), max_steps) for i in run_ids}
+    for _v in probe_vecs.values():
+        _v.reset(seed=args.seed)  # spin up workers + their EGL contexts pre-CUDA
+
+    # now bring up CUDA + policy + processors (env_cfg built here, AFTER the fork:
+    # constructing the LiberoEnv config earlier can perturb global state inherited
+    # by forked workers)
+    env_cfg = LiberoEnvConfig(task=args.suite, task_ids=args.task_ids)
     policy_cfg = PreTrainedConfig.from_pretrained(hf_repo)
     policy_cfg.pretrained_path = hf_repo
     policy_cfg.device = device
@@ -180,11 +220,6 @@ def run_lerobot(args, model_cfg: dict) -> dict:
     except Exception:
         ckpt_hash = None
 
-    instr_map = load_instructions(args.suite, args.condition)
-
-    envs = make_env(env_cfg, n_envs=1, use_async_envs=False)
-    suite_envs = envs[args.suite]  # {task_id: vec_env}
-
     out_dir = args.out_dir
     ep_path = out_dir / "episodes.jsonl"
     ep_file = open(ep_path, "w")
@@ -193,10 +228,16 @@ def run_lerobot(args, model_cfg: dict) -> dict:
     n_total = 0
     per_task = {}
 
-    for task_id, vec in sorted(suite_envs.items()):
-        sub = vec.envs[0]
-        true_lang = sub.task_description
+    def _eef_from_obs(obs):
+        try:
+            return np.asarray(obs["robot_state"]["eef"]["pos"]).reshape(-1)[:3].astype(float).tolist()
+        except Exception:
+            return None
+
+    for task_id in run_ids:
+        true_lang = true_langs[task_id]
         instr = true_lang if instr_map is None else instr_map[int(task_id)]
+        vec = probe_vecs[task_id]
         task_succ = 0
         for ep in range(args.n_episodes):
             vec.set_attr("init_state_id", ep)  # deterministic init state per episode
@@ -205,11 +246,9 @@ def run_lerobot(args, model_cfg: dict) -> dict:
             set_all_seeds(args.seed + ep)
             obs, info = vec.reset(seed=args.seed + ep)
 
-            reset_hash = sim_state_hash(sub)
-            try:
-                init_poses = extract_object_poses(sub._env.env._get_observations())
-            except Exception:
-                init_poses = {}
+            probe = vec.call("probe_state")[0]
+            reset_hash = probe.get("hash")
+            init_poses = probe.get("poses", {})
 
             done = False
             step = 0
@@ -230,19 +269,13 @@ def run_lerobot(args, model_cfg: dict) -> dict:
                 is_succ = info.get("is_success", [False])
                 success = success or bool(np.asarray(is_succ).reshape(-1)[0])
                 if step % 10 == 0:
-                    try:
-                        eef = sub._env.env._get_observations().get("robot0_eef_pos")
-                        if eef is not None:
-                            eef_traj.append(np.asarray(eef, dtype=np.float64).tolist())
-                    except Exception:
-                        pass
+                    eef = _eef_from_obs(obs)
+                    if eef is not None:
+                        eef_traj.append(eef)
                 done = bool(np.asarray(term).reshape(-1)[0] or np.asarray(trunc).reshape(-1)[0])
                 step += 1
 
-            try:
-                final_poses = extract_object_poses(sub._env.env._get_observations())
-            except Exception:
-                final_poses = {}
+            final_poses = vec.call("probe_state")[0].get("poses", {})
 
             n_total += 1
             task_succ += int(success)
@@ -254,7 +287,7 @@ def run_lerobot(args, model_cfg: dict) -> dict:
                 "condition": args.condition,
                 "seed": args.seed,
                 "task_id": int(task_id),
-                "task_name": sub.task,
+                "task_name": task_names[task_id],
                 "episode": ep,
                 "instruction": instr,
                 "true_instruction": true_lang,
@@ -322,10 +355,6 @@ def main():
 
     manifest = REPO_ROOT / "MANIFEST.json"
     node = os.environ.get("SLURMD_NODENAME") or os.uname().nodename
-    try:
-        gpu = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
-    except Exception:
-        gpu = "unknown"
 
     t_start = time.time()
     try:
@@ -344,6 +373,14 @@ def main():
         status = "FAILED"
         summary = {"n_success": None, "tsr": None, "n_episodes": args.n_episodes}
         print(err, file=sys.stderr)
+
+    # Query GPU name only AFTER the run: torch.cuda.* initializes a CUDA context,
+    # which must NOT happen before the AsyncVectorEnv render workers are forked
+    # (forked workers would inherit a broken CUDA state and SIGABRT in EGL).
+    try:
+        gpu = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
+    except Exception:
+        gpu = "unknown"
 
     append_manifest(
         manifest,

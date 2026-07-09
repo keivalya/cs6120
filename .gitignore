@@ -12,3 +12,6 @@ envs/build_*.log
 envs/smoke_eval.log
 envs/gate2_runone.log
 results/**/episodes.jsonl
+envs/gate3_run.log
+envs/gate3_debug.log
+envs/repro*.log
