@@ -1,0 +1,27 @@
+Could not find platform independent libraries <prefix>
+Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]
+Python path configuration:
+  PYTHONHOME = (not set)
+  PYTHONPATH = (not set)
+  program name = '/home/pandya.kei/.conda/envs/vla-openvla/bin/python'
+  isolated = 0
+  environment = 1
+  user site = 0
+  import site = 1
+  sys._base_executable = '/home/pandya.kei/.conda/envs/vla-openvla/bin/python'
+  sys.base_prefix = '/home/pandya.kei/.conda/envs/vla-openvla'
+  sys.base_exec_prefix = '/home/pandya.kei/.conda/envs/vla-openvla'
+  sys.platlibdir = 'lib'
+  sys.executable = '/home/pandya.kei/.conda/envs/vla-openvla/bin/python'
+  sys.prefix = '/home/pandya.kei/.conda/envs/vla-openvla'
+  sys.exec_prefix = '/home/pandya.kei/.conda/envs/vla-openvla'
+  sys.path = [
+    '/home/pandya.kei/.conda/envs/vla-openvla/lib/python310.zip',
+    '/home/pandya.kei/.conda/envs/vla-openvla/lib/python3.10',
+    '/home/pandya.kei/.conda/envs/vla-openvla/lib/python3.10/lib-dynload',
+  ]
+Fatal Python error: init_fs_encoding: failed to get the Python codec of the filesystem encoding
+Python runtime state: core initialized
+Traceback (most recent call last):
+  File "/home/pandya.kei/.conda/envs/vla-openvla/lib/python3.10/encodings/__init__.py", line 33, in <module>
+ImportError: cannot import name 'aliases' from partially initialized module 'encodings' (most likely due to a circular import) (/home/pandya.kei/.conda/envs/vla-openvla/lib/python3.10/encodings/__init__.py)
