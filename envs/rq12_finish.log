@@ -1,0 +1,70 @@
+[launch] RUN task 8 (elapsed 0s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:  99%|█████████▊| 482/489 [00:00<00:00, 4818.74it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 4868.15it/s]
+[eval_task 8] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[8]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=8 | n_envs=1
+[eval_task 8] env ready
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 8 wrong_object ep0] success=True steps=94
+[eval_task 8 wrong_object ep1] success=False steps=300
+[eval_task 8 wrong_action ep0] success=True steps=77
+[eval_task 8 wrong_action ep1] success=True steps=76
+[eval_task 8 wrong_task ep0] success=False steps=300
+[eval_task 8 wrong_task ep1] success=False steps=300
+[eval_task 8 repeated ep0] success=True steps=99
+[eval_task 8 repeated ep1] success=False steps=300
+[eval_task 8] DONE
+[launch] task 8 rc=0 (elapsed 465s)
+[launch] RUN task 9 (elapsed 465s)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+WARNING:huggingface_hub.utils._http:Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading  HuggingFaceTB/SmolVLM2-500M-Instruct weights ...
+Loading weights:   0%|          | 0/489 [00:00<?, ?it/s]Loading weights:  97%|█████████▋| 475/489 [00:00<00:00, 4739.54it/s]Loading weights: 100%|██████████| 489/489 [00:00<00:00, 4788.43it/s]
+[eval_task 9] policy ready
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+WARNING:robosuite_logs:No private macro file found!
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+WARNING:robosuite_logs:It is recommended to use a private macro file
+[robosuite WARNING] To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py (__init__.py:9)
+WARNING:robosuite_logs:To setup, run: python /home/pandya.kei/.conda/envs/vla-smolvla/lib/python3.12/site-packages/robosuite/scripts/setup_macros.py
+Creating LIBERO envs | suites=['libero_goal'] | n_envs(per task)=1 | init_states=True
+Restricting to task_ids=[9]
+[info] using task orders [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Built vec env | suite=libero_goal | task_id=9 | n_envs=1
+[eval_task 9] env ready
+Local assets not found. Downloading from HuggingFace Hub...
+Assets already downloaded at /home/pandya.kei/.cache/libero/assets
+[eval_task 9 wrong_object ep0] success=False steps=300
+[eval_task 9 wrong_object ep1] success=False steps=300
+[eval_task 9 wrong_action ep0] success=False steps=300
+[eval_task 9 wrong_action ep1] success=False steps=300
+[eval_task 9 wrong_task ep0] success=False steps=300
+[eval_task 9 wrong_task ep1] success=False steps=300
+[eval_task 9 repeated ep0] success=False steps=300
+[eval_task 9 repeated ep1] success=False steps=300
+[eval_task 9] DONE
+[launch] task 9 rc=0 (elapsed 1119s)
+[launch] aggregating...
+[aggregate] blank/seed7: TSR=0.0 (0/20)
+[aggregate] nonsense/seed7: TSR=0.0 (0/20)
+[aggregate] original/seed7: TSR=0.85 (17/20)
+[aggregate] repeated/seed7: TSR=0.1 (2/20)
+[aggregate] wrong_action/seed7: TSR=0.45 (9/20)
+[aggregate] wrong_object/seed7: TSR=0.07142857142857142 (1/14)
+[aggregate] wrong_task/seed7: TSR=0.0 (0/20)
+[aggregate] scene_fixed_check: pass=True (20 keys, 0 mismatches)
+[launch] DONE total 1123s

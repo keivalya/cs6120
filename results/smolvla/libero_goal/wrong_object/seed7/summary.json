@@ -6,9 +6,9 @@
   "checkpoint": "HuggingFaceVLA/smolvla_libero",
   "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
   "n_episodes": 2,
-  "n_total_episodes": 12,
+  "n_total_episodes": 14,
   "n_success": 1,
-  "tsr": 0.08333333333333333,
+  "tsr": 0.07142857142857142,
   "per_task": {
     "1": {
       "n": 2,
@@ -33,6 +33,10 @@
     "8": {
       "n": 2,
       "success": 1
+    },
+    "9": {
+      "n": 2,
+      "success": 0
     }
   },
   "framework": "lerobot",

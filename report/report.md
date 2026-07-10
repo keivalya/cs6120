@@ -48,19 +48,19 @@ to `results/smolvla/libero_goal/{original,blank,nonsense}/seed7/` — no fabrica
 follow the wrong instruction (Follow), do the true task anyway (Ignore → OAR), or
 fail (Fail)? High OAR would mean the policy reads pixels, not words.
 
-**Status: PARTIAL** — tasks 0–7 complete (+task 8 partial), seed 7, n_episodes=2.
-Tasks 8–9 pending a compatible GPU (the last allocated node has Tesla P100 /
-sm_60, unsupported by torch 2.10). Ignore/OAR is exact (env success = true task
-achieved); Follow is detected only for `wrong_object` via a movable-object
-displacement heuristic (`wrong_action`/`wrong_task` Follow is under-counted —
-needs per-task goal-predicate eval; see analyze/css.py).
+**Status: COMPLETE** — all 10 tasks, seed 7, n_episodes=2 (H200, d4053).
+Ignore/OAR is exact (env success = true task achieved); Follow is detected only
+for `wrong_object` via a movable-object displacement heuristic
+(`wrong_action`/`wrong_task` Follow is under-counted — needs per-task
+goal-predicate eval; see analyze/css.py).
 
 | condition | n | Ignore (OAR) | Follow | Fail |
 |-----------|---|--------------|--------|------|
-| `wrong_object` (swap object noun, in-scene) | 12 | **0.08** | 0.33 | 0.58 |
-| `wrong_action` (swap verb) | 18 | **0.50** | 0.00* | 0.50 |
-| `wrong_task` (another Goal task's instruction) | 17 | **0.00** | 0.00* | 1.00 |
-| `repeated` (benign: instruction doubled) | 16 | TSR **0.06** | — | — |
+| `wrong_object` (swap object noun, in-scene) | 14 | **0.07** | 0.29 | 0.64 |
+| `wrong_action` (swap verb) | 20 | **0.45** | 0.00* | 0.55 |
+| `wrong_task` (another Goal task's instruction) | 20 | **0.00** | 0.00* | 1.00 |
+| `repeated` (benign: instruction doubled) | 20 | TSR **0.10** | — | — |
+(`wrong_object` n=14: 7 movable-object tasks × 2; skipped on the 3 fixture tasks.)
 
 \* Follow under-counted for these (heuristic limitation).
 
@@ -73,12 +73,34 @@ needs per-task goal-predicate eval; see analyze/css.py).
   *verb* (matches LIBERO-Para's object-dominance prior — but this is our measured value).
 - **A fully wrong task instruction is destructive** — `wrong_task` OAR=0.00,
   Fail=1.00: the policy does not fall back to the true task; it reads the words.
-- **Fragility to benign redundancy** — `repeated` TSR=0.06 (vs original 0.85):
+- **Fragility to benign redundancy** — `repeated` TSR=0.10 (vs original 0.85):
   duplicating the identical instruction collapses success. Notable robustness gap.
 
-Numbers trace to `results/smolvla/libero_goal/{wrong_*,repeated}/seed7/`. Will be
-refreshed to the full 10-task grid once an sm_70+ GPU is available (idempotent
-resume finishes tasks 8–9).
+Numbers trace to `results/smolvla/libero_goal/{wrong_*,repeated}/seed7/`.
+
+## Failure locus — planning vs execution (analyze/locus.py, §7)
+
+Classifier: a failed episode is **planning-level** if the gripper never came
+within 0.08 m of the true target object over the trajectory (wrong *what*), else
+**execution-level** (right *what*, bad *how*). Distribution over failures:
+
+| condition | failed | planning | execution |
+|-----------|--------|----------|-----------|
+| original  | 3  | 3  | 0 |
+| blank     | 20 | 20 | 0 |
+| nonsense  | 20 | 16 | 4 |
+| wrong_task| 20 | 18 | 2 |
+
+**Reading:** language-destruction failures are overwhelmingly **planning-level** —
+without a meaningful instruction the policy never approaches the correct object
+(it fails at choosing *what*, not at manipulating). This corroborates RQ1.1: the
+instruction drives task *selection*.
+
+Validation (§7): geometric sanity-check on 10 failed `blank`/`nonsense`/`wrong_task`
+episodes — min eef→target distances were 0.24–0.37 m, i.e. all ≫ the 0.08 m
+threshold, correctly yielding "planning". (Full video-based hand-labeling of the
+threshold is a future refinement; the current heuristic is documented in
+analyze/locus.py.)
 
 ### Reproduce
 ```
