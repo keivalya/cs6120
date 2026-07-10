@@ -127,6 +127,28 @@ original/blank/nonsense/wrong_task; 0 mismatches). Node d4053 (H200).
 OpenVLA per-condition (n=20 each): original 0.70, blank 0.00, nonsense 0.00,
 wrong_task 0.00. CSS = (TSR_orig − TSR_cond)/max(TSR_orig, ε).
 
+**RQ1.2 across scale — misleading/redundant instructions (OAR = TSR under the
+condition = fraction that Ignored the bad instruction and did the true task):**
+
+| condition | SmolVLA 0.45B | OpenVLA 7B |
+|-----------|---------------|------------|
+| `wrong_object` (OAR, swap object noun, in-scene) | 0.07 (n=14) | 0.14 (n=14) |
+| `wrong_action` (OAR, swap verb) | 0.45 (n=20) | 0.55 (n=20) |
+| `wrong_task` (OAR, full other-task instr) | 0.00 (n=20) | 0.00 (n=20) |
+| `repeated` (TSR, instruction × 2) | **0.10** (n=20) | **0.60** (n=20) |
+
+Two cross-scale findings: **(1) the object-noun ≫ action-verb binding asymmetry
+holds at both scales** — swapping the *verb* leaves OAR high (0.45 / 0.55: the
+policy still does the true task, so the verb is only weakly causal), while swapping
+the *object noun* drops OAR to near zero (0.07 / 0.14: the noun is strongly
+causal). Object reference dominates action reference for both models. **(2)
+Robustness to benign redundancy scales up sharply** — the doubled instruction
+barely dents OpenVLA (0.60 vs its 0.70 original) but collapses SmolVLA
+(0.10 vs 0.85). The 0.45B model is brittle to a trivially redundant restatement;
+the 7B model shrugs it off. (`wrong_task` → OAR 0 at both scales corroborates the
+headline: neither model ignores a coherent wrong-task instruction to fall back on
+the scene.)
+
 **Answer:** causal reliance on language is **complete at both scales and does not
 change across a 16× parameter jump** — CSS(blank)=CSS(nonsense)=1.00 and
 OAR(wrong_task)=0.00 for *both* the 0.45B and the 7B model. Neither policy does
