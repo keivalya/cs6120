@@ -109,23 +109,29 @@ with model scale? We repeat the RQ1.1/1.2 causal probes on OpenVLA-7B
 (`openvla/openvla-7b-finetuned-libero-goal`) with the *identical* fixed-scene
 protocol and grid as SmolVLA, and compare.
 
-**Grid (matched):** suite=`libero_goal`, all 10 tasks, seed 7, n_episodes=2
-(20 episodes/condition), max_steps 300. OpenVLA loaded via HF `trust_remote_code`
-with `attn_implementation="sdpa"` (flash-attn unnecessary — identical attention
-math), bf16, `center_crop=True`, `unnorm_key="libero_goal"`. Scene held fixed —
-**proven**: `results/openvla/libero_goal/scene_fixed_check.json` = pass (20/20
-(task,episode) keys identical post-reset sim-state hashes across
-original/blank/nonsense/wrong_task; 0 mismatches). Node d4053 (H200).
+**Grid (matched):** suite=`libero_goal`, all 10 tasks, 2 episodes/task, max_steps
+300. Core causal conditions (`original/blank/nonsense/wrong_task`) run on **two
+seeds (7, 42) = 40 episodes/condition**; the RQ1.2 conditions
+(`wrong_object/wrong_action/repeated`) on seed 7 (20/14 episodes). OpenVLA loaded
+via HF `trust_remote_code` with `attn_implementation="sdpa"` (flash-attn
+unnecessary — identical attention math), bf16, `center_crop=True`,
+`unnorm_key="libero_goal"`. Scene held fixed — **proven**:
+`results/openvla/libero_goal/scene_fixed_check.json` = pass (40/40 (task,episode)
+keys identical post-reset sim-state hashes across
+original/blank/nonsense/wrong_task; 0 mismatches). Node d4053/d4054 (H200).
+Notably TSR(original)=0.70 on **both** seeds independently (std=0.00) — a stable
+estimate.
 
 **Result** (`report/rq1_scale.csv`, `report/rq1_causal_openvla.csv`):
 
 | model | params | TSR(original) | CSS(blank) | CSS(nonsense) | OAR(wrong_task) |
 |-------|--------|---------------|------------|---------------|-----------------|
-| SmolVLA  | 0.45B | 0.85 (17/20) | **1.00** | **1.00** | **0.00** |
-| OpenVLA  | 7.0B  | 0.70 (14/20) | **1.00** | **1.00** | **0.00** |
+| SmolVLA  | 0.45B | 0.85 (17/20, seed 7)   | **1.00** | **1.00** | **0.00** |
+| OpenVLA  | 7.0B  | 0.70 (28/40, seeds 7,42) | **1.00** | **1.00** | **0.00** |
 
-OpenVLA per-condition (n=20 each): original 0.70, blank 0.00, nonsense 0.00,
-wrong_task 0.00. CSS = (TSR_orig − TSR_cond)/max(TSR_orig, ε).
+OpenVLA per-condition (n=40, seeds 7+42): original 0.70 (std 0.00 over seeds),
+blank 0.00, nonsense 0.00, wrong_task 0.00. CSS = (TSR_orig −
+TSR_cond)/max(TSR_orig, ε).
 
 **RQ1.2 across scale — misleading/redundant instructions (OAR = TSR under the
 condition = fraction that Ignored the bad instruction and did the true task):**
@@ -160,12 +166,16 @@ the destructive-perturbation collapse is total either way. This argues the
 "visual-shortcut / language-ignored" hypothesis is false on LIBERO-Goal
 regardless of scale.
 
-**Caveats / scope:** single seed, 2 episodes/task per model (validation budget,
-§2's reduced 7B grid). `openvla_oft` / `openvla_oft_film` rows are not yet run
-(their env — forked transformers + dlimp — is GATE 4's remaining item; the FiLM
-checkpoint id must be confirmed before use, §2/§6.3). Numbers trace to
-`results/openvla/libero_goal/{original,blank,nonsense,wrong_task}/seed7/` — no
-fabrication.
+**Caveats / scope:** 2 episodes/task; OpenVLA core causal conditions on 2 seeds
+(7,42), SmolVLA and the RQ1.2 conditions on seed 7 (validation budget, §2's
+reduced 7B grid). `openvla_oft` / `openvla_oft_film` rows are not yet run — the
+`vla-oft` env is **built** (torch 2.2, moojink transformers fork + dlimp, LIBERO +
+robosuite 1.4.1/mujoco 2.3.2; `envs/vla-oft.lock.txt`) but its model import hits
+the same `dlimp→protobuf(runtime_version)` conflict, which for OFT must be
+*resolved* (its parallel-decoding/L1 head needs the `prismatic` classes, so the
+inline-around used for plain OpenVLA doesn't apply); FiLM checkpoint id must be
+confirmed before use (§2/§6.3). Numbers trace to
+`results/openvla/libero_goal/*/seed{7,42}/` — no fabrication.
 
 ### Reproduce
 ```

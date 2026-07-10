@@ -2,12 +2,15 @@
 
 ## DONE
 - **GATE 3 (SmolVLA/libero_goal):** RQ1.1 CSS=1.0, RQ1.2 OAR, locus. report/report.md.
-- **GATE 4 RQ1.3 — OpenVLA-7B COMPLETE (RQ1.1/1.3 causal grid):**
-  `openvla/openvla-7b-finetuned-libero-goal`, libero_goal, 10 tasks, seed 7,
-  2 ep/task (20/condition). Result: **original 0.70, blank 0.00, nonsense 0.00,
-  wrong_task 0.00 → CSS(blank)=CSS(nonsense)=1.00, OAR(wrong_task)=0.00.**
-  scene_fixed_check pass (0/20 mismatches). Matches SmolVLA (CSS=1.0) →
-  **causal language reliance is complete at BOTH 0.45B and 7B (16× scale).**
+- **GATE 4 RQ1.3 — OpenVLA-7B COMPLETE (RQ1.1/1.2/1.3, 2 seeds):**
+  `openvla/openvla-7b-finetuned-libero-goal`, libero_goal, 10 tasks, 2 ep/task.
+  Core causal conds on **seeds 7+42 (40 ep/cond)**; RQ1.2 conds on seed 7.
+  Result: **original 0.70 (std 0.00 over seeds), blank/nonsense/wrong_task 0.00 →
+  CSS(blank)=CSS(nonsense)=1.00, OAR(wrong_task)=0.00.** RQ1.2: wrong_object
+  OAR=0.14, wrong_action OAR=0.55, repeated TSR=0.60. scene_fixed_check pass
+  (0/40 mismatches). Matches SmolVLA (CSS=1.0) → **causal language reliance is
+  complete at BOTH 0.45B and 7B (16× scale)**; object-noun≫action-verb binding
+  and (new) redundancy-robustness-scales-up both hold.
   - report/rq1_scale.csv, report/rq1_causal_openvla.csv, report/rq1_causal.csv
     (combined), report/rq1_scale.png, report/rq1_causal_bars.png.
   - Runner: run/eval_task_openvla.py. Aggregation/analysis reused unchanged.
@@ -34,10 +37,23 @@
 - Checkpoint (~15G) on scratch: $HF_HOME/hub/models--openvla--openvla-7b-finetuned-libero-goal.
 
 ## Remaining (optional / next)
-- `openvla_oft` (7.5B): build env vla-oft (§6.3 — forked transformers + dlimp);
-  gives a 3rd scale point. `openvla_oft_film`: confirm the FiLM-trained ckpt id
-  first (§2/§6.3) — leave null until verified (missing > invented).
-- More seeds/episodes for tighter CIs if HPC time allows.
+- `openvla_oft` (7.5B, 3rd scale point): env **vla-oft is BUILT**
+  (`envs/vla-oft.lock.txt`: torch 2.2.0+cu121, moojink transformers fork,
+  dlimp 0.0.1, LIBERO + robosuite 1.4.1/mujoco 2.3.2, numpy<2; PYOK). **Blocker:**
+  `import prismatic` → `dlimp` → `google.protobuf runtime_version` (needs proto
+  ≥5.26, conflicts w/ tf 2.15's 4.25). For OFT this must be *resolved* (its
+  parallel-decoding/L1-head/proprio path needs the prismatic classes — the
+  inline-around used for plain OpenVLA won't work). Fix options for next session:
+  (a) patch openvla-oft `prismatic/__init__.py` to lazy-import `.models` so the
+  dlimp/RLDS training path isn't pulled at import (record diff per §9); or
+  (b) resolve the proto/tf version conflict. Then: download OFT ckpt
+  (`moojink/openvla-7b-oft-finetuned-libero-goal`), write run/eval_task_oft.py
+  (use_l1_regression=True, num_images_in_input=2, use_proprio=True, center_crop,
+  unnorm_key), run reduced grid.
+- `openvla_oft_film`: confirm the FiLM-trained ckpt id first (§2/§6.3) — leave
+  null until verified (missing > invented).
+- More seeds/episodes for tighter CIs if HPC time allows (SmolVLA + RQ1.2 conds
+  are still seed-7-only).
 
 ## Infra notes
 - Home per-user quota is tight; HF cache on scratch (HF_HOME); clear

@@ -1,6 +1,6 @@
 {
   "pass": true,
-  "n_keys_checked": 20,
+  "n_keys_checked": 40,
   "n_mismatches": 0,
   "mismatches": [],
   "note": "scene provably fixed across conditions iff pass (\u00a75/\u00a712)"
