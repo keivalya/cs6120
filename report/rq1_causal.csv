@@ -13,3 +13,7 @@ openvla,libero_goal,wrong_object,0.1429,0.0000,55.71,,14,7
 openvla,libero_goal,wrong_action,0.5500,0.0000,15.00,,20,7
 openvla,libero_goal,wrong_task,0.0000,0.0000,70.00,,40,7;42
 openvla,libero_goal,repeated,0.6000,0.0000,10.00,,20,7
+openvla_oft,libero_goal,original,1.0000,0.0000,0.00,,20,7
+openvla_oft,libero_goal,blank,0.1500,0.0000,85.00,0.8500,20,7
+openvla_oft,libero_goal,nonsense,0.0500,0.0000,95.00,0.9500,20,7
+openvla_oft,libero_goal,wrong_task,0.0000,0.0000,100.00,,20,7

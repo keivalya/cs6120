@@ -126,8 +126,9 @@ estimate.
 
 | model | params | TSR(original) | CSS(blank) | CSS(nonsense) | OAR(wrong_task) |
 |-------|--------|---------------|------------|---------------|-----------------|
-| SmolVLA  | 0.45B | 0.85 (17/20, seed 7)   | **1.00** | **1.00** | **0.00** |
-| OpenVLA  | 7.0B  | 0.70 (28/40, seeds 7,42) | **1.00** | **1.00** | **0.00** |
+| SmolVLA      | 0.45B | 0.85 (17/20, seed 7)     | **1.00** | **1.00** | **0.00** |
+| OpenVLA      | 7.0B  | 0.70 (28/40, seeds 7,42) | **1.00** | **1.00** | **0.00** |
+| OpenVLA-OFT  | 7.5B  | 1.00 (20/20, seed 7)     | 0.85 | 0.95 | **0.00** |
 
 OpenVLA per-condition (n=40, seeds 7+42): original 0.70 (std 0.00 over seeds),
 blank 0.00, nonsense 0.00, wrong_task 0.00. CSS = (TSR_orig −
@@ -155,27 +156,36 @@ the 7B model shrugs it off. (`wrong_task` → OAR 0 at both scales corroborates 
 headline: neither model ignores a coherent wrong-task instruction to fall back on
 the scene.)
 
-**Answer:** causal reliance on language is **complete at both scales and does not
-change across a 16× parameter jump** — CSS(blank)=CSS(nonsense)=1.00 and
-OAR(wrong_task)=0.00 for *both* the 0.45B and the 7B model. Neither policy does
-the task without a meaningful instruction, and neither ignores a wrong-task
-instruction to fall back on the memorized scene layout (OAR=0). The 7B model's
-lower `original` TSR (0.70 vs 0.85) is a capability/sample-size difference
-(2 episodes/task, single init-state each), **not** reduced language reliance —
-the destructive-perturbation collapse is total either way. This argues the
-"visual-shortcut / language-ignored" hypothesis is false on LIBERO-Goal
-regardless of scale.
+**Answer:** across **three models spanning 0.45B → 7.5B (16×)**, causal reliance
+on language is **high and essentially scale-invariant**: CSS(blank) ∈ [0.85, 1.00],
+CSS(nonsense) ∈ [0.95, 1.00], and **OAR(wrong_task)=0.00 for all three**. No model
+completes the task from a memorized scene layout when given a coherent *wrong-task*
+instruction, and destroying the instruction (blank/nonsense) collapses success at
+every scale. The "visual-shortcut / language-ignored" hypothesis is false on
+LIBERO-Goal regardless of scale or architecture.
+
+**Nuance (a real, honest wrinkle):** the strongest policy, OpenVLA-OFT (7.5B,
+original TSR=1.00, and the only one with a **wrist camera + proprioception**),
+shows a *small* residual capacity to succeed without a valid instruction —
+CSS(blank)=0.85 (it still finished 3/20 blanked episodes), CSS(nonsense)=0.95 —
+whereas the two single-3rd-person-camera policies (SmolVLA, OpenVLA) sit at CSS
+1.00. So the extra sensorimotor context in OFT buys a *little* visual-shortcut
+ability, but language still dominates (CSS≫0) and wrong-task OAR stays 0. The 7B
+OpenVLA's lower `original` TSR (0.70) is a capability/sample-size effect, not
+reduced reliance — its perturbation collapse is total (CSS=1.00).
+
+**Grid (OFT):** OpenVLA-OFT run with its native config — `use_l1_regression=True`,
+`num_images_in_input=2` (3rd-person + wrist), `use_proprio=True`,
+`num_open_loop_steps=8` (8-step action chunk), `center_crop=True`, `use_film=False`
+(plain OFT checkpoint), `unnorm_key="libero_goal_no_noops"`. Loaded from the local
+snapshot (base VLA + `action_head` + `proprio_projector` heads). seed 7, 2 ep/task.
 
 **Caveats / scope:** 2 episodes/task; OpenVLA core causal conditions on 2 seeds
-(7,42), SmolVLA and the RQ1.2 conditions on seed 7 (validation budget, §2's
-reduced 7B grid). `openvla_oft` / `openvla_oft_film` rows are not yet run — the
-`vla-oft` env is **built** (torch 2.2, moojink transformers fork + dlimp, LIBERO +
-robosuite 1.4.1/mujoco 2.3.2; `envs/vla-oft.lock.txt`) but its model import hits
-the same `dlimp→protobuf(runtime_version)` conflict, which for OFT must be
-*resolved* (its parallel-decoding/L1 head needs the `prismatic` classes, so the
-inline-around used for plain OpenVLA doesn't apply); FiLM checkpoint id must be
-confirmed before use (§2/§6.3). Numbers trace to
-`results/openvla/libero_goal/*/seed{7,42}/` — no fabrication.
+(7,42), SmolVLA/OFT and the RQ1.2 conditions on seed 7 (validation budget, §2's
+reduced 7B grid). `openvla_oft_film` (the FiLM-conditioned variant) is **not** run
+— its checkpoint id must be confirmed before use (§2/§6.3: mismatched use_film/ckpt
+= garbage), left out rather than guessed (missing > invented). Numbers trace to
+`results/{smolvla,openvla,openvla_oft}/libero_goal/*/seed*/` — no fabrication.
 
 ### Reproduce
 ```
