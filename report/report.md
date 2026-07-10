@@ -102,6 +102,49 @@ threshold, correctly yielding "planning". (Full video-based hand-labeling of the
 threshold is a future refinement; the current heuristic is documented in
 analyze/locus.py.)
 
+## RQ1.3 — Causal reliance vs model scale (SmolVLA 0.45B vs OpenVLA-7B)
+
+**Question (§1):** does causal reliance on the instruction (CSS) grow or shrink
+with model scale? We repeat the RQ1.1/1.2 causal probes on OpenVLA-7B
+(`openvla/openvla-7b-finetuned-libero-goal`) with the *identical* fixed-scene
+protocol and grid as SmolVLA, and compare.
+
+**Grid (matched):** suite=`libero_goal`, all 10 tasks, seed 7, n_episodes=2
+(20 episodes/condition), max_steps 300. OpenVLA loaded via HF `trust_remote_code`
+with `attn_implementation="sdpa"` (flash-attn unnecessary — identical attention
+math), bf16, `center_crop=True`, `unnorm_key="libero_goal"`. Scene held fixed —
+**proven**: `results/openvla/libero_goal/scene_fixed_check.json` = pass (20/20
+(task,episode) keys identical post-reset sim-state hashes across
+original/blank/nonsense/wrong_task; 0 mismatches). Node d4053 (H200).
+
+**Result** (`report/rq1_scale.csv`, `report/rq1_causal_openvla.csv`):
+
+| model | params | TSR(original) | CSS(blank) | CSS(nonsense) | OAR(wrong_task) |
+|-------|--------|---------------|------------|---------------|-----------------|
+| SmolVLA  | 0.45B | 0.85 (17/20) | **1.00** | **1.00** | **0.00** |
+| OpenVLA  | 7.0B  | 0.70 (14/20) | **1.00** | **1.00** | **0.00** |
+
+OpenVLA per-condition (n=20 each): original 0.70, blank 0.00, nonsense 0.00,
+wrong_task 0.00. CSS = (TSR_orig − TSR_cond)/max(TSR_orig, ε).
+
+**Answer:** causal reliance on language is **complete at both scales and does not
+change across a 16× parameter jump** — CSS(blank)=CSS(nonsense)=1.00 and
+OAR(wrong_task)=0.00 for *both* the 0.45B and the 7B model. Neither policy does
+the task without a meaningful instruction, and neither ignores a wrong-task
+instruction to fall back on the memorized scene layout (OAR=0). The 7B model's
+lower `original` TSR (0.70 vs 0.85) is a capability/sample-size difference
+(2 episodes/task, single init-state each), **not** reduced language reliance —
+the destructive-perturbation collapse is total either way. This argues the
+"visual-shortcut / language-ignored" hypothesis is false on LIBERO-Goal
+regardless of scale.
+
+**Caveats / scope:** single seed, 2 episodes/task per model (validation budget,
+§2's reduced 7B grid). `openvla_oft` / `openvla_oft_film` rows are not yet run
+(their env — forked transformers + dlimp — is GATE 4's remaining item; the FiLM
+checkpoint id must be confirmed before use, §2/§6.3). Numbers trace to
+`results/openvla/libero_goal/{original,blank,nonsense,wrong_task}/seed7/` — no
+fabrication.
+
 ### Reproduce
 ```
 # fresh GPU: preflight then sweep+aggregate+csv

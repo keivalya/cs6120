@@ -31,7 +31,11 @@ openvla:
   env: "vla-openvla"
   framework: "openvla"
   eval_flags:
-    unnorm_key: "libero_goal_no_noops"
+    device: "cuda:0"
+    # This checkpoint's norm_stats has key "libero_goal" (NOT _no_noops — that's
+    # the OFT variant). Verified at load: list(vla.norm_stats.keys())==['libero_goal'].
+    unnorm_key: "libero_goal"
+    attn_implementation: "sdpa"    # flash-attn wheel build fails; sdpa is identical math
     load_in_4bit: false            # enable on OOM (§9)
     center_crop: true
 

@@ -1,48 +1,46 @@
-# GATE 4 status — multi-model (RQ1.3), OpenVLA-7B env in progress
+# GATE 4 status — multi-model (RQ1.3)
 
-## Done
-- **GATE 3 COMPLETE** (SmolVLA/libero_goal): RQ1.1 CSS=1.0, RQ1.2 OAR
-  (wrong_object 0.07 / wrong_action 0.45 / wrong_task 0.00; repeated 0.10), locus
-  = planning-level. See report/report.md, report/rq1_causal.csv.
-- **vla-openvla env core built** (on home; quota freed by clearing ~23G of stray
-  ~/.cache/{huggingface,uv}): openvla 0.0.3, torch 2.2.0+cu121 (verified on H200),
-  transformers 4.40.1, timm 0.9.10, numpy 1.26.4, draccus 0.8.0; original LIBERO
-  installed (`openvla/LIBERO`, editable). Lock: envs/vla-openvla.lock.txt.
+## DONE
+- **GATE 3 (SmolVLA/libero_goal):** RQ1.1 CSS=1.0, RQ1.2 OAR, locus. report/report.md.
+- **GATE 4 RQ1.3 — OpenVLA-7B COMPLETE (RQ1.1/1.3 causal grid):**
+  `openvla/openvla-7b-finetuned-libero-goal`, libero_goal, 10 tasks, seed 7,
+  2 ep/task (20/condition). Result: **original 0.70, blank 0.00, nonsense 0.00,
+  wrong_task 0.00 → CSS(blank)=CSS(nonsense)=1.00, OAR(wrong_task)=0.00.**
+  scene_fixed_check pass (0/20 mismatches). Matches SmolVLA (CSS=1.0) →
+  **causal language reliance is complete at BOTH 0.45B and 7B (16× scale).**
+  - report/rq1_scale.csv, report/rq1_causal_openvla.csv, report/rq1_causal.csv
+    (combined), report/rq1_scale.png, report/rq1_causal_bars.png.
+  - Runner: run/eval_task_openvla.py. Aggregation/analysis reused unchanged.
+  - MANIFEST.json updated (4 openvla runs, checkpoint + repo SHAs, sdpa).
+- **OpenVLA RQ1.2 extension (wrong_object/wrong_action/repeated): RUNNING**
+  (same runner/grid); aggregate + fold into report when complete.
 
-## Open blockers for OpenVLA eval (each fixable; do in order)
-1. **protobuf too old** — `import prismatic` fails: `cannot import name
-   'runtime_version' from google.protobuf` (dlimp/tf-datasets needs newer proto).
-   Fix: `pip install 'protobuf>=4.25'` in vla-openvla (watch tf/dlimp pins).
-2. **flash-attn 2.5.5 wheel build failed** — NOT required. Load OpenVLA with
-   `attn_implementation="sdpa"` (mathematically identical attention; the fused
-   kernel is only a speedup). Avoids the compile entirely.
-3. **Cross-env LIBERO config collision (§6)** — `~/.libero/config.yaml` currently
-   points at the vla-smolvla *hf-libero* bddl paths; openvla uses *original*
-   LIBERO with a different layout. Fix: set `LIBERO_CONFIG_PATH` to an
-   openvla-specific dir (e.g. export LIBERO_CONFIG_PATH=$HOME/.libero_openvla) and
-   seed it once from the openvla env so it points at openvla/LIBERO/libero bddl.
+## How the OpenVLA env was made to work (envs/vla-openvla.lock.txt)
+- torch 2.2.0+cu121, transformers 4.40.1, numpy 1.26.4, mujoco **2.3.2** (robosuite
+  1.4.1 API — 3.x breaks `mj_fullM`), robosuite 1.4.1, tensorflow 2.15, imageio.
+- **Load via HF trust_remote_code + attn_implementation="sdpa"** — NO flash-attn
+  (wheel build fails; sdpa is identical attention math), NO `import prismatic`.
+- **Do NOT import experiments.robot.{libero_utils,openvla_utils,robot_utils}** —
+  they transitively `import prismatic` → dlimp → a protobuf≥5.26 `_pb2`
+  (`runtime_version`) that conflicts with tensorflow 2.15's protobuf 4.25.
+  eval_task_openvla.py **inlines** the (verbatim) helper bodies instead and uses
+  only the clean `libero` primitives + tf (tf itself imports fine).
+- **unnorm_key="libero_goal"** (this ckpt's norm_stats has no _no_noops key).
+- **Isolated LIBERO config:** LIBERO_CONFIG_PATH=~/.libero_openvla (config.yaml
+  points at openvla/LIBERO/libero/libero/{bddl_files,init_files,assets}) so it does
+  NOT collide with the vla-smolvla hf-libero paths (§6). LIBERO installed with
+  `-e LIBERO --config-settings editable_mode=compat` (default editable produced an
+  empty module map → import failed).
+- Checkpoint (~15G) on scratch: $HF_HOME/hub/models--openvla--openvla-7b-finetuned-libero-goal.
 
-## Remaining work (after blockers)
-4. Download `openvla/openvla-7b-finetuned-libero-goal` (~14 GB) to $HF_HOME (scratch).
-5. **New eval runner** `run/eval_task_openvla.py` — OpenVLA has a different
-   obs/action interface than lerobot SmolVLA: load via AutoModelForVision2Seq +
-   AutoProcessor (attn=sdpa, bf16), `unnorm_key="libero_goal_no_noops"`,
-   center_crop=True, single 3rd-person cam. Reuse the RELIABLE pattern from
-   run/eval_task.py: ONE process per task, SYNC LIBERO env at obs_hw=256, inject
-   perturbed `task_description` per episode, record success + reset_state_hash +
-   poses. Mirror the summary/episodes output contract so run/aggregate.py +
-   analyze/* work unchanged. models.yaml already has the openvla alias/flags.
-6. Run the REDUCED grid (§8): libero_goal, conditions [original,blank,wrong_task,
-   para_object,para_action] (start with original,blank,wrong_task for RQ1.1/1.2),
-   seeds [7,42], n_episodes 10 (or 2 for a first pass). Preflight first.
-7. Repeat for `openvla_oft` (env vla-oft, §6.3 — forked transformers + dlimp) and
-   confirm the FiLM checkpoint id before `openvla_oft_film` (§2: mismatched
-   use_film/ckpt = garbage).
-8. RQ1.3 table: CSS vs params (SmolVLA 0.45B → OFT 7.5B) — analyze/ + report.
+## Remaining (optional / next)
+- `openvla_oft` (7.5B): build env vla-oft (§6.3 — forked transformers + dlimp);
+  gives a 3rd scale point. `openvla_oft_film`: confirm the FiLM-trained ckpt id
+  first (§2/§6.3) — leave null until verified (missing > invented).
+- More seeds/episodes for tighter CIs if HPC time allows.
 
 ## Infra notes
-- Home per-user quota is tight; keep HF cache on scratch (HF_HOME) and clear
-  ~/.cache/{huggingface,uv} if `disk quota exceeded` recurs. Filesystem itself has
-  space (df: 112T free) — it's the per-user quota that bites.
-- H200 nodes (d4053/d4054) work; the P100 node (c2189) is sm_60, unsupported by
-  torch — always `run/preflight.py` first. Never SIGKILL render procs (Xid faults).
+- Home per-user quota is tight; HF cache on scratch (HF_HOME); clear
+  ~/.cache/{huggingface,uv} on "disk quota exceeded" (FS itself has 112T free).
+- H200 nodes work; P100 (sm_60) unsupported by torch — preflight first. One
+  process per task (single EGL context); never SIGKILL render procs.

@@ -36,7 +36,9 @@ def main():
     cssres = CSS.css(rr, args.model, args.suite)
 
     present = [c for c in CAUSAL_ORDER if c in rows] + [c for c in rows if c not in CAUSAL_ORDER]
-    out = REPO_ROOT / "report" / "rq1_causal.csv"
+    # Per-model file (RQ1.3 runs multiple models); a combined rq1_causal.csv is
+    # assembled by analyze/make_rq1_scale.py from these per-model CSVs.
+    out = REPO_ROOT / "report" / f"rq1_causal_{args.model}.csv"
     out.parent.mkdir(exist_ok=True)
     with open(out, "w", newline="") as f:
         w = csv.writer(f)
