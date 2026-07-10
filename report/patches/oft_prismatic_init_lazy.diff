@@ -1,0 +1,10 @@
+--- openvla-oft/prismatic/__init__.py.orig	2026-07-10 15:10:54.446175718 -0400
++++ openvla-oft/prismatic/__init__.py	2026-07-10 15:10:54.465899424 -0400
+@@ -1 +1,6 @@
+-from .models import available_model_names, available_models, get_model_description, load
++# PATCHED for inference (vla-lang-grounding): the original eager
++# `from .models import ...` pulls prismatic.training.metrics -> wandb, whose pb2
++# is incompatible with the protobuf 3.20.3 pinned by tensorflow-metadata (needed
++# for dlimp). Inference only needs prismatic.extern.hf.* + prismatic.models.{
++# action_heads,projectors,film_vit_wrapper}, none of which need training/wandb.
++# Original preserved as __init__.py.orig; diff recorded in report/patches/.

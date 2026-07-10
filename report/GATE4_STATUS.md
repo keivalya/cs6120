@@ -36,6 +36,20 @@
   empty module map → import failed).
 - Checkpoint (~15G) on scratch: $HF_HOME/hub/models--openvla--openvla-7b-finetuned-libero-goal.
 
+## OFT-7.5B (3rd scale point) — UNBLOCKED + RUNNING
+- Import poison RESOLVED: `tensorflow-metadata==1.14.0` (its anomalies_pb2 was the
+  proto≥5.26 `runtime_version` culprit) → protobuf 3.20.3 → then `wandb==0.16.6`
+  (0.28's pb2 broke under proto 3.20) + a lazy `prismatic/__init__.py`
+  (report/patches/oft_prismatic_init_lazy.diff). Now `experiments.robot.*` import
+  cleanly, so run/eval_task_oft.py REUSES them (get_model/get_action_head/
+  get_proprio_projector/get_action) rather than inlining.
+- Checkpoint dl'd (15G, scratch): base VLA + action_head--50000 + proprio_projector
+  --50000 + dataset_statistics (unnorm_key=libero_goal_no_noops). get_model needs a
+  LOCAL DIR (loads .pt heads by filename) → runner resolves via snapshot_download.
+- Smoke PASS: task7 original success (71 steps), blank fail → causal signature holds.
+- **RQ1.3 grid RUNNING** (original/blank/nonsense/wrong_task, seed7, 2ep/task);
+  aggregate + fold into rq1_scale as the 7.5B row when complete.
+
 ## Remaining (optional / next)
 - `openvla_oft` (7.5B, 3rd scale point): env **vla-oft is BUILT**
   (`envs/vla-oft.lock.txt`: torch 2.2.0+cu121, moojink transformers fork,

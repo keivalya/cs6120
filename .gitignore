@@ -18,3 +18,5 @@ envs/repro*.log
 openvla/
 envs/ov_*.log
 envs/openvla_*.log
+
+openvla-oft/
