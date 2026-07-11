@@ -38,9 +38,12 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--model", default="smolvla")
 ap.add_argument("--suite", default="libero_goal")
 ap.add_argument("--task_id", type=int, required=True)
-ap.add_argument("--conditions", required=True)
+ap.add_argument("--conditions", default="")
+ap.add_argument("--paraphrase_axis", default=None,
+                help="para_object|para_action|para_compositional — RQ2 mode (overrides --conditions)")
+ap.add_argument("--max_per_axis", type=int, default=None, help="cap paraphrases/axis (sampling)")
 ap.add_argument("--seed", type=int, default=7)
-ap.add_argument("--n_episodes", type=int, default=2)
+ap.add_argument("--n_episodes", type=int, default=2, help="episodes per condition OR per paraphrase")
 ap.add_argument("--max_steps", type=int, default=300)
 ap.add_argument("--obs_hw", type=int, default=256, help="render resolution (H=W)")
 ap.add_argument("--results_root", default=str(REPO_ROOT / "results"))
@@ -161,20 +164,35 @@ def eef_of():
         return None
 
 
-for cond in conditions:
-    if cond != "original" and cond not in instr:
-        print(f"[eval_task {tid}] skip {cond} (no scene-valid probe)", flush=True)
-        continue
-    text = true_lang if cond == "original" else instr[cond]
-    out_dir = results_root / args.model / args.suite / cond / f"seed{args.seed}"
+# work groups: conditions -> one item/file each; paraphrase -> one axis group with
+# the task's paraphrases appended to one file (run/para_util.py).
+if args.paraphrase_axis:
+    sys.path.insert(0, str(REPO_ROOT / "run"))
+    import para_util  # noqa: E402
+    paras = para_util.load_task_paraphrases(args.suite, tid, args.paraphrase_axis,
+                                            args.max_per_axis, args.seed)
+    items = [(p["instruction"], {"axis": args.paraphrase_axis, "para_idx": p["para_idx"],
+                                 "keyword_similarity": p["keyword_similarity"],
+                                 "structural_similarity": p["structural_similarity"],
+                                 "operation": p.get("operation", "")}) for p in paras]
+    groups = [(args.paraphrase_axis, items)]
+    print(f"[eval_task {tid}] paraphrase mode axis={args.paraphrase_axis} n_paraphrases={len(items)}", flush=True)
+else:
+    groups = [(c, [(true_lang if c == "original" else instr[c], {})])
+              for c in conditions if (c == "original" or c in instr)]
+
+for label, items in groups:
+    out_dir = results_root / args.model / args.suite / label / f"seed{args.seed}"
     out_dir.mkdir(parents=True, exist_ok=True)
+    ep_global = 0
     with open(out_dir / f"task{tid}.jsonl", "w") as ep_file:
-        for ep in range(args.n_episodes):
-            vec.set_attr("init_state_id", ep)
+        for text, extra in items:
+          for ep in range(args.n_episodes):
+            vec.set_attr("init_state_id", ep_global % 2)
             vec.set_attr("task_description", text)
             policy.reset()
-            set_all_seeds(args.seed + ep)
-            obs, _ = vec.reset(seed=args.seed + ep)
+            set_all_seeds(args.seed + ep_global)
+            obs, _ = vec.reset(seed=args.seed + ep_global)
             rhash = reset_hash()
             init_poses = poses_of()
             done = step = 0
@@ -200,18 +218,19 @@ for cond in conditions:
             achieved = (GOAL.achieved_task_ids(sub._env, goal_states)
                         if goal_states is not None else None)  # §7 final-state goal check
             rec = {
-                "model": args.model, "suite": args.suite, "condition": cond, "seed": args.seed,
-                "task_id": tid, "task_name": task_name, "episode": ep,
+                "model": args.model, "suite": args.suite, "condition": label, "seed": args.seed,
+                "task_id": tid, "task_name": task_name, "episode": ep_global,
                 "instruction": text, "true_instruction": true_lang,
                 "success": bool(success), "steps": step, "reset_state_hash": rhash,
-                "achieved_task_ids": achieved,
+                "achieved_task_ids": achieved, **extra,
                 "init_object_poses": init_poses, "final_object_poses": poses_of(),
                 "eef_traj": eef_traj, "wall_s": round(time.time() - t0, 2),
                 "checkpoint_hash": ckpt_hash,
             }
             ep_file.write(json.dumps(rec) + "\n")
             ep_file.flush()
-            print(f"[eval_task {tid} {cond} ep{ep}] success={success} steps={step}", flush=True)
+            print(f"[eval_task {tid} {label} ep{ep_global}] success={success} steps={step}", flush=True)
+            ep_global += 1
 
 vec.close()
 print(f"[eval_task {tid}] DONE", flush=True)
