@@ -25,6 +25,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "analyze"))
 import pride_wrap as PW  # noqa: E402
+import locus as LOCUS  # noqa: E402  (RQ2.4 planning vs execution)
 
 AXES = ("para_object", "para_action", "para_compositional")
 MODELS = ("smolvla", "openvla", "openvla_oft")
@@ -53,11 +54,24 @@ def main():
     rr = Path(args.results_root)
     report = REPO_ROOT / "report"
 
-    para_rows, axis_rows, op_rows = [], [], []
+    para_rows, axis_rows, op_rows, locus_rows = [], [], [], []
     for model in MODELS:
         orig_tsr = _tsr(_records(model, args.suite, "original", rr))
         if orig_tsr is None:
             continue
+        # RQ2.4 failure locus per axis (planning vs execution), pooled over axes too.
+        pl = ex = un = nf = 0
+        for axis in AXES:
+            if not (rr / model / args.suite / axis).exists():
+                continue
+            d = LOCUS.locus_distribution(rr, model, args.suite, axis)
+            locus_rows.append({"model": model, "axis": axis, "n_failed": d["n_failed"],
+                               "planning": d["planning"], "execution": d["execution"],
+                               "unclassified": d["unclassified"]})
+            pl += d["planning"]; ex += d["execution"]; un += d["unclassified"]; nf += d["n_failed"]
+        if nf:
+            locus_rows.append({"model": model, "axis": "ALL", "n_failed": nf,
+                               "planning": pl, "execution": ex, "unclassified": un})
         axis_tsr = {}
         for axis in AXES:
             recs = _records(model, args.suite, axis, rr)
@@ -122,6 +136,8 @@ def main():
            ["model", "TSR_original", "TSR_object", "TSR_action", "dTSR_object_pp", "dTSR_action_pp"])
     _write(report / "rq2_operation.csv", op_rows,
            ["model", "axis", "operation", "n", "TSR", "delta_TSR_pp", "mean_PD"])
+    _write(report / "rq2_locus.csv", locus_rows,
+           ["model", "axis", "n_failed", "planning", "execution", "unclassified"])
 
 
 if __name__ == "__main__":
