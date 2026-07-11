@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -106,6 +107,23 @@ print(f"[eval_task {tid}] policy ready", flush=True)
 envs = make_env(env_cfg, n_envs=1, use_async_envs=False)
 vec = envs[args.suite][tid]
 sub = vec.envs[0]
+
+# RQ1.2 (§7): parse ALL Goal task goals once for achieved_task_ids (analyze/goal_eval.py).
+# smolvla uses the lerobot/hf-libero env; sub._env is the OffScreenRenderEnv whose
+# .env is the problem env exposing _eval_predicate (same as poses_of uses).
+sys.path.insert(0, str(REPO_ROOT / "analyze"))
+import goal_eval as GOAL  # noqa: E402
+from libero.libero import get_libero_path as _glp  # noqa: E402
+from libero.libero import benchmark as _bm  # noqa: E402
+try:
+    _ts = _bm.get_benchmark_dict()[args.suite]()
+    _bddl_dir = os.path.join(_glp("bddl_files"), args.suite)
+    goal_states = GOAL.load_goal_states(
+        args.suite, _bddl_dir, {i: _ts.get_task(i).name for i in range(_ts.get_num_tasks())}
+    )
+except Exception as _e:
+    print(f"[eval_task {tid}] goal_states unavailable ({_e}); achieved_task_ids=None", flush=True)
+    goal_states = None
 print(f"[eval_task {tid}] env ready", flush=True)
 
 from run_one import atomic_write_json, set_all_seeds  # noqa: E402
@@ -179,11 +197,14 @@ for cond in conditions:
                     eef_traj.append(e)
                 done = bool(np.asarray(term).reshape(-1)[0] or np.asarray(trunc).reshape(-1)[0])
                 step += 1
+            achieved = (GOAL.achieved_task_ids(sub._env, goal_states)
+                        if goal_states is not None else None)  # §7 final-state goal check
             rec = {
                 "model": args.model, "suite": args.suite, "condition": cond, "seed": args.seed,
                 "task_id": tid, "task_name": task_name, "episode": ep,
                 "instruction": text, "true_instruction": true_lang,
                 "success": bool(success), "steps": step, "reset_state_hash": rhash,
+                "achieved_task_ids": achieved,
                 "init_object_poses": init_poses, "final_object_poses": poses_of(),
                 "eef_traj": eef_traj, "wall_s": round(time.time() - t0, 2),
                 "checkpoint_hash": ckpt_hash,

@@ -211,6 +211,15 @@ init_states = bench.get_task_init_states(tid)
 task_bddl = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
 env = OffScreenRenderEnv(bddl_file_name=task_bddl, camera_heights=args.obs_hw, camera_widths=args.obs_hw)
 env.seed(0)  # affects object poses even with fixed init_state (per libero_utils)
+
+# RQ1.2 (§7): parse ALL Goal task goals once, to record which task(s) the final
+# state satisfies (achieved_task_ids) -> exact Follow/Ignore/Fail in analyze/css.py.
+sys.path.insert(0, str(REPO_ROOT / "analyze"))
+import goal_eval as GOAL  # noqa: E402
+_bddl_dir = os.path.join(get_libero_path("bddl_files"), task.problem_folder)
+goal_states = GOAL.load_goal_states(
+    args.suite, _bddl_dir, {i: bench.get_task(i).bddl_file for i in range(bench.n_tasks)}
+)
 print(f"[ov {tid}] env ready", flush=True)
 
 try:
@@ -284,11 +293,13 @@ for cond in conditions:
                 if step % 10 == 0:
                     eef_traj.append(np.asarray(obs["robot0_eef_pos"], dtype=np.float64).tolist())
                 step += 1
+            achieved = GOAL.achieved_task_ids(env, goal_states)  # §7 final-state goal check
             rec = {
                 "model": args.model, "suite": args.suite, "condition": cond, "seed": args.seed,
                 "task_id": tid, "task_name": task_name, "episode": ep,
                 "instruction": text, "true_instruction": true_lang,
                 "success": bool(success), "steps": step, "reset_state_hash": rhash,
+                "achieved_task_ids": achieved,
                 "init_object_poses": init_poses, "final_object_poses": poses_of(raw_obs()),
                 "eef_traj": eef_traj, "wall_s": round(time.time() - t0, 2),
                 "checkpoint_hash": ckpt_hash,
