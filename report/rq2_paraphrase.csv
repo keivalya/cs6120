@@ -1,0 +1,13 @@
+model,axis,n,TSR_original,TSR,delta_TSR_pp,PRIDE,SK_score,ST_score
+smolvla,para_object,259,0.725,0.2973,42.77,28.7,25.0,34.6
+smolvla,para_action,870,0.725,0.0724,65.26,4.8,10.8,2.6
+smolvla,para_compositional,643,0.725,0.0591,66.59,6.5,7.5,4.9
+smolvla,ALL,1772,0.725,0.1005,62.45,7.5,10.3,5.1
+openvla,para_object,150,0.7,0.48,22.0,36.3,30.0,46.9
+openvla,para_action,150,0.7,0.6067,9.33,51.8,47.4,53.2
+openvla,para_compositional,150,0.7,0.24,46.0,20.2,15.4,24.7
+openvla,ALL,450,0.7,0.4422,25.78,33.3,25.0,39.5
+openvla_oft,para_object,150,0.975,0.78,19.5,72.5,58.7,95.9
+openvla_oft,para_action,150,0.975,0.9067,6.83,86.3,87.5,85.9
+openvla_oft,para_compositional,150,0.975,0.54,43.5,50.3,41.3,58.6
+openvla_oft,ALL,450,0.975,0.7422,23.28,65.8,54.2,74.6

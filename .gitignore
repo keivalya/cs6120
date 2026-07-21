@@ -20,3 +20,13 @@ envs/ov_*.log
 envs/openvla_*.log
 
 openvla-oft/
+
+# exclude all markdown files as requested
+*.md
+**/*.md
+
+# exclude logs, out files, and scratch text files
+*.log
+*.out
+scratch_*.txt
+temp_*.txt

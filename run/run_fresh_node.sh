@@ -25,7 +25,7 @@ LOG=/scratch/pandya.kei/fresh_node.log
 echo "=== run_fresh_node PHASE=$PHASE node=$(hostname|cut -d. -f1) $(date) ===" | tee "$LOG"
 
 # preflight: heavy CUDA+EGL must survive, else the channel is degraded -> STOP.
-$OV run/preflight.py >> "$LOG" 2>&1
+$SM run/preflight.py >> "$LOG" 2>&1
 if [ $? -ne 0 ]; then echo "PREFLIGHT FAILED — request a fresh node (channel degraded)." | tee -a "$LOG"; exit 1; fi
 
 # run one (model, task) eval process; $1=python $2=runner $3=extra-env $4..=args

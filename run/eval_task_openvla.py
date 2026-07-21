@@ -126,6 +126,7 @@ print(f"[ov {tid}] model ready (sdpa, unnorm_key={unnorm_key})", flush=True)
 import math  # noqa: E402
 
 import tensorflow as tf  # noqa: E402  (imports fine; only dlimp's proto is broken)
+tf.config.set_visible_devices([], 'GPU')
 from libero.libero import get_libero_path  # noqa: E402
 from libero.libero.benchmark import get_benchmark  # noqa: E402
 from libero.libero.envs import OffScreenRenderEnv  # noqa: E402
@@ -284,8 +285,21 @@ else:
 for label, items in groups:
     out_dir = results_root / args.model / args.suite / label / f"seed{args.seed}"
     out_dir.mkdir(parents=True, exist_ok=True)
+    
+    out_file = out_dir / f"task{tid}.jsonl"
+    expected_lines = len(items) * args.n_episodes
+    if out_file.exists():
+        try:
+            with open(out_file) as f:
+                lines = [l.strip() for l in f if l.strip()]
+            if len(lines) >= expected_lines:
+                print(f"[{args.model} {tid} {label}] skip (already has {len(lines)}/{expected_lines} eps)", flush=True)
+                continue
+        except Exception:
+            pass
+
     ep_global = 0
-    with open(out_dir / f"task{tid}.jsonl", "w") as ep_file:
+    with open(out_file, "w") as ep_file:
         for text, extra in items:
           for ep in range(args.n_episodes):
             set_all_seeds(args.seed + ep_global)

@@ -1,13 +1,8 @@
-#!/usr/bin/env python
-"""analyze/plot_rq1.py — figures for RQ1 (§11).
+#!/bin/env python
+"""analyze/plot_rq1.py — publication-grade figures for RQ1.
 
-- report/rq1_scale.png: CSS(blank), CSS(nonsense), OAR(wrong_task) per model,
-  ordered by params — the RQ1.3 "does reliance change with scale?" figure.
-- report/rq1_causal_bars.png: per-model TSR by condition (original vs destructive
-  perturbations), showing the causal collapse.
-
-Reads report/rq1_scale.csv + report/rq1_causal_<model>.csv. No fabrication;
-plots only models that have CSVs.
+- report/rq1_scale.png: CSS(blank), CSS(nonsense), OAR(wrong_task) per model.
+- report/rq1_causal_bars.png: per-model Task Success Rate (TSR) across perturbation conditions.
 """
 from __future__ import annotations
 
@@ -18,6 +13,18 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
+
+sns.set_theme(style="whitegrid", palette="muted", font="sans-serif")
+plt.rcParams.update({
+    "font.size": 10,
+    "axes.labelsize": 11,
+    "axes.titlesize": 12,
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "legend.fontsize": 9,
+    "figure.titlesize": 13,
+})
 
 REPORT = Path(__file__).resolve().parents[1] / "report"
 
@@ -31,40 +38,50 @@ scale = read_csv(REPORT / "rq1_scale.csv")
 labels = [f"{r['model']}\n({r['params_B']}B)" for r in scale]
 
 # ---- Figure 1: CSS + OAR vs scale ---------------------------------------- #
-fig, ax = plt.subplots(figsize=(7, 4.2))
+fig, ax = plt.subplots(figsize=(8, 4.8), dpi=300)
 x = np.arange(len(scale))
-w = 0.25
+w = 0.22
 css_b = [float(r["CSS_blank"] or 0) for r in scale]
 css_n = [float(r["CSS_nonsense"] or 0) for r in scale]
 oar = [float(r["OAR_wrong_task"] or 0) for r in scale]
-ax.bar(x - w, css_b, w, label="CSS(blank)", color="#2166ac")
-ax.bar(x, css_n, w, label="CSS(nonsense)", color="#4393c3")
-ax.bar(x + w, oar, w, label="OAR(wrong_task)", color="#d6604d")
-ax.set_xticks(x); ax.set_xticklabels(labels)
-ax.set_ylabel("score")
-ax.set_ylim(0, 1.08)
-ax.axhline(1.0, color="grey", ls=":", lw=0.8)
-ax.set_title("RQ1.3 — causal language reliance vs model scale\n"
-             "CSS≈1 ⇒ instruction is causal;  OAR≈0 ⇒ no visual-shortcut fallback")
-ax.legend(loc="center right", fontsize=8)
-for i, v in enumerate(css_b):
-    ax.text(i - w, v + 0.02, f"{v:.2f}", ha="center", fontsize=7)
-for i, v in enumerate(css_n):
-    ax.text(i, v + 0.02, f"{v:.2f}", ha="center", fontsize=7)
-for i, v in enumerate(oar):
-    ax.text(i + w, v + 0.02, f"{v:.2f}", ha="center", fontsize=7)
+
+b1 = ax.bar(x - w, css_b, w, label="CSS (Blank Instruction)", color="#2b5c8f", edgecolor="black", linewidth=0.5)
+b2 = ax.bar(x, css_n, w, label="CSS (Nonsense Instruction)", color="#4682b4", edgecolor="black", linewidth=0.5)
+b3 = ax.bar(x + w, oar, w, label="OAR (Wrong Task)", color="#d95f02", edgecolor="black", linewidth=0.5)
+
+ax.set_xticks(x)
+ax.set_xticklabels(labels, fontweight="bold")
+ax.set_ylabel("Metric Score", fontweight="bold")
+ax.set_ylim(0, 1.15)
+ax.axhline(1.0, color="gray", linestyle="--", linewidth=1.0, alpha=0.7)
+ax.set_title("RQ1.3: Causal Language Reliance vs. Model Scale & Fine-Tuning", pad=12, fontweight="bold")
+ax.legend(loc="upper right", frameon=True, facecolor="white", framealpha=0.9)
+
+for rect in b1:
+    h = rect.get_height()
+    ax.annotate(f"{h:.2f}", xy=(rect.get_x() + rect.get_width() / 2, h), xytext=(0, 3),
+                textcoords="offset points", ha="center", va="bottom", fontsize=8.5, fontweight="bold")
+for rect in b2:
+    h = rect.get_height()
+    ax.annotate(f"{h:.2f}", xy=(rect.get_x() + rect.get_width() / 2, h), xytext=(0, 3),
+                textcoords="offset points", ha="center", va="bottom", fontsize=8.5, fontweight="bold")
+for rect in b3:
+    h = rect.get_height()
+    ax.annotate(f"{h:.2f}", xy=(rect.get_x() + rect.get_width() / 2, h), xytext=(0, 3),
+                textcoords="offset points", ha="center", va="bottom", fontsize=8.5, fontweight="bold")
+
 fig.tight_layout()
-fig.savefig(REPORT / "rq1_scale.png", dpi=140)
+fig.savefig(REPORT / "rq1_scale.png", dpi=300)
 print("wrote", REPORT / "rq1_scale.png")
 
 # ---- Figure 2: per-model TSR by condition -------------------------------- #
-order = ["original", "blank", "nonsense", "wrong_task", "wrong_object",
-         "wrong_action", "repeated"]
+order = ["original", "blank", "nonsense", "wrong_task", "wrong_object", "wrong_action", "repeated"]
 models = [r["model"] for r in scale]
-fig, ax = plt.subplots(figsize=(9, 4.2))
+fig, ax = plt.subplots(figsize=(10, 5.2), dpi=300)
 nm = len(models)
 bw = 0.8 / nm
-colors = ["#1b7837", "#762a83", "#c2a5cf", "#e08214"][:nm]
+colors = ["#2b5c8f", "#7570b3", "#1b9e77"][:nm]
+
 for mi, model in enumerate(models):
     p = REPORT / f"rq1_causal_{model}.csv"
     if not p.exists():
@@ -73,14 +90,20 @@ for mi, model in enumerate(models):
     conds = [c for c in order if c in rows]
     xs = np.arange(len(conds))
     tsr = [float(rows[c]["TSR"] or 0) for c in conds]
-    ax.bar(xs + mi * bw, tsr, bw, label=f"{model} ({scale[mi]['params_B']}B)",
-           color=colors[mi])
+    bars = ax.bar(xs + mi * bw, tsr, bw, label=f"{model} ({scale[mi]['params_B']}B)",
+                  color=colors[mi], edgecolor="black", linewidth=0.5)
+    for rect in bars:
+        h = rect.get_height()
+        if h > 0.01:
+            ax.annotate(f"{h*100:.0f}%", xy=(rect.get_x() + rect.get_width() / 2, h), xytext=(0, 2),
+                        textcoords="offset points", ha="center", va="bottom", fontsize=7.5)
+
 ax.set_xticks(np.arange(len(order)) + bw * (nm - 1) / 2)
-ax.set_xticklabels(order, rotation=25, ha="right", fontsize=8)
-ax.set_ylabel("TSR")
-ax.set_ylim(0, 1.0)
-ax.set_title("RQ1 — task success rate by instruction condition (LIBERO-Goal, fixed scene)")
-ax.legend(fontsize=8)
+ax.set_xticklabels([c.replace("_", "\n") for c in order], fontweight="bold")
+ax.set_ylabel("Task Success Rate (TSR)", fontweight="bold")
+ax.set_ylim(0, 1.12)
+ax.set_title("RQ1: Task Success Rate Across Language Perturbation Conditions", pad=12, fontweight="bold")
+ax.legend(loc="upper right", frameon=True, facecolor="white", framealpha=0.9)
 fig.tight_layout()
-fig.savefig(REPORT / "rq1_causal_bars.png", dpi=140)
+fig.savefig(REPORT / "rq1_causal_bars.png", dpi=300)
 print("wrote", REPORT / "rq1_causal_bars.png")

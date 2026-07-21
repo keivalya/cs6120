@@ -7,12 +7,12 @@
   "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
   "n_episodes": 2,
   "n_total_episodes": 20,
-  "n_success": 17,
-  "tsr": 0.85,
+  "n_success": 16,
+  "tsr": 0.8,
   "per_task": {
     "0": {
       "n": 2,
-      "success": 1
+      "success": 2
     },
     "1": {
       "n": 2,
@@ -36,7 +36,7 @@
     },
     "6": {
       "n": 2,
-      "success": 2
+      "success": 1
     },
     "7": {
       "n": 2,
@@ -48,7 +48,7 @@
     },
     "9": {
       "n": 2,
-      "success": 2
+      "success": 1
     }
   },
   "framework": "lerobot",

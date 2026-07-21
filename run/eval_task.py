@@ -129,6 +129,46 @@ except Exception as _e:
     goal_states = None
 print(f"[eval_task {tid}] env ready", flush=True)
 
+# Monkey-patch LiberoEnv.step to capture achieved task goals BEFORE auto-reset
+from lerobot.envs.libero import LiberoEnv
+_orig_step = LiberoEnv.step
+
+def _patched_step(self, action: np.ndarray) -> tuple[RobotObservation, float, bool, bool, dict[str, Any]]:
+    self._ensure_env()
+    assert self._env is not None
+    if action.ndim != 1:
+        raise ValueError(
+            f"Expected action to be 1-D (shape (action_dim,)), "
+            f"but got shape {action.shape} with ndim={action.ndim}"
+        )
+    raw_obs, reward, done, info = self._env.step(action)
+    is_success = self._env.check_success()
+    terminated = done or is_success
+    
+    achieved = []
+    if goal_states is not None:
+        try:
+            achieved = [tid for tid, gs in goal_states.items() if GOAL.eval_goal_on_env(self._env, gs)]
+        except Exception:
+            pass
+            
+    info.update(
+        {
+            "task": self.task,
+            "task_id": self.task_id,
+            "done": done,
+            "is_success": is_success,
+            "achieved_task_ids": achieved,
+        }
+    )
+    observation = self._format_raw_obs(raw_obs)
+    if terminated:
+        self.reset()
+    truncated = False
+    return observation, reward, terminated, truncated, info
+
+LiberoEnv.step = _patched_step
+
 from run_one import atomic_write_json, set_all_seeds  # noqa: E402
 
 try:
@@ -184,10 +224,34 @@ else:
 for label, items in groups:
     out_dir = results_root / args.model / args.suite / label / f"seed{args.seed}"
     out_dir.mkdir(parents=True, exist_ok=True)
+    
+    out_file = out_dir / f"task{tid}.jsonl"
+    expected_lines = len(items) * args.n_episodes
+    if out_file.exists():
+        try:
+            with open(out_file) as f:
+                lines = [l.strip() for l in f if l.strip()]
+            if len(lines) >= expected_lines:
+                print(f"[{args.model} {tid} {label}] skip (already has {len(lines)}/{expected_lines} eps)", flush=True)
+                continue
+        except Exception:
+            pass
+
+    existing_records = []
+    if out_file.exists():
+        try:
+            with open(out_file) as f:
+                existing_records = [json.loads(l) for l in f if l.strip()]
+        except Exception:
+            pass
+
     ep_global = 0
-    with open(out_dir / f"task{tid}.jsonl", "w") as ep_file:
+    with open(out_file, "a" if existing_records else "w") as ep_file:
         for text, extra in items:
           for ep in range(args.n_episodes):
+            if ep_global < len(existing_records):
+                ep_global += 1
+                continue
             vec.set_attr("init_state_id", ep_global % 2)
             vec.set_attr("task_description", text)
             policy.reset()
@@ -200,6 +264,7 @@ for label, items in groups:
             eef_traj = []
             t0 = time.time()
             done = False
+            last_achieved = []
             while not done and step < args.max_steps:
                 o = preprocess_observation(obs)
                 o["task"] = list(vec.call("task_description"))
@@ -211,12 +276,13 @@ for label, items in groups:
                 a = env_postprocessor({ACTION: a})[ACTION]
                 obs, _, term, trunc, info = vec.step(a.to("cpu").numpy())
                 success = success or bool(np.asarray(info.get("is_success", [False])).reshape(-1)[0])
+                if info and "achieved_task_ids" in info:
+                    last_achieved = info["achieved_task_ids"][0]
                 if step % 10 == 0 and (e := eef_of()) is not None:
                     eef_traj.append(e)
                 done = bool(np.asarray(term).reshape(-1)[0] or np.asarray(trunc).reshape(-1)[0])
                 step += 1
-            achieved = (GOAL.achieved_task_ids(sub._env, goal_states)
-                        if goal_states is not None else None)  # §7 final-state goal check
+            achieved = last_achieved if goal_states is not None else None
             rec = {
                 "model": args.model, "suite": args.suite, "condition": label, "seed": args.seed,
                 "task_id": tid, "task_name": task_name, "episode": ep_global,
