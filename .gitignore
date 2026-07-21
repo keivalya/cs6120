@@ -25,6 +25,9 @@ openvla-oft/
 *.md
 **/*.md
 
+# exclude Claude / agent files
+.claude/
+
 # exclude logs, out files, and scratch text files
 *.log
 *.out
