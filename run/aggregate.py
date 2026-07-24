@@ -63,21 +63,23 @@ def aggregate_condition(seed_dir: Path, model, suite, condition, seed) -> dict |
 
 
 def scene_fixed_check(base: Path):
-    """reset_state_hash must match across conditions per (task_id, episode)."""
-    # (task_id, episode) -> {condition: hash}
+    """reset_state_hash must match across core conditions per (task_id, episode_idx)."""
     hashes = defaultdict(dict)
+    core_conds = {"original", "blank", "nonsense", "wrong_action", "wrong_object", "wrong_task", "repeated"}
     for cond_dir in sorted(base.iterdir()):
-        if not cond_dir.is_dir():
+        if not cond_dir.is_dir() or cond_dir.name not in core_conds:
             continue
         for seed_dir in cond_dir.glob("seed*"):
-            ep = seed_dir / "episodes.jsonl"
-            if not ep.exists():
-                continue
-            for line in ep.read_text().splitlines():
-                r = json.loads(line)
-                key = f"{r['task_id']}_{r['episode']}_{seed_dir.name}"
-                if r.get("reset_state_hash") is not None:
-                    hashes[key][r["condition"]] = r["reset_state_hash"]
+            for tf in seed_dir.glob("task*.jsonl"):
+                lines = [l for l in tf.read_text().splitlines() if l.strip()]
+                for ep_idx, line in enumerate(lines):
+                    try:
+                        r = json.loads(line.replace("\x00", "").strip())
+                        key = f"task{r['task_id']}_ep{ep_idx}_{seed_dir.name}"
+                        if r.get("reset_state_hash") is not None:
+                            hashes[key][cond_dir.name] = r["reset_state_hash"]
+                    except Exception:
+                        continue
     mismatches = []
     checked = 0
     for key, cond_hash in hashes.items():

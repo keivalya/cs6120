@@ -1,0 +1,13 @@
+model,alpha,compositional_TSR,overall_TSR,PRIDE
+smolvla,0.0,1.78,4.69,2.7
+smolvla,0.3,12.4,18.2,16.4
+smolvla,0.5,21.0,28.5,26.8
+smolvla,1.0,16.5,22.0,19.5
+openvla,0.0,24.0,44.22,33.3
+openvla,0.3,42.0,58.5,47.8
+openvla,0.5,56.0,68.0,59.2
+openvla,1.0,48.0,61.5,51.0
+openvla_oft,0.0,54.0,74.22,65.8
+openvla_oft,0.3,72.0,83.5,76.2
+openvla_oft,0.5,82.0,88.5,82.5
+openvla_oft,1.0,76.0,84.0,77.0

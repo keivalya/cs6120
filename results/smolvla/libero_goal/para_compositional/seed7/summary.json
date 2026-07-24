@@ -5,45 +5,49 @@
   "seed": 7,
   "checkpoint": "HuggingFaceVLA/smolvla_libero",
   "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
-  "n_episodes": 105,
-  "n_total_episodes": 643,
-  "n_success": 38,
-  "tsr": 0.05909797822706065,
+  "n_episodes": 321,
+  "n_total_episodes": 2984,
+  "n_success": 53,
+  "tsr": 0.017761394101876677,
   "per_task": {
     "0": {
-      "n": 1,
-      "success": 0
+      "n": 300,
+      "success": 3
+    },
+    "1": {
+      "n": 291,
+      "success": 3
     },
     "2": {
-      "n": 81,
-      "success": 9
+      "n": 299,
+      "success": 13
     },
     "3": {
-      "n": 75,
+      "n": 294,
       "success": 0
     },
     "4": {
-      "n": 74,
-      "success": 7
+      "n": 300,
+      "success": 8
     },
     "5": {
-      "n": 40,
+      "n": 299,
       "success": 0
     },
     "6": {
-      "n": 91,
+      "n": 300,
       "success": 2
     },
     "7": {
-      "n": 96,
-      "success": 16
+      "n": 321,
+      "success": 19
     },
     "8": {
-      "n": 105,
-      "success": 4
+      "n": 288,
+      "success": 5
     },
     "9": {
-      "n": 80,
+      "n": 292,
       "success": 0
     }
   },

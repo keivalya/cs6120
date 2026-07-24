@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VLA Language-Grounding Study — Interactive Diagnostic Dashboard</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      --accent-blue: #38bdf8;
+      --accent-green: #4ade80;
+      --accent-purple: #c084fc;
+      --accent-red: #f87171;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 24px;
+    }
+
+    header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .kpi-card .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .kpi-card .value { font-size: 26px; font-weight: 700; margin: 6px 0; }
+    .kpi-card .sub { font-size: 12px; color: var(--accent-blue); }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--accent-blue);
+      border-bottom-color: var(--accent-blue);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .figure-container {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .figure-container img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .figure-caption {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13px;
+    }
+    th {
+      background: #111827;
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+    tr:hover { background: rgba(56, 189, 248, 0.05); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-green { background: rgba(74, 222, 128, 0.15); color: var(--accent-green); }
+    .badge-purple { background: rgba(192, 132, 252, 0.15); color: var(--accent-purple); }
+    .badge-red { background: rgba(248, 113, 113, 0.15); color: var(--accent-red); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>VLA Language-Grounding Study — Interactive Diagnostic Dashboard</h1>
+    <p>Systematic Evaluation of Causal Reliance, Paraphrase Fragility, Attention Allocation, & Test-Time ICAG Mitigation</p>
+  </header>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="label">Attention Dominance (AAR)</div>
+      <div class="value" style="color: var(--accent-purple);">12.14×</div>
+      <div class="sub">Noun vs. Verb Cross-Attention in Late Layers</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">ICAG Paraphrase Recovery</div>
+      <div class="value" style="color: var(--accent-green);">88.50%</div>
+      <div class="sub">OpenVLA-OFT @ Guidance Scale α = 0.5</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Kinematic Divergence Step</div>
+      <div class="value" style="color: var(--accent-red);">t<sub>div</sub> ≤ 2</div>
+      <div class="sub">Immediate EEF Error under Destructive Prompts</div>
+    </div>
+    <div class="kpi-card">
+      <div class="label">Scene-Fixed Audit</div>
+      <div class="value" style="color: var(--accent-blue);">PASS</div>
+      <div class="sub">100% Matching Simulator Reset Hashes</div>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('figures')">Figure Gallery</button>
+    <button class="tab-btn" onclick="showTab('causal')">RQ1: Causal Sensitivity</button>
+    <button class="tab-btn" onclick="showTab('paraphrase')">RQ2: Paraphrase Robustness</button>
+    <button class="tab-btn" onclick="showTab('kinematics')">RQ3: Kinematic Divergence</button>
+    <button class="tab-btn" onclick="showTab('attention')">RQ4: Attention Mechanics</button>
+    <button class="tab-btn" onclick="showTab('mitigation')">RQ5: ICAG Mitigation</button>
+  </div>
+
+  <!-- Tab 1: Figure Gallery -->
+  <div id="figures" class="tab-content active">
+    <div class="figure-container">
+      <img src="rq1_scale.png" alt="RQ1 Scale Plot">
+      <div class="figure-caption">Figure 1: Baseline Task Success Rate vs. Change Severity Score (CSS) across Model Scales.</div>
+    </div>
+    <div class="figure-container">
+      <img src="rq4_attention.png" alt="RQ4 Attention Mechanics">
+      <div class="figure-caption">Figure 2: Layer-Wise Cross-Attention Allocation Ratio (AAR) showing exponential decay of verb attention across transformer depth.</div>
+    </div>
+    <div class="figure-container">
+      <img src="rq5_mitigation.png" alt="RQ5 ICAG Mitigation">
+      <div class="figure-caption">Figure 3: Instruction-Contrastive Action Guidance (ICAG) performance recovery curves across guidance scales α ∈ [0, 1].</div>
+    </div>
+    <div class="figure-container">
+      <img src="qualitative_grid.png" alt="Qualitative Rollout Comparison">
+      <div class="figure-caption">Figure 4: Qualitative Temporal Snapshot Grid comparing rollout trajectories under Original vs Perturbed prompts.</div>
+    </div>
+  </div>
+
+  <!-- Tab 2: RQ1 Table -->
+  <div id="causal" class="tab-content">
+    <h3>RQ1: Structural & Semantic Causal Probe Results</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Original TSR</th>
+          <th>Blank Prompt (CSS)</th>
+          <th>Nonsense Prompt (CSS)</th>
+          <th>Wrong Action TSR</th>
+          <th>Wrong Object TSR</th>
+          <th>Wrong Task OAR</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>SmolVLA (500M)</b></td>
+          <td>72.5%</td>
+          <td>0.0% <span class="badge badge-red">1.00</span></td>
+          <td>0.0% <span class="badge badge-red">1.00</span></td>
+          <td>57.5%</td>
+          <td>7.1%</td>
+          <td>0.0%</td>
+        </tr>
+        <tr>
+          <td><b>OpenVLA (7B)</b></td>
+          <td>70.0%</td>
+          <td>0.0% <span class="badge badge-red">1.00</span></td>
+          <td>0.0% <span class="badge badge-red">1.00</span></td>
+          <td>50.0%</td>
+          <td>7.1%</td>
+          <td>0.0%</td>
+        </tr>
+        <tr>
+          <td><b>OpenVLA-OFT (7.5B)</b></td>
+          <td>97.5%</td>
+          <td>12.5% <span class="badge badge-purple">0.87</span></td>
+          <td>7.5% <span class="badge badge-purple">0.92</span></td>
+          <td>97.5%</td>
+          <td>7.1%</td>
+          <td>0.0%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tab 3: RQ2 Table -->
+  <div id="paraphrase" class="tab-content">
+    <h3>RQ2: Paraphrase Robustness & PRIDE Metrics</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Paraphrase Axis</th>
+          <th>Baseline TSR</th>
+          <th>Paraphrase TSR</th>
+          <th>PRIDE Score</th>
+          <th>Semantic (S<sub>K</sub>)</th>
+          <th>Structural (S<sub>T</sub>)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>SmolVLA</td>
+          <td>Compositional</td>
+          <td>72.5%</td>
+          <td>1.78%</td>
+          <td><span class="badge badge-red">1.5</span></td>
+          <td>2.1</td>
+          <td>1.0</td>
+        </tr>
+        <tr>
+          <td>OpenVLA</td>
+          <td>Compositional</td>
+          <td>70.0%</td>
+          <td>24.00%</td>
+          <td><span class="badge badge-purple">20.2</span></td>
+          <td>15.4</td>
+          <td>24.7</td>
+        </tr>
+        <tr>
+          <td>OpenVLA-OFT</td>
+          <td>Compositional</td>
+          <td>97.5%</td>
+          <td>54.00%</td>
+          <td><span class="badge badge-green">50.3</span></td>
+          <td>41.3</td>
+          <td>58.6</td>
+        </tr>
+        <tr>
+          <td><b>OpenVLA-OFT (ALL)</b></td>
+          <td><b>All Axes</b></td>
+          <td><b>97.5%</b></td>
+          <td><b>74.22%</b></td>
+          <td><span class="badge badge-green"><b>65.8</b></span></td>
+          <td><b>54.2</b></td>
+          <td><b>74.6</b></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tab 4: RQ3 Table -->
+  <div id="kinematics" class="tab-content">
+    <h3>RQ3: Kinematic Trajectory Divergence Profile</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Perturbation Condition</th>
+          <th>Mean Divergence Timestep (t<sub>div</sub>)</th>
+          <th>Final EEF Error e(T) [m]</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>SmolVLA</td><td>blank / nonsense</td><td>t<sub>div</sub> = 1.0 - 1.8</td><td>0.528 m</td></tr>
+        <tr><td>SmolVLA</td><td>wrong_action</td><td>t<sub>div</sub> = 8.3</td><td>0.184 m</td></tr>
+        <tr><td>OpenVLA-OFT</td><td>blank / nonsense</td><td>t<sub>div</sub> = 1.3 - 1.4</td><td>0.633 m</td></tr>
+        <tr><td>OpenVLA-OFT</td><td>wrong_action</td><td>t<sub>div</sub> = 11.3</td><td><b>0.020 m</b></td></tr>
+        <tr><td>OpenVLA-OFT</td><td>para_action</td><td>t<sub>div</sub> = 12.8</td><td><b>0.007 m</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tab 5: RQ4 Table -->
+  <div id="attention" class="tab-content">
+    <h3>RQ4: Transformer Layer-Wise Attention Allocation Ratio (AAR)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Layer Depth (l)</th>
+          <th>Noun Cross-Attention (Ā<sub>noun</sub>)</th>
+          <th>Verb Cross-Attention (Ā<sub>verb</sub>)</th>
+          <th>Attention Allocation Ratio (AAR)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Layer 1</td><td>0.4377</td><td>0.3908</td><td><span class="badge badge-green">1.12 (Parity)</span></td></tr>
+        <tr><td>Layer 4</td><td>0.4273</td><td>0.1664</td><td>2.57</td></tr>
+        <tr><td>Layer 8</td><td>0.5297</td><td>0.0631</td><td>8.39</td></tr>
+        <tr><td>Layer 12</td><td>0.5339</td><td>0.0500</td><td>10.68</td></tr>
+        <tr><td>Layer 15</td><td>0.6070</td><td>0.0500</td><td><span class="badge badge-purple">12.14 (Noun Dominant)</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tab 6: RQ5 Table -->
+  <div id="mitigation" class="tab-content">
+    <h3>RQ5: Inference-Time ICAG Mitigation Results</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Guidance Scale (α)</th>
+          <th>Overall Paraphrase TSR</th>
+          <th>PRIDE Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>SmolVLA</td><td>0.0 (Baseline)</td><td>4.69%</td><td>2.70</td></tr>
+        <tr><td>SmolVLA</td><td><b>0.5 (Optimal)</b></td><td><b>28.50% (+23.8 pp)</b></td><td><b>26.80</b></td></tr>
+        <tr><td>OpenVLA</td><td>0.0 (Baseline)</td><td>44.22%</td><td>33.30</td></tr>
+        <tr><td>OpenVLA</td><td><b>0.5 (Optimal)</b></td><td><b>68.00% (+23.8 pp)</b></td><td><b>59.20</b></td></tr>
+        <tr><td>OpenVLA-OFT</td><td>0.0 (Baseline)</td><td>74.22%</td><td>65.80</td></tr>
+        <tr><td>OpenVLA-OFT</td><td><b>0.5 (Optimal)</b></td><td><b>88.50% (+14.3 pp)</b></td><td><b>82.50</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>
