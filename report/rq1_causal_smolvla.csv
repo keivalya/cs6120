@@ -6,6 +6,3 @@ smolvla,libero_goal,wrong_object,0.0714,0.0000,65.36,,28,7;42
 smolvla,libero_goal,wrong_action,0.5750,0.0250,15.00,,40,7;42
 smolvla,libero_goal,wrong_task,0.0000,0.0000,72.50,,40,7;42
 smolvla,libero_goal,repeated,0.1000,0.0000,62.50,,40,7;42
-smolvla,libero_goal,para_action,0.0724,0.0000,65.26,,870,7
-smolvla,libero_goal,para_compositional,0.0591,0.0000,66.59,,643,7
-smolvla,libero_goal,para_object,0.2973,0.0000,42.77,,259,7

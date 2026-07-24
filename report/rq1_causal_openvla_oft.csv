@@ -6,6 +6,3 @@ openvla_oft,libero_goal,wrong_object,0.0714,0.0000,90.36,,28,7;42
 openvla_oft,libero_goal,wrong_action,0.9750,0.0250,0.00,,40,7;42
 openvla_oft,libero_goal,wrong_task,0.0000,0.0000,97.50,,40,7;42
 openvla_oft,libero_goal,repeated,0.9500,0.0000,2.50,,40,7;42
-openvla_oft,libero_goal,para_action,0.9067,0.0000,6.83,,150,7
-openvla_oft,libero_goal,para_compositional,0.5400,0.0000,43.50,,150,7
-openvla_oft,libero_goal,para_object,0.7800,0.0000,19.50,,150,7

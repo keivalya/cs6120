@@ -35,7 +35,11 @@ def main():
     dtsr = TSR.delta_tsr(rows)
     cssres = CSS.css(rr, args.model, args.suite)
 
-    present = [c for c in CAUSAL_ORDER if c in rows] + [c for c in rows if c not in CAUSAL_ORDER]
+    # RQ1 is the causal-probe table only. Paraphrase conditions (para_*) belong to
+    # RQ2 and are reported from raw task*.jsonl in report/rq2_paraphrase.csv; their
+    # per-condition summary.json can lag the full episode set, so we never source
+    # paraphrase numbers here (avoids the stale-summary discrepancy).
+    present = [c for c in CAUSAL_ORDER if c in rows]
     # Per-model file (RQ1.3 runs multiple models); a combined rq1_causal.csv is
     # assembled by analyze/make_rq1_scale.py from these per-model CSVs.
     out = REPO_ROOT / "report" / f"rq1_causal_{args.model}.csv"
