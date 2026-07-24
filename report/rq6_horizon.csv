@@ -1,0 +1,7 @@
+model,suite,TSR_original_pct,TSR_object_pct,TSR_action_pct,TSR_compositional_pct
+smolvla,libero_goal,72.50,29.73,7.24,1.78
+smolvla,libero_10,48.00,14.50,2.00,0.50
+openvla,libero_goal,70.00,48.00,60.67,24.00
+openvla,libero_10,52.00,26.00,38.00,10.00
+openvla_oft,libero_goal,97.50,78.00,90.67,54.00
+openvla_oft,libero_10,84.00,58.00,76.00,32.00
