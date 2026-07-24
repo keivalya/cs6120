@@ -26,5 +26,5 @@ SM=/home/pandya.kei/.conda/envs/vla-smolvla/bin/python
 TID=$SLURM_ARRAY_TASK_ID
 
 echo "=== Generating Videos for Task ${TID}: $(date) ==="
-"$SM" run/generate_videos.py --task_id "$TID" --num_videos 5
+"$SM" run/generate_videos.py --task_id "$TID" --num_videos 5 "$@"
 echo "=== Done Task ${TID}: $(date) ==="

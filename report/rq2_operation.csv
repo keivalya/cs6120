@@ -3,8 +3,9 @@ smolvla,para_object,lexical,259,0.2973,42.77,0.0938
 smolvla,para_action,lexical,253,0.1897,53.53,0.0777
 smolvla,para_action,pragmatical,444,0.0293,69.57,0.2099
 smolvla,para_action,structural,173,0.0116,71.34,0.1911
-smolvla,para_compositional,lexical+lexical,621,0.0596,66.54,0.2097
-smolvla,para_compositional,lexical+pragmatical,22,0.0455,67.95,0.2233
+smolvla,para_compositional,lexical+lexical,898,0.0479,67.71,0.2016
+smolvla,para_compositional,lexical+pragmatical,1475,0.0061,71.89,0.3077
+smolvla,para_compositional,lexical+structural,611,0.0016,72.34,0.2918
 openvla,para_object,lexical,150,0.48,22.0,0.0931
 openvla,para_action,lexical,50,0.74,-4.0,0.0697
 openvla,para_action,pragmatical,50,0.52,18.0,0.2287

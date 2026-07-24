@@ -1,0 +1,2 @@
+[Cron Scheduler] Total vla-video jobs in queue: 6
+[Cron Scheduler] Queue has 6 or more jobs. Skipping submission to respect QOS limits.
