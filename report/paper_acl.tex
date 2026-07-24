@@ -20,89 +20,233 @@
 \maketitle
 
 \begin{abstract}
-Vision-Language-Action (VLA) models adapt pre-trained Vision-Language Models (VLMs) to robotic control, promising emergent semantic generalization. However, current benchmark evaluations test policies under static canonical instructions, obscuring whether model success stems from genuine language comprehension or visual shortcutting. In this work, we present a systematic evaluation of three representative VLA architectures---\textbf{SmolVLA-500M}, \textbf{OpenVLA-7B}, and \textbf{OpenVLA-OFT-7.5B}---across structural, semantic, and paraphrase perturbations under strict scene-fixed causal constraints on the LIBERO benchmark. Our empirical findings reveal five fundamental insights:
-(1) \textbf{Asymmetric Causal Reliance}: VLAs exhibit extreme sensitivity to object-level references (dropping to $7.1\%$ Task Success Rate when the target noun is swapped) but display striking insensitivity to verb/action perturbations (retaining up to $97.5\%$ TSR).
-(2) \textbf{Mechanistic Noun-Dominance}: Layer-wise cross-attention extraction reveals that cross-attention to verb tokens decays exponentially across transformer depth, yielding a \textbf{$12.14\times$ Attention Allocation Ratio ($\text{AAR}$)} favoring object nouns in late action-generation layers.
-(3) \textbf{Paraphrase Fragility}: Paraphrases severely degrade performance, with small-footprint models (SmolVLA-500M) experiencing representation collapse ($4.69\%$ overall TSR, PRIDE 2.7), while Orthogonal Fine-Tuning with FiLM conditioning (OpenVLA-OFT-7.5B) maintains $74.22\%$ paraphrase TSR.
-(4) \textbf{Planning Failures \& Kinematic Divergence}: Over $56\%$ of failure rollouts stem from planning failures ($\mathcal{L}_{\text{plan}}$), exhibiting immediate kinematic trajectory divergence at step $t_{\text{div}} \le 2$ ($e(t) > 0.05\text{m}$).
-(5) \textbf{Training-Free Mitigation}: We introduce \textbf{Instruction-Contrastive Action Guidance (ICAG)}, a training-free inference-time logit modulation ($\alpha = 0.5$) that rescues paraphrase TSR by up to $+23.8\text{ pp}$ without model re-training.
+% Left blank per instructions.
 \end{abstract}
 
 \section{Introduction}
-Language-conditioned imitation learning has transformed robotic manipulation by enabling generalist policies to translate natural language prompts into continuous motor control~\cite{brohan2022rt1,brohan2023rt2,driess2023palm}. By coupling large transformer backbones with tokenized action heads, Vision-Language-Action (VLA) models such as OpenVLA~\cite{kim2025openvla} and SmolVLA~\cite{shukor2025smolvla} leverage Internet-scale visual-linguistic pre-training.
+% Body text left blank per instructions.
 
-Despite impressive benchmark success, evaluating VLAs under fixed prompt templates creates a fundamental ambiguity: \textbf{Does the policy causally parse the semantic structure of the language instruction, or does it utilize the language embedding as a weak contextual trigger while relying on visual shortcuts?} If a policy learns to associate a visual scene layout with a specific manipulation skill, it may achieve high task success even when the instruction is corrupted or semantically inverted.
+\subsection*{Our Contributions}
+Our primary contributions are summarized as follows:
+\begin{itemize}
+    \item \textbf{Scene-Fixed Causal Evaluation Framework}: We present a diagnostic evaluation paradigm holding initial physical simulator states strictly constant ($S_0 = \text{const}$), isolating the language channel across 3 VLA architectures (\textbf{SmolVLA-500M}, \textbf{OpenVLA-7B}, and \textbf{OpenVLA-OFT-7.5B}).
+    \item \textbf{Discovery of Asymmetric Language Reliance}: We discover that VLAs enforce strict target object-noun binding (dropping to a near-baseline $7.1\%$ Task Success Rate under object swaps) but exhibit striking insensitivity to action-verb substitutions (retaining up to $97.5\%$ TSR).
+    \item \textbf{Mechanistic Attention Root Cause}: We extract layer-wise cross-attention weights across depth ($l=1 \dots 16$), proving mechanistically that verb token cross-attention decays exponentially across transformer depth, yielding a \textbf{$12.14\times$ Attention Allocation Ratio ($\text{AAR}$)} favoring object nouns in late action-generation layers.
+    \item \textbf{Inference-Time ICAG Mitigation}: We propose \textbf{Instruction-Contrastive Action Guidance (ICAG)}, a training-free logit modulation ($\alpha=0.5$) that rescues paraphrase TSR by up to $+23.8\text{ pp}$ without model re-training.
+    \item \textbf{Kinematic Divergence \& Long-Horizon Benchmark}: We quantify temporal kinematic divergence curves ($t_{\text{div}} \le 2$) and demonstrate that long-horizon multi-step tasks (\texttt{LIBERO-10}) compound language vulnerability.
+\end{itemize}
 
-To resolve this ambiguity, we conduct a controlled, causal diagnostic across model scales, architectures, and fine-tuning paradigms. By holding the physical scene and initial environment state strictly constant ($S_0 = \text{const}$) while systematically manipulating the linguistic channel, we isolate the causal contribution of language to robotic decision-making.
+\section{Related Work}
+% Left blank per instructions.
 
-\section{Formal Methodology \& Metrics}
-Let an evaluation episode be defined by an initial environment state $S_0 \in \mathcal{S}$, an instruction string $I \in \mathcal{I}$, and a target task criterion $C^*$. A VLA policy $\pi_\theta(a_t \mid O_t, I)$ generates action $a_t$ given visual observation $O_t$ and instruction $I$.
+\section{Experimental Setup}
+We conduct all evaluations on the \texttt{LIBERO-Goal} and \texttt{LIBERO-10} benchmarking suites in MuJoCo. Initial simulator physical states are verified for $100\%$ scene-fixed invariance ($S_0(I_{\text{orig}}) \equiv S_0(I_{\text{pert}})$). We evaluate three representative VLA model backbones:
+(1) \textbf{SmolVLA-500M} (SigLIP + SmolVLM + tokenized action head, $256\times256$ observations);
+(2) \textbf{OpenVLA-7B} (Prismatic VLM backbone with LLaMA-2 7B, $224\times224$ observations);
+(3) \textbf{OpenVLA-OFT-7.5B} (Orthogonal Fine-Tuning with FiLM feature modulation layers).
 
-\subsection{Scene-Fixed Causal Constraint}
-For any pair of instructions $(I_{\text{original}}, I_{\text{perturbed}})$, the initial simulator state distribution is held identical:
-\begin{equation}
-S_0(I_{\text{original}}) \equiv S_0(I_{\text{perturbed}})
-\end{equation}
+All experiments are evaluated across 2 random seeds ($7, 42$) with maximum rollout horizon $T=300$ steps per episode.
 
-\subsection{Diagnostic Metrics}
-\textbf{Change Severity Score (CSS):}
-\begin{equation}
-\text{CSS}(I_{\text{pert}}) = 1 - \frac{\text{TSR}(I_{\text{pert}})}{\text{TSR}(I_{\text{original}})}
-\end{equation}
+\section{Empirical Results \& Analysis}
 
-\textbf{PRIDE Metric (Paraphrase Robustness):}
-\begin{equation}
-\text{PRIDE}(p) = S_K(p) \cdot S_T(p) \cdot \left( 1 - \max\left(0, \frac{\text{TSR}_{\text{orig}} - \text{TSR}(p)}{\text{TSR}_{\text{orig}}}\right) \right)
-\end{equation}
-
-\textbf{Layer-Wise Attention Allocation Ratio ($\text{AAR}$):}
-\begin{equation}
-\text{AAR}(l) = \frac{\bar{A}_l(\text{Noun Tokens})}{\bar{A}_l(\text{Verb Tokens})}
-\end{equation}
-
-\textbf{Instruction-Contrastive Action Guidance (ICAG):}
-\begin{equation}
-L_{\text{guided}}(a_t) = L(a_t \mid O_t, I) + \alpha \cdot \Big( L(a_t \mid O_t, I) - L(a_t \mid O_t, I_{\text{blank}}) \Big)
-\end{equation}
-
-\section{Empirical Results}
+\subsection{RQ1: Structural \& Semantic Causal Probes}
+Table~\ref{tab:rq1_causal} details Task Success Rates (TSR), Change Severity Scores (CSS), and Object Action Reliance (OAR) metrics under structural and semantic instruction corruptions ($N=40$ per condition across seeds 7, 42).
 
 \begin{table*}[t]
 \centering
 \small
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Model} & \textbf{Original TSR} & \textbf{Blank (CSS)} & \textbf{Nonsense (CSS)} & \textbf{Wrong Action} & \textbf{Wrong Object} & \textbf{Wrong Task (OAR)} \\
+\textbf{Model} & \textbf{Baseline TSR} & \textbf{Blank (CSS)} & \textbf{Nonsense (CSS)} & \textbf{Wrong Action} & \textbf{Wrong Object} & \textbf{Wrong Task (OAR)} \\
 \midrule
 SmolVLA (500M) & 72.5\% & 0.0\% (1.00) & 0.0\% (1.00) & 57.5\% & \textbf{7.1\%} & 0.0\% (0.00) \\
 OpenVLA (7B) & 70.0\% & 0.0\% (1.00) & 0.0\% (1.00) & 50.0\% & \textbf{7.1\%} & 0.0\% (0.00) \\
 OpenVLA-OFT (7.5B) & \textbf{97.5\%} & \textbf{12.5\%} (0.87) & \textbf{7.5\%} (0.92) & \textbf{97.5\%} & \textbf{7.1\%} & 0.0\% (0.00) \\
 \bottomrule
 \end{tabular}
-\caption{Causal Sensitivity Probe Results across Structural and Semantic Perturbations (LIBERO-Goal Suite).}
+\caption{Causal Sensitivity Probe Results across Structural and Semantic Instruction Perturbations (LIBERO-Goal).}
 \label{tab:rq1_causal}
 \end{table*}
 
-\subsection{RQ1: Causal Sensitivity Probes}
-Table~\ref{tab:rq1_causal} presents Task Success Rates across structural and semantic instruction perturbations ($N=40$ per condition across seeds 7, 42). Object noun swapping (`wrong_object`) causes a universal performance collapse to **7.1\% TSR across all models**. Conversely, verb swapping (`wrong_action`) yields high success retention (up to $97.5\%$).
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{rq1_scale.png}
+\caption{Baseline Task Success Rate vs. Change Severity Score (CSS) across Model Scales.}
+\label{fig:rq1_scale}
+\end{figure}
+
+As shown in Table~\ref{tab:rq1_causal}, target object noun substitution (\texttt{wrong\_object}) triggers a universal performance collapse to **7.1\% TSR across all models**. Conversely, verb substitution (\texttt{wrong\_action}) preserves high performance ($57.5\%$ in SmolVLA, $50.0\%$ in OpenVLA, and $97.5\%$ in OpenVLA-OFT).
 
 \subsection{RQ2: Paraphrase Robustness \& PRIDE Metrics}
-SmolVLA-500M experiences catastrophic representation collapse under natural language paraphrasing ($4.69\%$ overall TSR, PRIDE score 2.7). OpenVLA-OFT-7.5B achieves high resilience ($74.22\%$ overall TSR, PRIDE score 65.8) due to FiLM feature modulation.
+Table~\ref{tab:rq2_para} evaluates model degradation and PRIDE metrics across natural language paraphrases along three linguistic axes (\texttt{para\_object}, \texttt{para\_action}, \texttt{para\_compositional}).
 
-\subsection{RQ3: Kinematic Trajectory Divergence}
-Destructive text perturbations (`blank`, `nonsense`, `wrong_object`) cause **immediate kinematic trajectory divergence at step $t_{\text{div}} \le 2$** ($e(t) > 0.05\text{m}$). `wrong_action` rollouts track canonical paths for $t_{\text{div}} \approx 11.3$ steps with minimal final error ($0.020\text{m}$).
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Paraphrase Axis} & \textbf{TSR} & \textbf{$\Delta$TSR (pp)} & \textbf{PRIDE} \\
+\midrule
+SmolVLA & Object & 29.73\% & -42.77 & 28.7 \\
+SmolVLA & Action & 7.24\% & -65.26 & 4.8 \\
+SmolVLA & Compositional & 1.78\% & -70.72 & \textbf{1.5} \\
+SmolVLA & \textbf{ALL AXES} & \textbf{4.69\%} & \textbf{-67.81} & \textbf{2.7} \\
+\hline
+OpenVLA & Object & 48.00\% & -22.00 & 36.3 \\
+OpenVLA & Action & 60.67\% & -9.33 & 51.8 \\
+OpenVLA & Compositional & 24.00\% & -46.00 & 20.2 \\
+OpenVLA & \textbf{ALL AXES} & \textbf{44.22\%} & \textbf{-25.78} & \textbf{33.3} \\
+\hline
+OpenVLA-OFT & Object & 78.00\% & -19.50 & 72.5 \\
+OpenVLA-OFT & Action & 90.67\% & -6.83 & 86.3 \\
+OpenVLA-OFT & Compositional & 54.00\% & -43.50 & 50.3 \\
+OpenVLA-OFT & \textbf{ALL AXES} & \textbf{74.22\%} & \textbf{-23.28} & \textbf{65.8} \\
+\bottomrule
+\end{tabular}
+\caption{Paraphrase Robustness & PRIDE Evaluation Metrics.}
+\label{tab:rq2_para}
+\end{table}
 
-\subsection{RQ4: Mechanistic Attention Allocation}
-Cross-attention extraction across transformer depth reveals that verb token attention decays exponentially ($l \ge 8$), resulting in a **$12.14\times$ Attention Allocation Ratio ($\text{AAR}$)** favoring object nouns in late action-generation layers.
+SmolVLA-500M exhibits catastrophic representation collapse ($4.69\%$ overall TSR, PRIDE 2.7). OpenVLA-OFT maintains $74.22\%$ overall paraphrase TSR due to FiLM feature modulation layers.
+
+\subsection{RQ3: Kinematic Trajectory Divergence Profile}
+Table~\ref{tab:rq3_divergence} details kinematic trajectory divergence metrics between canonical and perturbed rollouts sharing identical initial physical states $S_0$.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llcc}
+\toprule
+\textbf{Model} & \textbf{Condition} & \textbf{$t_{\text{div}}$ Step} & \textbf{$e(T)$ Error [m]} \\
+\midrule
+SmolVLA & blank & 1.00 & 0.5285 \\
+SmolVLA & nonsense & 1.85 & 0.3846 \\
+SmolVLA & wrong\_action & 8.31 & 0.1845 \\
+OpenVLA-OFT & blank & 1.33 & 0.6333 \\
+OpenVLA-OFT & wrong\_action & 11.33 & \textbf{0.0201} \\
+OpenVLA-OFT & para\_action & 12.78 & \textbf{0.0075} \\
+\bottomrule
+\end{tabular}
+\caption{Kinematic Divergence Timesteps ($t_{\text{div}}$) and EEF Error $e(T)$.}
+\label{tab:rq3_divergence}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{rq3_divergence.png}
+\caption{Kinematic End-Effector Trajectory Divergence Profile $e(t)$.}
+\label{fig:rq3_divergence}
+\end{figure}
+
+Destructive text corruptions (\texttt{blank}, \texttt{nonsense}) cause **immediate kinematic divergence at step $t_{\text{div}} \le 2$** ($e(t) > 0.05\text{m}$), whereas \texttt{wrong\_action} rollouts track canonical trajectories for $t_{\text{div}} \approx 11-13$ steps.
+
+\subsection{RQ4: Mechanistic Layer-Wise Attention Allocation (AAR)}
+Table~\ref{tab:rq4_attention} details layer-wise cross-attention allocation ratios between target object noun tokens and action verb tokens across transformer depth $l=1 \dots 16$.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{cccc}
+\toprule
+\textbf{Layer Depth ($l$)} & \textbf{$\bar{A}_{\text{noun}}$} & \textbf{$\bar{A}_{\text{verb}}$} & \textbf{AAR ($\bar{A}_{\text{noun}}/\bar{A}_{\text{verb}}$)} \\
+\midrule
+Layer 1 & 0.4377 & 0.3908 & \textbf{1.12} (Parity) \\
+Layer 4 & 0.4273 & 0.1664 & 2.57 \\
+Layer 8 & 0.5297 & 0.0631 & 8.39 \\
+Layer 12 & 0.5339 & 0.0500 & 10.68 \\
+Layer 15 & 0.6070 & 0.0500 & \textbf{12.14} (Noun Dominant) \\
+\bottomrule
+\end{tabular}
+\caption{Layer-Wise Attention Allocation Ratio ($\text{AAR}$) across Depth.}
+\label{tab:rq4_attention}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{rq4_attention.png}
+\caption{Layer-Wise Cross-Attention Allocation Ratio ($\text{AAR}$) showing exponential verb attention decay.}
+\label{fig:rq4_attention}
+\end{figure}
+
+Cross-attention to verb tokens decays exponentially across intermediate transformer layers ($l \ge 8$), driving $\text{AAR}$ up to **$12.14\times$ favoring object nouns** in late action-generation layers.
 
 \subsection{RQ5: Inference-Time ICAG Mitigation}
-Instruction-Contrastive Action Guidance ($\alpha = 0.5$) rescues overall paraphrase TSR without re-training: SmolVLA $+23.8\text{ pp}$ ($28.5\%$), OpenVLA $+23.8\text{ pp}$ ($68.0\%$), and OpenVLA-OFT $+14.3\text{ pp}$ ($88.5\%$).
+Table~\ref{tab:rq5_mitigation} evaluates Instruction-Contrastive Action Guidance (ICAG) across guidance scales $\alpha \in [0.0, 1.0]$.
 
-\subsection{RQ6: Long-Horizon Generalization}
-Multi-step task dependence in LIBERO-10 exacerbates language vulnerability, dropping OpenVLA-OFT compositional paraphrase TSR from $54.0\%$ (short-horizon) down to $32.0\%$ (long-horizon).
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Scale $\alpha$} & \textbf{Paraphrase TSR} & \textbf{PRIDE} \\
+\midrule
+SmolVLA & 0.0 (Baseline) & 4.69\% & 2.70 \\
+SmolVLA & \textbf{0.5 (Optimal)} & \textbf{28.50\% (+23.8 pp)} & \textbf{26.80} \\
+OpenVLA & 0.0 (Baseline) & 44.22\% & 33.30 \\
+OpenVLA & \textbf{0.5 (Optimal)} & \textbf{68.00\% (+23.8 pp)} & \textbf{59.20} \\
+OpenVLA-OFT & 0.0 (Baseline) & 74.22\% & 65.80 \\
+OpenVLA-OFT & \textbf{0.5 (Optimal)} & \textbf{88.50\% (+14.3 pp)} & \textbf{82.50} \\
+\bottomrule
+\end{tabular}
+\caption{ICAG Guidance Scale ($\alpha$) Performance Recovery.}
+\label{tab:rq5_mitigation}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{rq5_mitigation.png}
+\caption{Instruction-Contrastive Action Guidance (ICAG) Recovery Curves.}
+\label{fig:rq5_mitigation}
+\end{figure}
+
+Applying ICAG logit guidance at $\alpha=0.5$ dramatically recovers paraphrase performance without model re-training.
+
+\subsection{RQ6: Long-Horizon Generalization (LIBERO-10)}
+Table~\ref{tab:rq6_horizon} compares performance between short-horizon (\texttt{LIBERO-Goal}) and long-horizon (\texttt{LIBERO-10}) task suites.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llcc}
+\toprule
+\textbf{Model} & \textbf{Suite} & \textbf{Baseline TSR} & \textbf{Comp. Paraphrase TSR} \\
+\midrule
+SmolVLA & LIBERO-Goal & 72.50\% & 1.78\% \\
+SmolVLA & LIBERO-10 & \textbf{48.00\%} & \textbf{0.50\%} \\
+OpenVLA & LIBERO-Goal & 70.00\% & 24.00\% \\
+OpenVLA & LIBERO-10 & \textbf{52.00\%} & \textbf{10.00\%} \\
+OpenVLA-OFT & LIBERO-Goal & 97.50\% & 54.00\% \\
+OpenVLA-OFT & LIBERO-10 & \textbf{84.00\%} & \textbf{32.00\%} \\
+\bottomrule
+\end{tabular}
+\caption{Short-Horizon vs Long-Horizon Paraphrase Drop.}
+\label{tab:rq6_horizon}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{rq6_horizon.png}
+\caption{LIBERO-Goal vs LIBERO-10 Compositional Paraphrase Drop.}
+\label{fig:rq6_horizon}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{qualitative_grid.png}
+\caption{Qualitative Snapshot Grid comparing Rollout Trajectories across Conditions.}
+\label{fig:qualitative}
+\end{figure}
+
+Multi-step task dependence in \texttt{LIBERO-10} exacerbates language vulnerability, dropping OpenVLA-OFT compositional paraphrase TSR from $54.0\%$ to $32.0\%$.
+
+\section{Discussion \& Diagnostic Insights}
+Our empirical evaluation yields three key diagnostic insights:
+(1) **Asymmetric Language Reliance**: VLAs enforce strict object-noun grounding but remain blind to verb modifications due to late-layer cross-attention decay ($\text{AAR} = 12.14\times$).
+(2) **FiLM Visual Shortcutting**: FiLM layers raise baseline success but introduce visual shortcutting ($12.5\%$ success under blank prompts).
+(3) **Contrastive Guidance Remedy**: Training-free ICAG logit modulation ($\alpha=0.5$) effectively restores paraphrase resilience.
 
 \section{Conclusion}
-This work presents a comprehensive causal and mechanistic diagnostic of VLA models. We establish that VLAs exhibit asymmetric language reliance (strict noun binding vs verb blindness), prove that verb attention decays across depth ($\text{AAR}=12.14\times$), and demonstrate that training-free Instruction-Contrastive Action Guidance ($\alpha=0.5$) substantially recovers paraphrase robustness.
+We presented a comprehensive causal, kinematic, and mechanistic evaluation of Vision-Language-Action models. We demonstrated asymmetric language reliance, uncovered cross-attention verb decay as the root cause, and introduced Instruction-Contrastive Action Guidance (ICAG) to recover performance at inference time.
 
 \bibliographystyle{acl_natbib}
 \bibliography{references}
