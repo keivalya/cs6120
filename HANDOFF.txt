@@ -3,10 +3,13 @@ PROJECT HANDOFF — VLA Language-Grounding Study -> ACL
 ================================================================================
 Repo:   keivalya/cs6120
 Branch: claude/robotics-nlp-project-review-qo8i2d
-Date:   2026-07-25
+Date:   2026-07-25  (updated after P1b landed)
 Goal:   An HONEST, reproducible ACL (or comparable) submission on whether
         Vision-Language-Action (VLA) robot policies actually USE the language
         instruction. Near-term deadline (weeks). Fresh H200/cluster available.
+
+STATUS: P0 (integrity) + P1 scaffolding + P1b (OFT baseline fix incl. aggregate.py
+        root-cause) DONE and pushed. >>> NEXT UP: P1a, RQ4 real attention. <<<
 
 This file is the single source of truth for the current state and the handoff.
 Companion docs (tracked, because *.md is gitignored in this repo):
@@ -58,14 +61,27 @@ Commit 5202b97 — P1 honest scaffolding (code-ready, NOT yet run):
   [x] report/RQ4_RQ5_SPEC.txt — implementation spec, including the RQ5 method
       problem (see section 4 below).
 
-P1b Fix — Mislabeled OFT baseline corrected:
-  [x] Re-evaluated OpenVLA-OFT libero_goal original seed 7 on GPU with correct
-      moojink/openvla-7b-oft-finetuned-libero-goal checkpoint via run/eval_task_oft.py.
-  [x] Verified results/openvla_oft/libero_goal/original/seed7/summary.json records
-      checkpoint moojink/openvla-7b-oft-finetuned-libero-goal, runner eval_task_oft.py,
-      and non-null SHA c2d0f9fbbd82674683b397ff923168a12f6a307b.
-  [x] Re-aggregated summaries, refreshed report/rq1_causal.csv, rq1_scale.csv, and MANIFEST.json.
-      Verified OFT baseline TSR = 0.9750 +/- 0.0250 across seeds 7 and 42.
+Commit 9dcf777 — P1b: mislabeled OFT baseline corrected (integrity):
+  [x] ROOT CAUSE FIXED: run/aggregate.py was hardcoding
+      checkpoint="HuggingFaceVLA/smolvla_libero", framework="lerobot",
+      runner="eval_task.py" into EVERY model's summary.json — that is what
+      mislabeled the OFT cell in the first place. It now reads checkpoint/
+      framework/runner per-model from configs/models.yaml and the records, so
+      future aggregations are correctly labeled. run/eval_task_oft.py now also
+      writes the checkpoint repo id into each record + a more robust hash lookup.
+  [x] Re-evaluated OpenVLA-OFT libero_goal original seed 7 on GPU with the correct
+      moojink/openvla-7b-oft-finetuned-libero-goal checkpoint via run/eval_task_oft.py
+      (SLURM script run/slurm/run_p1b_oft_seed7.sbatch; excludes the bad d4054 node).
+  [x] Verified summary.json now records checkpoint moojink/...-libero-goal,
+      runner eval_task_oft.py, non-null SHA c2d0f9fbbd82674683b397ff923168a12f6a307b,
+      tsr=1.0 (seed7); seed42=0.95. MANIFEST.json updated (584 runs logged).
+  [x] Audited ALL committed summaries: 17 openvla_oft -> moojink/..., 17 smolvla ->
+      HuggingFaceVLA/smolvla_libero. No model/checkpoint mismatches remain.
+  [x] OFT baseline TSR = 0.9750 +/- 0.0250 (seeds 7,42) — value unchanged but now
+      legitimately backed by a real OFT run instead of a mislabeled SmolVLA one.
+  [!] MINOR GAP: OFT seed42 original summary still has checkpoint_hash=null (older
+      run predating the eval_task_oft.py fix). Backfills naturally when P2 re-runs
+      that cell at higher episode counts; no action needed before then.
 
 --------------------------------------------------------------------------------
 2. WHAT IS REAL vs REMOVED  (trust map)
@@ -88,7 +104,7 @@ All GPU work runs strictly one EGL process at a time on a FRESH node
 Always run run/preflight.py first. Append every run to MANIFEST.json. Never edit
 measured numbers by hand.
 
-P1a. RQ4 real attention (CHEAP, HIGHEST VALUE, DO FIRST) — ~days
+P1a. RQ4 real attention  <<< NEXT UP — CHEAP, HIGHEST VALUE >>> — ~days
    - Finish analyze/attention_extract.py at the two VALIDATE-ON-DEVICE points:
        (i) per-framework attention capture (openvla/oft: output_attentions=True
            with attn_implementation='eager', NOT 'sdpa'; smolvla: forward hooks
@@ -100,20 +116,21 @@ P1a. RQ4 real attention (CHEAP, HIGHEST VALUE, DO FIRST) — ~days
    - Regenerate report/rq4_attention.csv + a real plot; reinstate the RQ4 section
      in paper_acl.tex from the real table.
 
-P1b. Fix the mislabeled OFT baseline (INTEGRITY, small) — hours on GPU
-   - results/openvla_oft/libero_goal/original/seed7/summary.json is a SmolVLA run
-     mislabeled as OFT (checkpoint=smolvla, runner=eval_task.py, tsr=1.0, hash=null).
-     It contaminates the headline OFT baseline (0.975 = mean of this 1.0 and
-     seed42's 0.95). Re-run OFT libero_goal original seed7 with the correct
-     moojink/openvla-7b-oft checkpoint via run/eval_task_oft.py, re-aggregate,
-     refresh rq1_causal.csv / rq1_scale.csv + MANIFEST.
+P1b. Fix the mislabeled OFT baseline — [DONE, commit 9dcf777; see section 1].
+     Root cause was in run/aggregate.py (hardcoded labels), now fixed for all
+     future aggregations.
 
 P2. Statistical power on the real core — ~1 week
    - Re-run RQ1 (all conditions, 3 models) and RQ2 sample cells at >=20
      episodes/task and BOTH seeds (7, 42). Several SmolVLA/OFT conditions are
-     seed-7-only today; RQ1 was run at only 2 episodes/task.
+     seed-7-only today; RQ1 was run at only 2 episodes/task (n=40/cond total).
+   - This run also backfills the OFT seed42 original checkpoint_hash (null today)
+     since eval_task_oft.py now records it.
    - Scale RQ3 pair counts. Recompute CSS/OAR/PRIDE/divergence; refresh all
      RQ1-RQ3 CSVs/plots + MANIFEST. Add seed variance / CIs to headline tables.
+   - NOTE: with the OFT baseline now genuinely at 1.0 (seed7), the reported
+     0.975 rests on only 2 seeds x 2 eps/task. Higher n here is the single most
+     important robustness item for the headline numbers.
 
 P3. RQ5 mitigation — REQUIRES A METHOD DECISION FIRST (see section 4) — 1-2 weeks
    - Decide the guidance operator (unified vs OpenVLA-only), then add
