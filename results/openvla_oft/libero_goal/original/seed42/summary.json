@@ -3,7 +3,7 @@
   "suite": "libero_goal",
   "condition": "original",
   "seed": 42,
-  "checkpoint": "HuggingFaceVLA/smolvla_libero",
+  "checkpoint": "moojink/openvla-7b-oft-finetuned-libero-goal",
   "checkpoint_hash": null,
   "n_episodes": 2,
   "n_total_episodes": 20,
@@ -51,6 +51,6 @@
       "success": 2
     }
   },
-  "framework": "lerobot",
-  "runner": "eval_task.py"
+  "framework": "openvla_oft",
+  "runner": "eval_task_oft.py"
 }

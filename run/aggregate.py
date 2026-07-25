@@ -49,14 +49,20 @@ def aggregate_condition(seed_dir: Path, model, suite, condition, seed) -> dict |
         per_task[r["task_id"]]["n"] += 1
         per_task[r["task_id"]]["success"] += int(r["success"])
     n_episodes = max((v["n"] for v in per_task.values()), default=0)
-    ckpt = next((r.get("checkpoint_hash") for r in recs if r.get("checkpoint_hash")), None)
+    import yaml
+    with open(REPO_ROOT / "configs" / "models.yaml") as f:
+        mc = yaml.safe_load(f).get(model, {})
+    ckpt_name = next((r.get("checkpoint") for r in recs if r.get("checkpoint")), mc.get("hf_repo"))
+    ckpt_hash = next((r.get("checkpoint_hash") for r in recs if r.get("checkpoint_hash")), None)
+    framework = mc.get("framework", "lerobot")
+    runner = "eval_task_oft.py" if model == "openvla_oft" else ("eval_task_openvla.py" if model == "openvla" else "eval_task.py")
     summary = {
         "model": model, "suite": suite, "condition": condition, "seed": seed,
-        "checkpoint": "HuggingFaceVLA/smolvla_libero", "checkpoint_hash": ckpt,
+        "checkpoint": ckpt_name, "checkpoint_hash": ckpt_hash,
         "n_episodes": n_episodes, "n_total_episodes": n_total, "n_success": n_success,
         "tsr": (n_success / n_total) if n_total else None,
         "per_task": {int(k): dict(v) for k, v in per_task.items()},
-        "framework": "lerobot", "runner": "eval_task.py",
+        "framework": framework, "runner": runner,
     }
     atomic_write_json(seed_dir / "summary.json", summary)
     return summary

@@ -1,7 +1,242 @@
 {
-  "pass": true,
+  "pass": false,
   "n_keys_checked": 40,
-  "n_mismatches": 0,
-  "mismatches": [],
+  "n_mismatches": 20,
+  "mismatches": [
+    {
+      "key": "task0_ep0_seed7",
+      "hashes": {
+        "blank": "b20d10aa1b0a54af",
+        "nonsense": "b20d10aa1b0a54af",
+        "original": "a1e4450e6fd91c57",
+        "repeated": "b20d10aa1b0a54af",
+        "wrong_action": "b20d10aa1b0a54af",
+        "wrong_task": "b20d10aa1b0a54af"
+      }
+    },
+    {
+      "key": "task0_ep1_seed7",
+      "hashes": {
+        "blank": "10f0715b23ea82b2",
+        "nonsense": "10f0715b23ea82b2",
+        "original": "6b4fdd2f5e9d1859",
+        "repeated": "10f0715b23ea82b2",
+        "wrong_action": "10f0715b23ea82b2",
+        "wrong_task": "10f0715b23ea82b2"
+      }
+    },
+    {
+      "key": "task1_ep0_seed7",
+      "hashes": {
+        "blank": "9ee1cc60ab7ac30d",
+        "nonsense": "9ee1cc60ab7ac30d",
+        "original": "3d3eb677ae71e5ab",
+        "repeated": "9ee1cc60ab7ac30d",
+        "wrong_action": "9ee1cc60ab7ac30d",
+        "wrong_object": "9ee1cc60ab7ac30d",
+        "wrong_task": "9ee1cc60ab7ac30d"
+      }
+    },
+    {
+      "key": "task1_ep1_seed7",
+      "hashes": {
+        "blank": "cf297c2ce7572d4a",
+        "nonsense": "cf297c2ce7572d4a",
+        "original": "0d47b5eb80a0d953",
+        "repeated": "cf297c2ce7572d4a",
+        "wrong_action": "cf297c2ce7572d4a",
+        "wrong_object": "cf297c2ce7572d4a",
+        "wrong_task": "cf297c2ce7572d4a"
+      }
+    },
+    {
+      "key": "task2_ep0_seed7",
+      "hashes": {
+        "blank": "4c418232b2a74db1",
+        "nonsense": "4c418232b2a74db1",
+        "original": "0cd5c4cd7e83f140",
+        "repeated": "4c418232b2a74db1",
+        "wrong_action": "4c418232b2a74db1",
+        "wrong_object": "4c418232b2a74db1",
+        "wrong_task": "4c418232b2a74db1"
+      }
+    },
+    {
+      "key": "task2_ep1_seed7",
+      "hashes": {
+        "blank": "3d555150098e8293",
+        "nonsense": "3d555150098e8293",
+        "original": "82fbb3accaa2d4c5",
+        "repeated": "3d555150098e8293",
+        "wrong_action": "3d555150098e8293",
+        "wrong_object": "3d555150098e8293",
+        "wrong_task": "3d555150098e8293"
+      }
+    },
+    {
+      "key": "task3_ep0_seed7",
+      "hashes": {
+        "blank": "faadb76337b3bf1f",
+        "nonsense": "faadb76337b3bf1f",
+        "original": "9adce5bc6d4d5d98",
+        "repeated": "faadb76337b3bf1f",
+        "wrong_action": "faadb76337b3bf1f",
+        "wrong_task": "faadb76337b3bf1f"
+      }
+    },
+    {
+      "key": "task3_ep1_seed7",
+      "hashes": {
+        "blank": "3cf6f5aeefcc02c3",
+        "nonsense": "3cf6f5aeefcc02c3",
+        "original": "226b973c94c0b2f1",
+        "repeated": "3cf6f5aeefcc02c3",
+        "wrong_action": "3cf6f5aeefcc02c3",
+        "wrong_task": "3cf6f5aeefcc02c3"
+      }
+    },
+    {
+      "key": "task4_ep0_seed7",
+      "hashes": {
+        "blank": "d588562c057297a6",
+        "nonsense": "d588562c057297a6",
+        "original": "9144c040ee59949b",
+        "repeated": "d588562c057297a6",
+        "wrong_action": "d588562c057297a6",
+        "wrong_object": "d588562c057297a6",
+        "wrong_task": "d588562c057297a6"
+      }
+    },
+    {
+      "key": "task4_ep1_seed7",
+      "hashes": {
+        "blank": "a79a7f58b84b8b05",
+        "nonsense": "a79a7f58b84b8b05",
+        "original": "41c6960bab536678",
+        "repeated": "a79a7f58b84b8b05",
+        "wrong_action": "a79a7f58b84b8b05",
+        "wrong_object": "a79a7f58b84b8b05",
+        "wrong_task": "a79a7f58b84b8b05"
+      }
+    },
+    {
+      "key": "task5_ep0_seed7",
+      "hashes": {
+        "blank": "73628312b22d0a4c",
+        "nonsense": "73628312b22d0a4c",
+        "original": "121d36aef38f9352",
+        "repeated": "73628312b22d0a4c",
+        "wrong_action": "73628312b22d0a4c",
+        "wrong_object": "73628312b22d0a4c",
+        "wrong_task": "73628312b22d0a4c"
+      }
+    },
+    {
+      "key": "task5_ep1_seed7",
+      "hashes": {
+        "blank": "258ab12d443749d0",
+        "nonsense": "258ab12d443749d0",
+        "original": "b662a3ec75f73938",
+        "repeated": "258ab12d443749d0",
+        "wrong_action": "258ab12d443749d0",
+        "wrong_object": "258ab12d443749d0",
+        "wrong_task": "258ab12d443749d0"
+      }
+    },
+    {
+      "key": "task6_ep0_seed7",
+      "hashes": {
+        "blank": "54a2e61fe18a90e5",
+        "nonsense": "54a2e61fe18a90e5",
+        "original": "6db61b9feffaa286",
+        "repeated": "54a2e61fe18a90e5",
+        "wrong_action": "54a2e61fe18a90e5",
+        "wrong_object": "54a2e61fe18a90e5",
+        "wrong_task": "54a2e61fe18a90e5"
+      }
+    },
+    {
+      "key": "task6_ep1_seed7",
+      "hashes": {
+        "blank": "9ae9c184884d90db",
+        "nonsense": "9ae9c184884d90db",
+        "original": "1c4c07ee4b7adaee",
+        "repeated": "9ae9c184884d90db",
+        "wrong_action": "9ae9c184884d90db",
+        "wrong_object": "9ae9c184884d90db",
+        "wrong_task": "9ae9c184884d90db"
+      }
+    },
+    {
+      "key": "task7_ep0_seed7",
+      "hashes": {
+        "blank": "628b3b8f8228e55e",
+        "nonsense": "628b3b8f8228e55e",
+        "original": "254c68efda045147",
+        "repeated": "628b3b8f8228e55e",
+        "wrong_action": "628b3b8f8228e55e",
+        "wrong_task": "628b3b8f8228e55e"
+      }
+    },
+    {
+      "key": "task7_ep1_seed7",
+      "hashes": {
+        "blank": "8132604a1c22acad",
+        "nonsense": "8132604a1c22acad",
+        "original": "85ddd48f3075f4f3",
+        "repeated": "8132604a1c22acad",
+        "wrong_action": "8132604a1c22acad",
+        "wrong_task": "8132604a1c22acad"
+      }
+    },
+    {
+      "key": "task8_ep0_seed7",
+      "hashes": {
+        "blank": "f27183806c6c1ee4",
+        "nonsense": "f27183806c6c1ee4",
+        "original": "219d0abcb9659797",
+        "repeated": "f27183806c6c1ee4",
+        "wrong_action": "f27183806c6c1ee4",
+        "wrong_object": "f27183806c6c1ee4",
+        "wrong_task": "f27183806c6c1ee4"
+      }
+    },
+    {
+      "key": "task8_ep1_seed7",
+      "hashes": {
+        "blank": "21b763e1cf389629",
+        "nonsense": "21b763e1cf389629",
+        "original": "c2dff76649494d2e",
+        "repeated": "21b763e1cf389629",
+        "wrong_action": "21b763e1cf389629",
+        "wrong_object": "21b763e1cf389629",
+        "wrong_task": "21b763e1cf389629"
+      }
+    },
+    {
+      "key": "task9_ep0_seed7",
+      "hashes": {
+        "blank": "2d508a1a3eac3a6c",
+        "nonsense": "2d508a1a3eac3a6c",
+        "original": "6df79cd3b828914e",
+        "repeated": "2d508a1a3eac3a6c",
+        "wrong_action": "2d508a1a3eac3a6c",
+        "wrong_object": "2d508a1a3eac3a6c",
+        "wrong_task": "2d508a1a3eac3a6c"
+      }
+    },
+    {
+      "key": "task9_ep1_seed7",
+      "hashes": {
+        "blank": "cc505df84a1381ab",
+        "nonsense": "cc505df84a1381ab",
+        "original": "6db0d1d014120da5",
+        "repeated": "cc505df84a1381ab",
+        "wrong_action": "cc505df84a1381ab",
+        "wrong_object": "cc505df84a1381ab",
+        "wrong_task": "cc505df84a1381ab"
+      }
+    }
+  ],
   "note": "scene provably fixed across conditions iff pass (\u00a75/\u00a712)"
 }

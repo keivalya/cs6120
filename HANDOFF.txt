@@ -58,6 +58,15 @@ Commit 5202b97 — P1 honest scaffolding (code-ready, NOT yet run):
   [x] report/RQ4_RQ5_SPEC.txt — implementation spec, including the RQ5 method
       problem (see section 4 below).
 
+P1b Fix — Mislabeled OFT baseline corrected:
+  [x] Re-evaluated OpenVLA-OFT libero_goal original seed 7 on GPU with correct
+      moojink/openvla-7b-oft-finetuned-libero-goal checkpoint via run/eval_task_oft.py.
+  [x] Verified results/openvla_oft/libero_goal/original/seed7/summary.json records
+      checkpoint moojink/openvla-7b-oft-finetuned-libero-goal, runner eval_task_oft.py,
+      and non-null SHA c2d0f9fbbd82674683b397ff923168a12f6a307b.
+  [x] Re-aggregated summaries, refreshed report/rq1_causal.csv, rq1_scale.csv, and MANIFEST.json.
+      Verified OFT baseline TSR = 0.9750 +/- 0.0250 across seeds 7 and 42.
+
 --------------------------------------------------------------------------------
 2. WHAT IS REAL vs REMOVED  (trust map)
 --------------------------------------------------------------------------------
