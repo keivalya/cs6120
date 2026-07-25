@@ -31,16 +31,14 @@ Our primary contributions are summarized as follows:
 \begin{itemize}
     \item \textbf{Scene-Fixed Causal Evaluation Framework}: We present a diagnostic evaluation paradigm holding initial physical simulator states strictly constant ($S_0 = \text{const}$), isolating the language channel across 3 VLA architectures (\textbf{SmolVLA-500M}, \textbf{OpenVLA-7B}, and \textbf{OpenVLA-OFT-7.5B}).
     \item \textbf{Discovery of Asymmetric Language Reliance}: We discover that VLAs enforce strict target object-noun binding (dropping to a near-baseline $7.1\%$ Task Success Rate under object swaps) but exhibit striking insensitivity to action-verb substitutions (retaining up to $97.5\%$ TSR).
-    \item \textbf{Mechanistic Attention Root Cause}: We extract layer-wise cross-attention weights across depth ($l=1 \dots 16$), proving mechanistically that verb token cross-attention decays exponentially across transformer depth, yielding a \textbf{$12.14\times$ Attention Allocation Ratio ($\text{AAR}$)} favoring object nouns in late action-generation layers.
-    \item \textbf{Inference-Time ICAG Mitigation}: We propose \textbf{Instruction-Contrastive Action Guidance (ICAG)}, a training-free logit modulation ($\alpha=0.5$) that rescues paraphrase TSR by up to $+23.8\text{ pp}$ without model re-training.
-    \item \textbf{Kinematic Divergence \& Long-Horizon Benchmark}: We quantify temporal kinematic divergence curves ($t_{\text{div}} \le 2$) and demonstrate that long-horizon multi-step tasks (\texttt{LIBERO-10}) compound language vulnerability.
+    \item \textbf{Kinematic Divergence Profile}: We quantify temporal end-effector divergence between canonical and perturbed rollouts sharing an identical initial state, showing that destructive corruptions diverge almost immediately ($t_{\text{div}} \le 2$) while verb substitutions track the canonical trajectory for $\approx 11$--$13$ steps.
 \end{itemize}
 
 \section{Related Work}
 % Left blank per instructions.
 
 \section{Experimental Setup}
-We conduct all evaluations on the \texttt{LIBERO-Goal} and \texttt{LIBERO-10} benchmarking suites in MuJoCo. Initial simulator physical states are verified for $100\%$ scene-fixed invariance ($S_0(I_{\text{orig}}) \equiv S_0(I_{\text{pert}})$). We evaluate three representative VLA model backbones:
+We conduct all evaluations on the \texttt{LIBERO-Goal} benchmarking suite in MuJoCo, chosen because every task in the suite shares an identical initial scene, so the instruction is the only cue that disambiguates the task. Initial simulator physical states are verified for $100\%$ scene-fixed invariance ($S_0(I_{\text{orig}}) \equiv S_0(I_{\text{pert}})$). We evaluate three representative VLA model backbones:
 (1) \textbf{SmolVLA-500M} (SigLIP + SmolVLM + tokenized action head, $256\times256$ observations);
 (2) \textbf{OpenVLA-7B} (Prismatic VLM backbone with LLaMA-2 7B, $224\times224$ observations);
 (3) \textbf{OpenVLA-OFT-7.5B} (Orthogonal Fine-Tuning with FiLM feature modulation layers).
@@ -140,95 +138,15 @@ OpenVLA-OFT & para\_action & 12.78 & \textbf{0.0075} \\
 
 Destructive text corruptions (\texttt{blank}, \texttt{nonsense}) cause **immediate kinematic divergence at step $t_{\text{div}} \le 2$** ($e(t) > 0.05\text{m}$), whereas \texttt{wrong\_action} rollouts track canonical trajectories for $t_{\text{div}} \approx 11-13$ steps.
 
-\subsection{RQ4: Mechanistic Layer-Wise Attention Allocation (AAR)}
-Table~\ref{tab:rq4_attention} details layer-wise cross-attention allocation ratios between target object noun tokens and action verb tokens across transformer depth $l=1 \dots 16$.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{cccc}
-\toprule
-\textbf{Layer Depth ($l$)} & \textbf{$\bar{A}_{\text{noun}}$} & \textbf{$\bar{A}_{\text{verb}}$} & \textbf{AAR ($\bar{A}_{\text{noun}}/\bar{A}_{\text{verb}}$)} \\
-\midrule
-Layer 1 & 0.4377 & 0.3908 & \textbf{1.12} (Parity) \\
-Layer 4 & 0.4273 & 0.1664 & 2.57 \\
-Layer 8 & 0.5297 & 0.0631 & 8.39 \\
-Layer 12 & 0.5339 & 0.0500 & 10.68 \\
-Layer 15 & 0.6070 & 0.0500 & \textbf{12.14} (Noun Dominant) \\
-\bottomrule
-\end{tabular}
-\caption{Layer-Wise Attention Allocation Ratio ($\text{AAR}$) across Depth.}
-\label{tab:rq4_attention}
-\end{table}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{rq4_attention.png}
-\caption{Layer-Wise Cross-Attention Allocation Ratio ($\text{AAR}$) showing exponential verb attention decay.}
-\label{fig:rq4_attention}
-\end{figure}
-
-Cross-attention to verb tokens decays exponentially across intermediate transformer layers ($l \ge 8$), driving $\text{AAR}$ up to **$12.14\times$ favoring object nouns** in late action-generation layers.
-
-\subsection{RQ5: Inference-Time ICAG Mitigation}
-Table~\ref{tab:rq5_mitigation} evaluates Instruction-Contrastive Action Guidance (ICAG) across guidance scales $\alpha \in [0.0, 1.0]$.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{lccc}
-\toprule
-\textbf{Model} & \textbf{Scale $\alpha$} & \textbf{Paraphrase TSR} & \textbf{PRIDE} \\
-\midrule
-SmolVLA & 0.0 (Baseline) & 4.69\% & 2.70 \\
-SmolVLA & \textbf{0.5 (Optimal)} & \textbf{28.50\% (+23.8 pp)} & \textbf{26.80} \\
-OpenVLA & 0.0 (Baseline) & 44.22\% & 33.30 \\
-OpenVLA & \textbf{0.5 (Optimal)} & \textbf{68.00\% (+23.8 pp)} & \textbf{59.20} \\
-OpenVLA-OFT & 0.0 (Baseline) & 74.22\% & 65.80 \\
-OpenVLA-OFT & \textbf{0.5 (Optimal)} & \textbf{88.50\% (+14.3 pp)} & \textbf{82.50} \\
-\bottomrule
-\end{tabular}
-\caption{ICAG Guidance Scale ($\alpha$) Performance Recovery.}
-\label{tab:rq5_mitigation}
-\end{table}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{rq5_mitigation.png}
-\caption{Instruction-Contrastive Action Guidance (ICAG) Recovery Curves.}
-\label{fig:rq5_mitigation}
-\end{figure}
-
-Applying ICAG logit guidance at $\alpha=0.5$ dramatically recovers paraphrase performance without model re-training.
-
-\subsection{RQ6: Long-Horizon Generalization (LIBERO-10)}
-Table~\ref{tab:rq6_horizon} compares performance between short-horizon (\texttt{LIBERO-Goal}) and long-horizon (\texttt{LIBERO-10}) task suites.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{llcc}
-\toprule
-\textbf{Model} & \textbf{Suite} & \textbf{Baseline TSR} & \textbf{Comp. Paraphrase TSR} \\
-\midrule
-SmolVLA & LIBERO-Goal & 72.50\% & 1.78\% \\
-SmolVLA & LIBERO-10 & \textbf{48.00\%} & \textbf{0.50\%} \\
-OpenVLA & LIBERO-Goal & 70.00\% & 24.00\% \\
-OpenVLA & LIBERO-10 & \textbf{52.00\%} & \textbf{10.00\%} \\
-OpenVLA-OFT & LIBERO-Goal & 97.50\% & 54.00\% \\
-OpenVLA-OFT & LIBERO-10 & \textbf{84.00\%} & \textbf{32.00\%} \\
-\bottomrule
-\end{tabular}
-\caption{Short-Horizon vs Long-Horizon Paraphrase Drop.}
-\label{tab:rq6_horizon}
-\end{table}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{rq6_horizon.png}
-\caption{LIBERO-Goal vs LIBERO-10 Compositional Paraphrase Drop.}
-\label{fig:rq6_horizon}
-\end{figure}
+% ---------------------------------------------------------------------------
+% RQ4 (mechanistic cross-attention / AAR) and RQ5 (inference-time contrastive
+% guidance / ICAG) are held out of this draft until backed by real, on-device
+% measurements. The prior draft generated these tables (and an RQ6 LIBERO-10
+% table) from synthetic closed-form arrays; those generators and outputs have
+% been removed (see archive/fabricated/). RQ4/RQ5 will be reinstated once
+% measured; RQ6 (LIBERO-10) is out of scope for this submission because
+% LIBERO-10 was never run.
+% ---------------------------------------------------------------------------
 
 \begin{figure}[h]
 \centering
@@ -237,16 +155,25 @@ OpenVLA-OFT & LIBERO-10 & \textbf{84.00\%} & \textbf{32.00\%} \\
 \label{fig:qualitative}
 \end{figure}
 
-Multi-step task dependence in \texttt{LIBERO-10} exacerbates language vulnerability, dropping OpenVLA-OFT compositional paraphrase TSR from $54.0\%$ to $32.0\%$.
-
 \section{Discussion \& Diagnostic Insights}
-Our empirical evaluation yields three key diagnostic insights:
-(1) **Asymmetric Language Reliance**: VLAs enforce strict object-noun grounding but remain blind to verb modifications due to late-layer cross-attention decay ($\text{AAR} = 12.14\times$).
-(2) **FiLM Visual Shortcutting**: FiLM layers raise baseline success but introduce visual shortcutting ($12.5\%$ success under blank prompts).
-(3) **Contrastive Guidance Remedy**: Training-free ICAG logit modulation ($\alpha=0.5$) effectively restores paraphrase resilience.
+Our empirical evaluation yields two key diagnostic insights, both grounded in the
+scene-fixed causal and paraphrase experiments (RQ1--RQ3):
+(1) \textbf{Asymmetric Language Reliance}: VLAs enforce strict object-noun
+grounding (object swaps collapse success to near-baseline $7.1\%$ TSR) yet remain
+largely insensitive to action-verb substitutions (OpenVLA-OFT retains $97.5\%$
+TSR under \texttt{wrong\_action}), indicating that nouns are bound strictly while
+verbs are treated as near-optional.
+(2) \textbf{FiLM Visual Shortcutting}: FiLM feature modulation raises baseline
+success but introduces a measurable visual shortcut ($12.5\%$ success under blank
+prompts, versus $0\%$ for the non-FiLM backbones).
 
 \section{Conclusion}
-We presented a comprehensive causal, kinematic, and mechanistic evaluation of Vision-Language-Action models. We demonstrated asymmetric language reliance, uncovered cross-attention verb decay as the root cause, and introduced Instruction-Contrastive Action Guidance (ICAG) to recover performance at inference time.
+We presented a scene-fixed causal and paraphrase evaluation of three
+Vision-Language-Action models spanning $16\times$ in scale, showing that language
+is causally necessary and scale-invariant, and uncovering an asymmetric
+noun~$\gg$~verb grounding gap. A mechanistic cross-attention analysis and a
+training-free inference-time mitigation are the natural next steps and are
+deferred pending on-device measurement.
 
 \bibliographystyle{acl_natbib}
 \bibliography{references}

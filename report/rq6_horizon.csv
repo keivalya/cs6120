@@ -1,7 +1,0 @@
-model,suite,TSR_original_pct,TSR_object_pct,TSR_action_pct,TSR_compositional_pct
-smolvla,libero_goal,72.5,29.73,7.24,1.78
-smolvla,libero_10,48.0,14.5,2.0,0.5
-openvla,libero_goal,70.0,48.0,60.67,24.0
-openvla,libero_10,52.0,26.0,38.0,10.0
-openvla_oft,libero_goal,97.5,78.0,90.67,54.0
-openvla_oft,libero_10,84.0,58.0,76.0,32.0
