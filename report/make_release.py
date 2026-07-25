@@ -40,12 +40,6 @@ FILES_TO_INCLUDE = [
     "report/rq2_locus.png",
     "report/rq3_divergence.csv",
     "report/rq3_divergence.png",
-    "report/rq4_attention.csv",
-    "report/rq4_attention.png",
-    "report/rq5_mitigation.csv",
-    "report/rq5_mitigation.png",
-    "report/rq6_horizon.csv",
-    "report/rq6_horizon.png",
     "report/scene_fixed_check.json",
 ]
 

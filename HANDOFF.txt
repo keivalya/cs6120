@@ -1,0 +1,177 @@
+================================================================================
+PROJECT HANDOFF — VLA Language-Grounding Study -> ACL
+================================================================================
+Repo:   keivalya/cs6120
+Branch: claude/robotics-nlp-project-review-qo8i2d
+Date:   2026-07-25
+Goal:   An HONEST, reproducible ACL (or comparable) submission on whether
+        Vision-Language-Action (VLA) robot policies actually USE the language
+        instruction. Near-term deadline (weeks). Fresh H200/cluster available.
+
+This file is the single source of truth for the current state and the handoff.
+Companion docs (tracked, because *.md is gitignored in this repo):
+  - report/KNOWN_ISSUES.txt   integrity remediation log + open data-quality issues
+  - report/RQ4_RQ5_SPEC.txt   how to reinstate RQ4 & RQ5 honestly (read before running)
+
+--------------------------------------------------------------------------------
+0. THE ONE-PARAGRAPH SUMMARY
+--------------------------------------------------------------------------------
+The core science is real and interesting: on the scene-fixed LIBERO-Goal suite,
+language is causally necessary and scale-invariant (RQ1), and there is an
+asymmetric grounding gap — models bind object NOUNS strictly (object swap ->
+~7.1% TSR) but treat action VERBS as near-optional (OpenVLA-OFT keeps 97.5% TSR
+under wrong_action) (RQ2). RQ3 (kinematic divergence) is real but small-n.
+HOWEVER, the prior ACL draft's three headline contributions — RQ4 (attention
+"12.14x AAR"), RQ5 (ICAG "+23.8 pp"), RQ6 (LIBERO-10) — were FABRICATED from
+hardcoded arrays with no model in the loop. Those have now been removed. The
+paper is scoped to the real RQ1-RQ3, and the fabricated RQ4/RQ5 are marked for
+honest, measured reinstatement.
+
+--------------------------------------------------------------------------------
+1. WHAT IS ALREADY DONE  (committed + pushed on this branch)
+--------------------------------------------------------------------------------
+Commit 130f473 — P0 integrity remediation:
+  [x] Deleted fabricated outputs: report/rq4_attention.{csv,png},
+      rq5_mitigation.{csv,png}, rq6_horizon.{csv,png}
+  [x] Deleted fabricated generators: analyze/attention_mechanics.py,
+      analyze/guided_mitigation.py, analyze/horizon_generalization.py
+      (copies remain ONLY under archive/fabricated/ as an internal record)
+  [x] paper_acl.tex: removed RQ4/RQ5/RQ6 sections + their contribution bullets;
+      scoped Experimental Setup to LIBERO-Goal only; rewrote Discussion &
+      Conclusion to claim only what RQ1-RQ3 support
+  [x] Cleaned the same fabricated claims from report/compile_acl.py,
+      report/make_slides.py, report/dashboard.html
+  [x] report/make_release.py: dropped fabricated files from the release allowlist
+      (archive/fabricated/ was never in the allowlist, so it does not ship)
+  [x] Removed stale committed PDFs (report/paper.pdf, paper_acl.pdf, slides.pdf)
+      — they embed the fabricated numbers and could not be rebuilt here
+      (no pdflatex/reportlab in the environment). REBUILD from cleaned sources.
+  [x] Added report/KNOWN_ISSUES.txt (remediation log + open issues)
+  [x] Verified: no fabricated markers (12.14, +23.8, AAR, ICAG, libero_10, the
+      generator names) remain anywhere outside archive/
+
+Commit 5202b97 — P1 honest scaffolding (code-ready, NOT yet run):
+  [x] analyze/attention_extract.py — REAL RQ4 attention scaffold. Loads a real
+      model, captures real attention, writes rq4_attention.csv. NO synthetic
+      fallback: it raises SystemExit/NotImplementedError at the two on-device
+      validation points and never emits a CSV without a model in the loop.
+  [x] report/RQ4_RQ5_SPEC.txt — implementation spec, including the RQ5 method
+      problem (see section 4 below).
+
+--------------------------------------------------------------------------------
+2. WHAT IS REAL vs REMOVED  (trust map)
+--------------------------------------------------------------------------------
+REAL, data-backed (keep, strengthen):
+  RQ1 causal probes (CSS/OAR) — report/rq1_causal.csv, rq1_scale.csv;
+       results/*/summary.json; MANIFEST.json (H200, checkpoint/repo SHAs)
+  RQ2 paraphrase/PRIDE        — report/rq2_paraphrase.csv, rq2_axis.csv,
+       rq2_operation.csv, rq2_locus.csv; real per-axis summary.json
+  RQ3 kinematic divergence    — report/rq3_divergence.csv (small-n, 5-15 pairs);
+       analyze/kinematic_divergence.py reads real eef_traj
+REMOVED, was fabricated (reinstate only if measured):
+  RQ4 attention/AAR, RQ5 ICAG mitigation, RQ6 LIBERO-10 horizon
+
+--------------------------------------------------------------------------------
+3. WHAT NEEDS TO BE DONE NEXT  (prioritized by urgency)
+--------------------------------------------------------------------------------
+All GPU work runs strictly one EGL process at a time on a FRESH node
+(concurrent EGL corrupts the render channel -> SIGABRT). Driver: run/run_fresh_node.sh.
+Always run run/preflight.py first. Append every run to MANIFEST.json. Never edit
+measured numbers by hand.
+
+P1a. RQ4 real attention (CHEAP, HIGHEST VALUE, DO FIRST) — ~days
+   - Finish analyze/attention_extract.py at the two VALIDATE-ON-DEVICE points:
+       (i) per-framework attention capture (openvla/oft: output_attentions=True
+           with attn_implementation='eager', NOT 'sdpa'; smolvla: forward hooks
+           on SmolVLM attention modules);
+       (ii) noun/verb + visual token index resolution, reusing the RQ2 tagging
+           in perturb/make_paraphrases.py.
+   - Forward passes only, no rollouts. Report the MEASURED AAR curve even if far
+     below the old fabricated 12.14x; the noun>>verb story stands on RQ1/RQ2.
+   - Regenerate report/rq4_attention.csv + a real plot; reinstate the RQ4 section
+     in paper_acl.tex from the real table.
+
+P1b. Fix the mislabeled OFT baseline (INTEGRITY, small) — hours on GPU
+   - results/openvla_oft/libero_goal/original/seed7/summary.json is a SmolVLA run
+     mislabeled as OFT (checkpoint=smolvla, runner=eval_task.py, tsr=1.0, hash=null).
+     It contaminates the headline OFT baseline (0.975 = mean of this 1.0 and
+     seed42's 0.95). Re-run OFT libero_goal original seed7 with the correct
+     moojink/openvla-7b-oft checkpoint via run/eval_task_oft.py, re-aggregate,
+     refresh rq1_causal.csv / rq1_scale.csv + MANIFEST.
+
+P2. Statistical power on the real core — ~1 week
+   - Re-run RQ1 (all conditions, 3 models) and RQ2 sample cells at >=20
+     episodes/task and BOTH seeds (7, 42). Several SmolVLA/OFT conditions are
+     seed-7-only today; RQ1 was run at only 2 episodes/task.
+   - Scale RQ3 pair counts. Recompute CSS/OAR/PRIDE/divergence; refresh all
+     RQ1-RQ3 CSVs/plots + MANIFEST. Add seed variance / CIs to headline tables.
+
+P3. RQ5 mitigation — REQUIRES A METHOD DECISION FIRST (see section 4) — 1-2 weeks
+   - Decide the guidance operator (unified vs OpenVLA-only), then add
+     --icag_alpha (and --icag_space) to the runners, sweep alpha in {0,0.3,0.5,1.0}
+     on the paraphrase axes, recompute PRIDE via analyze/pride_wrap.py, write a
+     real report/rq5_mitigation.csv, reinstate the RQ5 section.
+
+P4. Write the paper (parallel with runs; no GPU needed) — continuous
+   - paper_acl.tex still has EMPTY stubs: Abstract, Introduction body, Related
+     Work ("left blank per instructions"). Fill them.
+   - Add a Methods/Metrics subsection formally DEFINING CSS, OAR, PRIDE (and AAR
+     once RQ4 is real) — they are used but never defined.
+   - Add Limitations (single suite, simulation-only, no real robot, episode
+     counts) and Ethics/Reproducibility sections (ACL norms).
+   - Related-work positioning: causal isolation + noun>>verb asymmetry +
+     (once real) mechanistic attention + cheap fix, vs kim2026liberopara/PRIDE,
+     hou2026langgap, fei2025liberoplus, pang2025openvla (see report/references.bib).
+
+P5. Build + reproducibility polish — days, before submission
+   - Rebuild PDFs on a LaTeX machine: pdflatex on report/paper_acl.tex (real
+     build, NOT the ReportLab fallback in compile_acl.py). Fix or retire
+     report/compile_pdf.py (it references a missing gitignored research_paper.md).
+   - Decide a retention policy for raw results/**/*.jsonl (gitignored today), so
+     CSS/OAR/locus/divergence can be regenerated. Rebuild the release tar clean
+     (python report/make_release.py). Anonymize for review.
+
+--------------------------------------------------------------------------------
+4. OPEN DECISION THAT BLOCKS RQ5  (read report/RQ4_RQ5_SPEC.txt)
+--------------------------------------------------------------------------------
+The fabricated RQ5 claimed one "logit modulation" operator
+    logits' = logits(I) + alpha * (logits(I) - logits(I_blank))
+for all three models. That operator is only DEFINED for OpenVLA, which predicts
+discretized action tokens (has logits). OpenVLA-OFT (use_l1_regression=True) and
+SmolVLA (flow-matching) have CONTINUOUS action heads with NO action-token logits.
+So RQ5 "for real" is a method-design task, not a pure run. Choose one:
+   (A) Scope RQ5 to OpenVLA (logit guidance is native); present the continuous
+       variant as an extension; OR
+   (B) Define a unified operator that reduces to logit-space for OpenVLA and to
+       action-space  a' = a(I) + alpha*(a(I) - a(I_blank))  for OFT/SmolVLA.
+Decide BEFORE any RQ5 runs.
+
+--------------------------------------------------------------------------------
+5. KEY FILES (orientation)
+--------------------------------------------------------------------------------
+Paper:      report/paper_acl.tex (canonical), report/references.bib
+Runners:    run/eval_task.py (smolvla), run/eval_task_openvla.py,
+            run/eval_task_oft.py; driver run/run_fresh_node.sh; run/preflight.py;
+            run/aggregate.py
+Metrics:    analyze/css.py (CSS/OAR), analyze/goal_eval.py, analyze/tsr.py,
+            analyze/locus.py, analyze/kinematic_divergence.py,
+            analyze/pride_wrap.py (wraps LIBERO-Para PRIDE)
+CSV/plots:  analyze/make_rq1_csv.py, make_rq1_scale.py, make_rq2_csv.py,
+            plot_rq1.py, plot_rq2.py
+RQ4 (new):  analyze/attention_extract.py  (+ spec in report/RQ4_RQ5_SPEC.txt)
+Perturb:    perturb/make_instructions.py (causal), perturb/make_paraphrases.py
+            (paraphrases + noun/verb tagging), perturb/generated/*.jsonl
+Config:     configs/models.yaml, configs/perturbations.yaml, configs/grid.yaml
+Repro:      envs/*.lock.txt (4 conda locks), MANIFEST.json (per-run provenance),
+            report/scene_fixed_check.json (fixed-scene audit, 0 mismatches)
+DO NOT SHIP: archive/fabricated/  (internal record only)
+
+--------------------------------------------------------------------------------
+6. NON-NEGOTIABLE GROUND RULES (from CLAUDE.md §12)
+--------------------------------------------------------------------------------
+  - No fabricated results. Missing > invented. A made-up number is project-ending.
+  - Causal claims are valid ONLY on the scene-fixed LIBERO-Goal (never on
+    scene-confounded Spatial/Object suites).
+  - Checkpoint HASH is ground truth, not the model nickname.
+  - Every run is logged to MANIFEST.json with its checkpoint/repo SHAs.
+================================================================================

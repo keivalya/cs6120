@@ -101,9 +101,7 @@ def build_two_column_pdf():
     contributions = [
         "<b>Scene-Fixed Causal Evaluation Framework:</b> Diagnostic evaluation paradigm holding initial physical simulator states strictly constant (S_0 = const), isolating the language channel across 3 VLA architectures (SmolVLA-500M, OpenVLA-7B, OpenVLA-OFT-7.5B).",
         "<b>Discovery of Asymmetric Language Reliance:</b> VLAs enforce strict target object-noun binding (dropping to 7.1% TSR under object swaps) but exhibit striking insensitivity to action-verb substitutions (retaining up to 97.5% TSR).",
-        "<b>Mechanistic Attention Root Cause:</b> Layer-wise cross-attention extraction across depth (l = 1..16) proves verb token cross-attention decays exponentially across depth, yielding a 12.14x Attention Allocation Ratio (AAR) favoring object nouns in late layers.",
-        "<b>Inference-Time ICAG Mitigation:</b> Instruction-Contrastive Action Guidance (ICAG, alpha=0.5) rescues paraphrase TSR by up to +23.8 pp without model re-training.",
-        "<b>Kinematic Divergence & Long-Horizon Benchmark:</b> Quantified temporal kinematic divergence curves (t_div <= 2) and demonstrated that long-horizon multi-step tasks (LIBERO-10) compound language vulnerability."
+        "<b>Kinematic Divergence Profile:</b> Quantified temporal end-effector divergence between canonical and perturbed rollouts sharing an identical initial state (destructive corruptions diverge at t_div <= 2; verb substitutions track the canonical path for ~11-13 steps)."
     ]
     for c in contributions:
         story.append(Paragraph(f"• {c}", body_style))
@@ -115,7 +113,7 @@ def build_two_column_pdf():
     # Section 3: Experimental Setup
     story.append(Paragraph("<b>3. Experimental Setup</b>", h1_style))
     story.append(Paragraph(
-        "We evaluate on LIBERO-Goal and LIBERO-10 in MuJoCo. Initial physical states are verified for 100% scene-fixed invariance. "
+        "We evaluate on LIBERO-Goal in MuJoCo, chosen because every task shares an identical initial scene so the instruction is the only disambiguating cue. Initial physical states are verified for 100% scene-fixed invariance. "
         "We compare: (1) SmolVLA-500M (256x256 obs); (2) OpenVLA-7B (224x224 obs); (3) OpenVLA-OFT-7.5B (FiLM conditioning). "
         "All evaluations run across 2 seeds (7, 42) with max horizon T=300 steps.", body_style
     ))
@@ -135,18 +133,6 @@ def build_two_column_pdf():
     story.append(Paragraph("<b>4.3 RQ3: Kinematic Trajectory Divergence</b>", h2_style))
     story.append(Paragraph("Destructive text corruptions (blank, nonsense) cause immediate kinematic divergence at step t_div <= 2 (e(t) > 0.05m). wrong_action rollouts track canonical paths for t_div = 11.3 steps.", body_style))
 
-    # RQ4
-    story.append(Paragraph("<b>4.4 RQ4: Mechanistic Attention Allocation (AAR)</b>", h2_style))
-    story.append(Paragraph("Verb cross-attention decays exponentially across intermediate transformer layers (l >= 8), driving AAR to 12.14x favoring object nouns in late action-generation layers.", body_style))
-
-    # RQ5
-    story.append(Paragraph("<b>4.5 RQ5: Inference-Time ICAG Mitigation</b>", h2_style))
-    story.append(Paragraph("Instruction-Contrastive Action Guidance (alpha=0.5) recovers paraphrase TSR by up to +23.8 pp without model re-training.", body_style))
-
-    # RQ6
-    story.append(Paragraph("<b>4.6 RQ6: Long-Horizon Generalization (LIBERO-10)</b>", h2_style))
-    story.append(Paragraph("Multi-step task dependence in LIBERO-10 exacerbates language vulnerability, dropping OpenVLA-OFT compositional paraphrase TSR from 54.0% to 32.0%.", body_style))
-
     # Figures & Tables summary
     fig_path = REPO_ROOT / "report" / "qualitative_grid.png"
     if fig_path.exists():
@@ -157,14 +143,14 @@ def build_two_column_pdf():
     # Section 5: Discussion & Conclusion
     story.append(Paragraph("<b>5. Discussion & Diagnostic Insights</b>", h1_style))
     story.append(Paragraph(
-        "Our evaluation establishes asymmetric language reliance (strict noun binding vs verb blindness), identifies late-layer cross-attention decay (AAR=12.14x) as the root cause, "
-        "and shows that ICAG logit guidance (alpha=0.5) provides a lightweight inference remedy.", body_style
+        "Our evaluation establishes asymmetric language reliance (strict object-noun binding vs near-insensitivity to verb substitution) across three models spanning 16x in scale, "
+        "and shows the effect is causal and scale-invariant on the scene-fixed LIBERO-Goal suite.", body_style
     ))
 
     story.append(Paragraph("<b>6. Conclusion</b>", h1_style))
     story.append(Paragraph(
-        "We presented a comprehensive causal diagnostic of Vision-Language-Action models. "
-        "Future architectures must combine contrastive language pre-training with ICAG inference guidance.", body_style
+        "We presented a scene-fixed causal and paraphrase diagnostic of Vision-Language-Action models. "
+        "A mechanistic cross-attention analysis and a training-free inference-time mitigation are natural next steps, deferred pending on-device measurement.", body_style
     ))
 
     doc.build(story)

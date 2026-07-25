@@ -78,47 +78,20 @@ SLIDE_MARKDOWN_CONTENT = """# Lost in Instruction: Causal Sensitivity and Paraph
 
 ---
 
-## 7. RQ4: Mechanistic Attention Allocation Ratio (AAR)
-
-- **Early Layer Parity**: At Layer 1, Noun and Verb cross-attention are near parity ($\\text{AAR} = 1.12$).
-- **Exponential Verb Attention Decay**: Cross-attention to verb tokens decays rapidly across intermediate transformer layers ($l \\ge 8$).
-- **Extreme Late-Layer Noun Dominance**: Achieves a **$12.14\\times$ Attention Allocation Ratio (AAR)** favoring object nouns in late action-generation layers, explaining verb-blindness mechanistically.
-
----
-
-## 8. RQ5: Inference-Time Contrastive Guidance (ICAG)
-
-- **Training-Free Logit Modulation**:
-  $$L_{\\text{guided}}(a_t \\mid O_t, I) = L(a_t \\mid O_t, I) + \\alpha \\cdot \\Big( L(a_t \\mid O_t, I) - L(a_t \\mid O_t, I_{\\text{blank}}) \\Big)$$
-- **Performance Recovery at $\\alpha = 0.5$**:
-  - SmolVLA: Paraphrase TSR jumps from **$4.69\\% \\to 28.50\\%$** (PRIDE score $2.70 \\to 26.80$).
-  - OpenVLA: Paraphrase TSR jumps from **$44.22\\% \\to 68.00\\%$** (PRIDE score $33.30 \\to 59.20$).
-  - OpenVLA-OFT: Paraphrase TSR jumps from **$74.22\\% \\to 88.50\\%$** (PRIDE score $65.80 \\to 82.50$).
-
----
-
-## 9. RQ6: Long-Horizon Multi-Step Task Generalization
-
-- **LIBERO-10 Sequential Dependency**: Multi-step tasks amplify initial language planning errors.
-- **SmolVLA**: Compositional paraphrase TSR drops from $1.78\\%$ (Goal) to $0.50\\%$ (LIBERO-10).
-- **OpenVLA**: Compositional paraphrase TSR drops from $24.00\\%$ (Goal) to $10.00\\%$ (LIBERO-10).
-- **OpenVLA-OFT**: Compositional paraphrase TSR drops from $54.00\\%$ (Goal) to $32.00\\%$ (LIBERO-10).
-
----
-
-## 10. Summary of Architectural Recommendations
+## 7. Summary of Architectural Recommendations
 
 1. **Incorporate Asymmetric Contrastive Objectives**: Train action heads with contrastive loss against unconditioned visual features to eliminate visual shortcutting.
-2. **Layer-Wise Verb Attention Boosting**: Add explicit verb-token cross-attention loss penalties to prevent verb attention decay across transformer depth.
-3. **Deploy Inference-Time ICAG**: Use ICAG logit modulation ($\\alpha = 0.5$) at deployment for instant paraphrase resilience without re-training.
+2. **Strengthen Verb Grounding**: Address the noun >> verb asymmetry so action semantics are not treated as near-optional.
 
 ---
 
-## 11. Conclusion & Key Takeaways
+## 8. Conclusion & Key Takeaways
 
 - **Causal Isolation is Essential**: Scene-fixed causal evaluations expose visual shortcutting hidden by standard static benchmarks.
-- **Mechanistic Root Cause Identified**: Verb blindness stems from late-layer cross-attention decay ($\\text{AAR} = 12.14\\times$).
-- **Simple, Training-Free Remedy**: ICAG logit modulation effectively rescues paraphrase degradation across scales.
+- **Asymmetric Language Reliance**: Object nouns are bound strictly (object swaps collapse success to ~7.1% TSR) while action verbs are near-optional (OpenVLA-OFT retains 97.5% TSR under wrong_action).
+- **Causal and Scale-Invariant**: The effect holds across three models spanning 16x in scale on LIBERO-Goal.
+
+*Next steps (deferred pending on-device measurement): a mechanistic cross-attention analysis of the noun/verb asymmetry and a training-free inference-time mitigation.*
 """
 
 def generate_pdf_presentation(slides_text: str, pdf_path: Path):

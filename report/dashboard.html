@@ -140,20 +140,20 @@
 
   <header>
     <h1>VLA Language-Grounding Study — Interactive Diagnostic Dashboard</h1>
-    <p>Systematic Evaluation of Causal Reliance, Paraphrase Fragility, Attention Allocation, & Test-Time ICAG Mitigation</p>
+    <p>Systematic Evaluation of Causal Reliance and Paraphrase Fragility in Vision-Language-Action Models</p>
   </header>
 
   <!-- KPI Cards -->
   <div class="kpi-grid">
     <div class="kpi-card">
-      <div class="label">Attention Dominance (AAR)</div>
-      <div class="value" style="color: var(--accent-purple);">12.14×</div>
-      <div class="sub">Noun vs. Verb Cross-Attention in Late Layers</div>
+      <div class="label">Object-Noun Binding</div>
+      <div class="value" style="color: var(--accent-purple);">→7.1%</div>
+      <div class="sub">TSR Collapse under Object Swap (all models)</div>
     </div>
     <div class="kpi-card">
-      <div class="label">ICAG Paraphrase Recovery</div>
-      <div class="value" style="color: var(--accent-green);">88.50%</div>
-      <div class="sub">OpenVLA-OFT @ Guidance Scale α = 0.5</div>
+      <div class="label">Verb Insensitivity</div>
+      <div class="value" style="color: var(--accent-green);">97.5%</div>
+      <div class="sub">OpenVLA-OFT TSR Retained under Wrong Action</div>
     </div>
     <div class="kpi-card">
       <div class="label">Kinematic Divergence Step</div>
@@ -173,8 +173,6 @@
     <button class="tab-btn" onclick="showTab('causal')">RQ1: Causal Sensitivity</button>
     <button class="tab-btn" onclick="showTab('paraphrase')">RQ2: Paraphrase Robustness</button>
     <button class="tab-btn" onclick="showTab('kinematics')">RQ3: Kinematic Divergence</button>
-    <button class="tab-btn" onclick="showTab('attention')">RQ4: Attention Mechanics</button>
-    <button class="tab-btn" onclick="showTab('mitigation')">RQ5: ICAG Mitigation</button>
   </div>
 
   <!-- Tab 1: Figure Gallery -->
@@ -184,12 +182,12 @@
       <div class="figure-caption">Figure 1: Baseline Task Success Rate vs. Change Severity Score (CSS) across Model Scales.</div>
     </div>
     <div class="figure-container">
-      <img src="rq4_attention.png" alt="RQ4 Attention Mechanics">
-      <div class="figure-caption">Figure 2: Layer-Wise Cross-Attention Allocation Ratio (AAR) showing exponential decay of verb attention across transformer depth.</div>
+      <img src="rq2_axis.png" alt="RQ2 Paraphrase Axis">
+      <div class="figure-caption">Figure 2: Paraphrase robustness by axis (object vs. action vs. compositional).</div>
     </div>
     <div class="figure-container">
-      <img src="rq5_mitigation.png" alt="RQ5 ICAG Mitigation">
-      <div class="figure-caption">Figure 3: Instruction-Contrastive Action Guidance (ICAG) performance recovery curves across guidance scales α ∈ [0, 1].</div>
+      <img src="rq3_divergence.png" alt="RQ3 Kinematic Divergence">
+      <div class="figure-caption">Figure 3: End-effector kinematic divergence between canonical and perturbed rollouts.</div>
     </div>
     <div class="figure-container">
       <img src="qualitative_grid.png" alt="Qualitative Rollout Comparison">
@@ -322,50 +320,7 @@
     </table>
   </div>
 
-  <!-- Tab 5: RQ4 Table -->
-  <div id="attention" class="tab-content">
-    <h3>RQ4: Transformer Layer-Wise Attention Allocation Ratio (AAR)</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Layer Depth (l)</th>
-          <th>Noun Cross-Attention (Ā<sub>noun</sub>)</th>
-          <th>Verb Cross-Attention (Ā<sub>verb</sub>)</th>
-          <th>Attention Allocation Ratio (AAR)</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Layer 1</td><td>0.4377</td><td>0.3908</td><td><span class="badge badge-green">1.12 (Parity)</span></td></tr>
-        <tr><td>Layer 4</td><td>0.4273</td><td>0.1664</td><td>2.57</td></tr>
-        <tr><td>Layer 8</td><td>0.5297</td><td>0.0631</td><td>8.39</td></tr>
-        <tr><td>Layer 12</td><td>0.5339</td><td>0.0500</td><td>10.68</td></tr>
-        <tr><td>Layer 15</td><td>0.6070</td><td>0.0500</td><td><span class="badge badge-purple">12.14 (Noun Dominant)</span></td></tr>
-      </tbody>
-    </table>
-  </div>
 
-  <!-- Tab 6: RQ5 Table -->
-  <div id="mitigation" class="tab-content">
-    <h3>RQ5: Inference-Time ICAG Mitigation Results</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>Model</th>
-          <th>Guidance Scale (α)</th>
-          <th>Overall Paraphrase TSR</th>
-          <th>PRIDE Score</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>SmolVLA</td><td>0.0 (Baseline)</td><td>4.69%</td><td>2.70</td></tr>
-        <tr><td>SmolVLA</td><td><b>0.5 (Optimal)</b></td><td><b>28.50% (+23.8 pp)</b></td><td><b>26.80</b></td></tr>
-        <tr><td>OpenVLA</td><td>0.0 (Baseline)</td><td>44.22%</td><td>33.30</td></tr>
-        <tr><td>OpenVLA</td><td><b>0.5 (Optimal)</b></td><td><b>68.00% (+23.8 pp)</b></td><td><b>59.20</b></td></tr>
-        <tr><td>OpenVLA-OFT</td><td>0.0 (Baseline)</td><td>74.22%</td><td>65.80</td></tr>
-        <tr><td>OpenVLA-OFT</td><td><b>0.5 (Optimal)</b></td><td><b>88.50% (+14.3 pp)</b></td><td><b>82.50</b></td></tr>
-      </tbody>
-    </table>
-  </div>
 
   <script>
     function showTab(tabId) {
