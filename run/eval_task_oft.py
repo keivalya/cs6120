@@ -165,11 +165,24 @@ goal_states = GOAL.load_goal_states(
 )
 print(f"[oft {tid}] env ready", flush=True)
 
-try:
-    from huggingface_hub import HfApi
-    ckpt_hash = HfApi().model_info(ckpt).sha
-except Exception:
-    ckpt_hash = None
+hf_repo_id = mc["hf_repo"]
+def get_ckpt_sha(repo_id):
+    try:
+        from huggingface_hub import HfApi
+        return HfApi().model_info(repo_id).sha
+    except Exception:
+        pass
+    hfh = os.environ.get("HF_HOME", os.path.expanduser("~/.cache/huggingface"))
+    t_dir = Path(hfh) / "modules" / "transformers_modules" / repo_id.replace("/", "--")
+    if not t_dir.exists():
+        t_dir = Path(hfh) / "modules" / "transformers_modules" / repo_id
+    if t_dir.exists():
+        subdirs = [d.name for d in t_dir.iterdir() if d.is_dir() and len(d.name) == 40]
+        if subdirs:
+            return subdirs[0]
+    return None
+
+ckpt_hash = get_ckpt_sha(hf_repo_id)
 
 
 def raw_obs():
@@ -291,6 +304,7 @@ for label, items in groups:
                 "achieved_task_ids": achieved, **extra,
                 "init_object_poses": init_poses, "final_object_poses": poses_of(raw_obs()),
                 "eef_traj": eef_traj, "wall_s": round(time.time() - t0, 2),
+                "checkpoint": hf_repo_id,
                 "checkpoint_hash": ckpt_hash,
             }
             ep_file.write(json.dumps(rec) + "\n"); ep_file.flush()
