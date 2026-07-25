@@ -1,0 +1,79 @@
+IMPLEMENTATION SPEC — REAL RQ4 (attention) & RQ5 (mitigation)
+=============================================================
+(Tracked in .txt because *.md is gitignored.)
+
+These two research questions were previously FABRICATED (see KNOWN_ISSUES.txt)
+and have been removed from the paper. This spec is what an HONEST reinstatement
+requires. Both must be measured on a real GPU with the real checkpoints; neither
+may emit numbers without a model in the loop.
+
+================================================================================
+RQ4 — Layer-wise noun-vs-verb attention (AAR)      [WELL-DEFINED, CHEAP, DO FIRST]
+================================================================================
+Scaffold: analyze/attention_extract.py (fails loudly; no synthetic fallback).
+
+Method:
+  For each LIBERO-Goal original instruction, forward the real model on the fixed
+  initial observation with attention capture ON. At each transformer layer l,
+  average the attention that language NOUN tokens vs language VERB tokens place on
+  the VISUAL tokens:  AAR(l) = mean_noun(attn->visual) / mean_verb(attn->visual).
+
+Two on-device validation points (marked VALIDATE-ON-DEVICE in the scaffold):
+  1. Attention capture per framework:
+       - openvla / openvla_oft: transformers AutoModelForVision2Seq with
+         output_attentions=True. NOTE: attn_implementation must be 'eager'
+         (the runners use 'sdpa', which does NOT return attention weights).
+         Attentions arrive as a tuple over layers, each [batch, heads, q, k].
+       - smolvla: no output_attentions on the lerobot SmolVLAPolicy; register
+         forward hooks on the SmolVLM attention modules instead.
+  2. Token-type resolution: which key positions are visual patches vs language,
+     and which language tokens are the object noun vs the action verb. Reuse the
+     RQ2 noun/verb tagging (perturb/make_paraphrases.py) so RQ4 and RQ2 refer to
+     the same tokens. Multi-token words: average sub-tokens.
+
+Why cheap: forward passes only, no rollouts. This is the highest-value/lowest-cost
+reinstatement and validates (or falsifies) the mechanistic story behind the real
+RQ1/RQ2 behavioral asymmetry. REPORT WHATEVER IS MEASURED — if the real AAR is far
+below the fabricated 12.14x, the noun>>verb story still stands on RQ1/RQ2; do not
+tune the number toward the old fabricated value.
+
+================================================================================
+RQ5 — Instruction-contrastive guidance            [NOT YET WELL-DEFINED; REDESIGN]
+================================================================================
+CRITICAL: the fabricated RQ5 claimed a single "logit modulation"
+    logits' = logits(I) + alpha * (logits(I) - logits(I_blank))
+for all three models. That operator is only defined for ONE of the three:
+
+  - openvla (7B): predicts DISCRETIZED action tokens -> there ARE logits over
+    action bins. Logit-space contrastive guidance is well-defined here. Implement
+    by intercepting the action-token logits inside run/eval_task_openvla.py
+    predict_action(), running a second forward with the blank instruction, and
+    combining before argmax/sampling.
+
+  - openvla_oft (7.5B): use_l1_regression=True -> CONTINUOUS action head, NO
+    logits. Logit modulation is undefined. The honest analogue is action-space
+    contrastive guidance:
+        a' = a(I) + alpha * (a(I) - a(I_blank))
+    which is a DIFFERENT method with a different justification and must be named
+    and evaluated as such.
+
+  - smolvla (0.45B): flow-matching / continuous action head, NO action-token
+    logits. Same situation as OFT; use the action-space (or velocity-field)
+    contrastive form, not logit modulation.
+
+Consequence for the plan: "run RQ5 for real" is NOT a pure compute task. It first
+requires choosing and justifying a guidance operator PER ARCHITECTURE (logit-space
+for OpenVLA; action-space for OFT/SmolVLA), then sweeping alpha in {0,0.3,0.5,1.0}
+on the RQ2 paraphrase axes and recomputing TSR/PRIDE via analyze/pride_wrap.py.
+Because the operator differs across models, the paper must either (a) present a
+single unified formulation that reduces to each case, or (b) scope RQ5 to OpenVLA
+where logit guidance is native and present the continuous-action variant as an
+extension. This decision should be made explicitly before any RQ5 runs.
+
+Integration points (once the operator is chosen):
+  - Add --icag_alpha and --icag_space {logit,action} flags to the three runners
+    (run/eval_task.py, eval_task_openvla.py, eval_task_oft.py).
+  - Each rollout step: compute the guided action/logits from I and I_blank and
+    apply the chosen operator. Log alpha into the per-episode record.
+  - Reaggregate with run/aggregate.py; recompute PRIDE with analyze/pride_wrap.py;
+    write report/rq5_mitigation.csv from the REAL summaries; append to MANIFEST.json.
