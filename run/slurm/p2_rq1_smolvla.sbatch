@@ -35,7 +35,7 @@ export MUJOCO_EGL_DEVICE_ID=0
 export TOKENIZERS_PARALLELISM=false
 export TF_XLA_FLAGS="--tf_xla_auto_jit=-1"
 
-SM=/home/pandya.kei/.conda/envs/vla-smolvla/bin/python
+SM=${CONDA_ENVS:-/scratch/pandya.kei/conda-envs/.conda/envs}/vla-smolvla/bin/python
 
 # --- Tunables -----------------------------------------------------------------
 N_EPISODES="${N_EPISODES:-20}"

@@ -33,8 +33,8 @@ export MUJOCO_EGL_DEVICE_ID=0
 export TOKENIZERS_PARALLELISM=false
 export TF_XLA_FLAGS="--tf_xla_auto_jit=-1"
 
-OFT=/home/pandya.kei/.conda/envs/vla-oft/bin/python
-SM=/home/pandya.kei/.conda/envs/vla-smolvla/bin/python   # preflight only
+OFT=${CONDA_ENVS:-/scratch/pandya.kei/conda-envs/.conda/envs}/vla-oft/bin/python
+SM=${CONDA_ENVS:-/scratch/pandya.kei/conda-envs/.conda/envs}/vla-smolvla/bin/python   # preflight only
 OVENV="LIBERO_CONFIG_PATH=/home/pandya.kei/.libero_openvla HF_HUB_OFFLINE=1"
 
 # --- Tunables -----------------------------------------------------------------

@@ -30,7 +30,7 @@ export HF_HOME=$SCRATCH/hf_home
 export HF_HUB_CACHE=$HF_HOME/hub
 export TOKENIZERS_PARALLELISM=false
 
-OV=/home/pandya.kei/.conda/envs/vla-openvla/bin/python
+OV=${CONDA_ENVS:-/scratch/pandya.kei/conda-envs/.conda/envs}/vla-openvla/bin/python
 LOG=$SCRATCH/p2_aggregate.log
 
 echo "=== P2 aggregate $(date) ===" | tee "$LOG"
