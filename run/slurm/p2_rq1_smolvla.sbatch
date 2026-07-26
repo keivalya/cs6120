@@ -18,7 +18,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
-#SBATCH --time=16:00:00
+#SBATCH --time=08:00:00
 #SBATCH --exclude=d4054
 #SBATCH --output=p2-rq1-sm-%j.out
 #SBATCH --error=p2-rq1-sm-%j.out
