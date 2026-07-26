@@ -129,22 +129,28 @@ P2. Statistical power on the real core  <<< NEXT UP — sbatch READY >>> — ~1 
    calls for 20/task (SmolVLA) and 10/task (7B) across seeds 7,42. This is the
    single most important robustness item for the headline numbers.
 
-   IMPLEMENTED — SLURM job arrays (one EGL process per seed x task, own GPU):
-     run/slurm/p2_rq1_smolvla.sbatch   (array 0-19: 2 seeds x 10 tasks, 20 eps)
-     run/slurm/p2_rq1_openvla.sbatch   (array 0-19, 10 eps)
-     run/slurm/p2_rq1_oft.sbatch       (array 0-19, 10 eps)
-     run/slurm/p2_aggregate.sbatch     (run ONCE after all arrays finish)
-   All 7 causal conditions (original,blank,nonsense,wrong_object,wrong_action,
-   wrong_task,repeated). Runners are resumable (top up each task<tid>.jsonl to
-   --n_episodes; re-submit after a timeout to continue). Tunables via env:
-   N_EPISODES=..., CONDITIONS=..., SEEDS edited in-script.
+   IMPLEMENTED — NON-ARRAY jobs (one per model; loops seeds x tasks internally,
+   one EGL process at a time). This design fits the cluster QOS limit (gpu QOS:
+   MaxSubmit=8, MaxRunning=4) — job ARRAYS blew past it (each 20-task array = 20
+   jobs). 3 eval jobs + 1 aggregate = 4 submissions total.
+     run/slurm/p2_rq1_smolvla.sbatch   (seeds 7,42 x 10 tasks, 20 eps, --time 16h)
+     run/slurm/p2_rq1_openvla.sbatch   (10 eps, --time 24h)
+     run/slurm/p2_rq1_oft.sbatch       (10 eps, --time 24h; backfills OFT s42 hash)
+     run/slurm/p2_aggregate.sbatch     (run ONCE after the 3 eval jobs finish)
+   All 7 causal conditions. Runners are resumable (top up each task<tid>.jsonl to
+   --n_episodes; if a job hits the wall-time limit, just re-submit it). Tunables
+   via env: N_EPISODES=..., CONDITIONS=..., TASKS=...; and SEED_ONLY=7|42 to run a
+   single seed per job (halves wall time, uses more of the 4 running slots).
 
    RUN ORDER (submit yourself):
      sbatch run/slurm/p2_rq1_smolvla.sbatch
      sbatch run/slurm/p2_rq1_openvla.sbatch
      sbatch run/slurm/p2_rq1_oft.sbatch
-     # wait for all three arrays to finish, then:
+     # wait for all three to finish, then:
      sbatch run/slurm/p2_aggregate.sbatch
+   To split 7B by seed if 24h is too long (still <= 8 submitted):
+     sbatch --export=ALL,SEED_ONLY=7  run/slurm/p2_rq1_oft.sbatch
+     sbatch --export=ALL,SEED_ONLY=42 run/slurm/p2_rq1_oft.sbatch
    Outputs: refreshed report/rq1_causal.csv (TSR_std_over_seeds = CIs), rq1_scale.csv,
    rq1_*.png; MANIFEST.json grows. Also backfills the OFT seed42 original hash.
 
