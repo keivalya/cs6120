@@ -48,8 +48,14 @@ RQ4 (real cross-attention extraction) and RQ5 (real inference-time contrastive
 guidance) are intended to be reinstated ONCE MEASURED on-device. RQ6 (LIBERO-10)
 is out of scope for the near-term submission.
 
+UPDATE: RESOLVED (commit 9dcf777). Root cause was run/aggregate.py hardcoding
+checkpoint/framework/runner for every model; fixed to read per-model. OFT
+original seed7 re-run with the correct moojink checkpoint (hash c2d0f9...);
+all summaries audited, no mismatches remain. Baseline 0.9750 +/- 0.0250 now
+legitimately backed. (Kept below for the record.)
+
 --------------------------------------------------------------------------------
-2. MISLABELED OpenVLA-OFT BASELINE CELL  (OPEN — needs GPU re-run)
+2. MISLABELED OpenVLA-OFT BASELINE CELL  (RESOLVED — see UPDATE above)
 --------------------------------------------------------------------------------
 File: results/openvla_oft/libero_goal/original/seed7/summary.json
 
@@ -87,3 +93,22 @@ both seeds (7, 42), recompute CSS/OAR/PRIDE/divergence, and report variance/CIs.
 RQ3 divergence cannot be regenerated from the repo alone -- only aggregated
 summary.json files persist. Decide a retention policy for the raw eef/episode
 trajectories (external archive or documented re-run recipe) before release.
+
+--------------------------------------------------------------------------------
+5. RQ4 ATTENTION: VALIDATE THE VISUAL-TOKEN SPAN  (OPEN — verify before paper)
+--------------------------------------------------------------------------------
+RQ4 (report/rq4_attention.csv via analyze/attention_extract.py) is REAL — real
+forward passes, honestly reported (measured AAR ~1.005 -> ~1.24, far below the
+old fabricated 12.14x; the noun>>verb trend is what matters and it holds). Two
+things to validate before the paper leans on the magnitudes:
+  (a) OpenVLA/OFT use a HARDCODED visual-token span: visual_indices =
+      range(40, 296). The measured per-visual-token attention (~0.005) is ABOVE
+      the uniform ceiling (1/256 ~= 0.0039), which suggests that span may include
+      some non-visual (language) tokens and/or the patch count/offset is off.
+      Confirm the true image-token positions from the processor output (decode
+      token types) rather than assuming 40..296.
+  (b) SmolVLA extractor swaps in an eager VLM via load_state_dict(..., strict=
+      False); verify no weights were silently dropped (log missing/unexpected keys).
+The AAR is a RATIO, so a consistent mis-span largely cancels and the monotone
+noun>verb-with-depth trend is probably robust — but re-run after fixing (a)/(b)
+and confirm the trend before citing exact AAR numbers.

@@ -8,7 +8,10 @@ Goal:   An HONEST, reproducible ACL (or comparable) submission on whether
         Vision-Language-Action (VLA) robot policies actually USE the language
         instruction. Near-term deadline (weeks). Fresh H200/cluster available.
 
-STATUS: P0 (integrity) + P1 scaffolding + P1b (OFT baseline fix) + P1a (RQ4 real attention) DONE and pushed. >>> NEXT UP: P2 (Statistical power / episode scale), P3 (RQ5 mitigation decision). <<<
+STATUS: P0 (integrity) + P1 scaffolding + P1b (OFT baseline fix) + P1a (RQ4 real
+        attention) DONE and pushed. >>> NEXT UP: P2 (statistical power) — sbatch
+        job arrays IMPLEMENTED in run/slurm/p2_rq1_*.sbatch, ready to submit (see
+        section 3). Then P3 (RQ5) needs the method decision in section 4. <<<
 
 This file is the single source of truth for the current state and the handoff.
 Companion docs (tracked, because *.md is gitignored in this repo):
@@ -119,17 +122,35 @@ P1b. Fix the mislabeled OFT baseline — [DONE, commit 9dcf777; see section 1].
      Root cause was in run/aggregate.py (hardcoded labels), now fixed for all
      future aggregations.
 
-P2. Statistical power on the real core — ~1 week
-   - Re-run RQ1 (all conditions, 3 models) and RQ2 sample cells at >=20
-     episodes/task and BOTH seeds (7, 42). Several SmolVLA/OFT conditions are
-     seed-7-only today; RQ1 was run at only 2 episodes/task (n=40/cond total).
-   - This run also backfills the OFT seed42 original checkpoint_hash (null today)
-     since eval_task_oft.py now records it.
-   - Scale RQ3 pair counts. Recompute CSS/OAR/PRIDE/divergence; refresh all
-     RQ1-RQ3 CSVs/plots + MANIFEST. Add seed variance / CIs to headline tables.
-   - NOTE: with the OFT baseline now genuinely at 1.0 (seed7), the reported
-     0.975 rests on only 2 seeds x 2 eps/task. Higher n here is the single most
-     important robustness item for the headline numbers.
+P2. Statistical power on the real core  <<< NEXT UP — sbatch READY >>> — ~1 week
+   WHY: RQ1 currently rests on only 2 episodes/task (n=40/cond total). grid.yaml
+   calls for 20/task (SmolVLA) and 10/task (7B) across seeds 7,42. This is the
+   single most important robustness item for the headline numbers.
+
+   IMPLEMENTED — SLURM job arrays (one EGL process per seed x task, own GPU):
+     run/slurm/p2_rq1_smolvla.sbatch   (array 0-19: 2 seeds x 10 tasks, 20 eps)
+     run/slurm/p2_rq1_openvla.sbatch   (array 0-19, 10 eps)
+     run/slurm/p2_rq1_oft.sbatch       (array 0-19, 10 eps)
+     run/slurm/p2_aggregate.sbatch     (run ONCE after all arrays finish)
+   All 7 causal conditions (original,blank,nonsense,wrong_object,wrong_action,
+   wrong_task,repeated). Runners are resumable (top up each task<tid>.jsonl to
+   --n_episodes; re-submit after a timeout to continue). Tunables via env:
+   N_EPISODES=..., CONDITIONS=..., SEEDS edited in-script.
+
+   RUN ORDER (submit yourself):
+     sbatch run/slurm/p2_rq1_smolvla.sbatch
+     sbatch run/slurm/p2_rq1_openvla.sbatch
+     sbatch run/slurm/p2_rq1_oft.sbatch
+     # wait for all three arrays to finish, then:
+     sbatch run/slurm/p2_aggregate.sbatch
+   Outputs: refreshed report/rq1_causal.csv (TSR_std_over_seeds = CIs), rq1_scale.csv,
+   rq1_*.png; MANIFEST.json grows. Also backfills the OFT seed42 original hash.
+
+   STILL TODO after the above lands (separate, smaller):
+   - Scale RQ2 paraphrase cells (higher --n_episodes/paraphrase; add seed 42) and
+     RQ3 pair counts; recompute PRIDE/divergence; refresh rq2_*/rq3_* + plots.
+   - Optional: add seed 123 (grid.yaml lists it) for tighter CIs — edit SEEDS and
+     bump --array to 0-29 in the P2 scripts.
 
 P3. RQ5 mitigation — REQUIRES A METHOD DECISION FIRST (see section 4) — 1-2 weeks
    - Decide the guidance operator (unified vs OpenVLA-only), then add
