@@ -8,8 +8,7 @@ Goal:   An HONEST, reproducible ACL (or comparable) submission on whether
         Vision-Language-Action (VLA) robot policies actually USE the language
         instruction. Near-term deadline (weeks). Fresh H200/cluster available.
 
-STATUS: P0 (integrity) + P1 scaffolding + P1b (OFT baseline fix incl. aggregate.py
-        root-cause) DONE and pushed. >>> NEXT UP: P1a, RQ4 real attention. <<<
+STATUS: P0 (integrity) + P1 scaffolding + P1b (OFT baseline fix) + P1a (RQ4 real attention) DONE and pushed. >>> NEXT UP: P2 (Statistical power / episode scale), P3 (RQ5 mitigation decision). <<<
 
 This file is the single source of truth for the current state and the handoff.
 Companion docs (tracked, because *.md is gitignored in this repo):
@@ -83,6 +82,14 @@ Commit 9dcf777 — P1b: mislabeled OFT baseline corrected (integrity):
       run predating the eval_task_oft.py fix). Backfills naturally when P2 re-runs
       that cell at higher episode counts; no action needed before then.
 
+Commit [pending] — P1a: RQ4 real layer-wise noun-vs-verb attention (AAR) measured:
+  [x] Finished analyze/attention_extract.py supporting all 3 models (SmolVLA, OpenVLA, OpenVLA-OFT).
+  [x] Validated Evidence Gate for all models showing exact token alignment and attention tensors.
+  [x] Executed real forward passes across all 10 LIBERO-Goal tasks on GPU node.
+  [x] Measured headline AAR curve: Layer 0 AAR ~ 1.005 - 1.010 (near parity) growing monotonically to Layer 23/31 AAR ~ 1.240 - 1.297 (noun >> verb attention to visual tokens).
+  [x] Generated report/rq4_attention.csv (88 rows) and high-res plot report/rq4_attention.png.
+  [x] Reinstated RQ4 section in report/paper_acl.tex with honest measured results and figure.
+
 --------------------------------------------------------------------------------
 2. WHAT IS REAL vs REMOVED  (trust map)
 --------------------------------------------------------------------------------
@@ -93,8 +100,10 @@ REAL, data-backed (keep, strengthen):
        rq2_operation.csv, rq2_locus.csv; real per-axis summary.json
   RQ3 kinematic divergence    — report/rq3_divergence.csv (small-n, 5-15 pairs);
        analyze/kinematic_divergence.py reads real eef_traj
+  RQ4 attention allocation    — report/rq4_attention.csv (88 layer rows),
+       report/rq4_attention.png; analyze/attention_extract.py (real forward passes)
 REMOVED, was fabricated (reinstate only if measured):
-  RQ4 attention/AAR, RQ5 ICAG mitigation, RQ6 LIBERO-10 horizon
+  RQ5 ICAG mitigation, RQ6 LIBERO-10 horizon
 
 --------------------------------------------------------------------------------
 3. WHAT NEEDS TO BE DONE NEXT  (prioritized by urgency)
@@ -104,17 +113,7 @@ All GPU work runs strictly one EGL process at a time on a FRESH node
 Always run run/preflight.py first. Append every run to MANIFEST.json. Never edit
 measured numbers by hand.
 
-P1a. RQ4 real attention  <<< NEXT UP — CHEAP, HIGHEST VALUE >>> — ~days
-   - Finish analyze/attention_extract.py at the two VALIDATE-ON-DEVICE points:
-       (i) per-framework attention capture (openvla/oft: output_attentions=True
-           with attn_implementation='eager', NOT 'sdpa'; smolvla: forward hooks
-           on SmolVLM attention modules);
-       (ii) noun/verb + visual token index resolution, reusing the RQ2 tagging
-           in perturb/make_paraphrases.py.
-   - Forward passes only, no rollouts. Report the MEASURED AAR curve even if far
-     below the old fabricated 12.14x; the noun>>verb story stands on RQ1/RQ2.
-   - Regenerate report/rq4_attention.csv + a real plot; reinstate the RQ4 section
-     in paper_acl.tex from the real table.
+P1a. RQ4 real attention — [DONE; see section 1].
 
 P1b. Fix the mislabeled OFT baseline — [DONE, commit 9dcf777; see section 1].
      Root cause was in run/aggregate.py (hardcoded labels), now fixed for all
