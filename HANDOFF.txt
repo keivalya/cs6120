@@ -8,10 +8,12 @@ Goal:   An HONEST, reproducible ACL (or comparable) submission on whether
         Vision-Language-Action (VLA) robot policies actually USE the language
         instruction. Near-term deadline (weeks). Fresh H200/cluster available.
 
-STATUS: P0 (integrity) + P1 scaffolding + P1b (OFT baseline fix) + P1a (RQ4 real
-        attention) DONE and pushed. >>> NEXT UP: P2 (statistical power) — sbatch
-        job arrays IMPLEMENTED in run/slurm/p2_rq1_*.sbatch, ready to submit (see
-        section 3). Then P3 (RQ5) needs the method decision in section 4. <<<
+STATUS: P0 (integrity) + P1 scaffolding + P1b (OFT fix) + P1a (RQ4 real attention)
+        + P4 (paper first draft: abstract/intro/related work/metrics/limitations/
+        ethics) DONE and pushed. >>> ON YOU: submit the P2 sbatch job arrays
+        (run/slurm/p2_rq1_*.sbatch, then p2_aggregate.sbatch) to scale episodes;
+        after they land, refresh the paper's RQ1 numbers. P3 (RQ5) deferred by
+        decision. Build the PDF on a LaTeX machine. <<<
 
 This file is the single source of truth for the current state and the handoff.
 Companion docs (tracked, because *.md is gitignored in this repo):
@@ -158,16 +160,26 @@ P3. RQ5 mitigation — REQUIRES A METHOD DECISION FIRST (see section 4) — 1-2 
      on the paraphrase axes, recompute PRIDE via analyze/pride_wrap.py, write a
      real report/rq5_mitigation.csv, reinstate the RQ5 section.
 
-P4. Write the paper (parallel with runs; no GPU needed) — continuous
-   - paper_acl.tex still has EMPTY stubs: Abstract, Introduction body, Related
-     Work ("left blank per instructions"). Fill them.
-   - Add a Methods/Metrics subsection formally DEFINING CSS, OAR, PRIDE (and AAR
-     once RQ4 is real) — they are used but never defined.
-   - Add Limitations (single suite, simulation-only, no real robot, episode
-     counts) and Ethics/Reproducibility sections (ACL norms).
-   - Related-work positioning: causal isolation + noun>>verb asymmetry +
-     (once real) mechanistic attention + cheap fix, vs kim2026liberopara/PRIDE,
-     hou2026langgap, fei2025liberoplus, pang2025openvla (see report/references.bib).
+P4. Write the paper (no GPU needed) — FIRST DRAFT DONE; needs a real build + polish
+   DONE (paper_acl.tex now has full prose):
+     [x] Abstract, Introduction body, Related Work (all three former stubs filled;
+         cites all 10 references.bib keys).
+     [x] Metrics subsection formally defining CSS, OAR, PRIDE, AAR.
+     [x] Limitations + Ethics/Reproducibility sections (ACL norms).
+     [x] Discussion/Conclusion updated: RQ4 is done (attention correlate, honest
+         about the modest ~1.24 AAR), only the RQ5 mitigation is future work.
+     [x] Fixed LaTeX bugs: unescaped & in the RQ2 caption; markdown **bold** ->
+         \textbf. Structural check passes (envs/braces balanced, refs wired).
+   STILL TODO:
+   - Build the PDF on a LaTeX machine (no pdflatex/reportlab in the agent env):
+     `pdflatex paper_acl && bibtex paper_acl && pdflatex x2` in report/. Confirm
+     no undefined refs/citations and the figures resolve.
+   - REFRESH NUMBERS after P2 lands: the RQ1 table (N=40, 2 eps/task) and its
+     inline mentions will change once episode counts scale; re-sync abstract +
+     RQ1 table + Discussion to the P2 CSVs. Numbers are currently the honest
+     pre-P2 values.
+   - Optional: promote RQ4 from \section to \subsection under Empirical Results
+     for numbering consistency.
 
 P5. Build + reproducibility polish — days, before submission
    - Rebuild PDFs on a LaTeX machine: pdflatex on report/paper_acl.tex (real
