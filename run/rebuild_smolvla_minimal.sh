@@ -29,22 +29,33 @@ echo "=== minimal vla-smolvla -> $PREFIX (python 3.12) ==="
 rm -rf "$PREFIX"
 conda create -y -p "$PREFIX" python=3.12 || { echo "FATAL: conda create failed"; exit 1; }
 PIP="$PREFIX/bin/pip"
-# egl_probe/hf-egl-probe shell out to `cmake` during their build, so the env's
-# bin/ must be on PATH — pip-installing cmake alone is not enough.
 export PATH="$PREFIX/bin:$PATH"
 
-# Hold the four packages the measured runs used (envs/vla-smolvla.lock.txt) so a
-# loose resolve can't silently swap the torch/transformers the results were made on.
+# Hold the packages whose version the measured runs depended on
+# (envs/vla-smolvla.lock.txt) so a loose resolve can't silently swap out the
+# torch/transformers stack, the gym API, or bump opencv across a major version.
 CONSTRAINTS="$PREFIX/constraints.txt"
 cat > "$CONSTRAINTS" <<'EOF'
 torch==2.10.0
 torchvision==0.25.0
 transformers==5.1.0
 numpy==2.2.6
+gymnasium==1.2.3
+opencv-python==4.13.0.92
+opencv-python-headless==4.10.0.84
 EOF
 
 "$PIP" install --upgrade pip wheel setuptools
 "$PIP" install "cmake<4" num2words
+
+# egl_probe/hf-egl-probe shell out to a bare `cmake` from their setup.py. The pip
+# cmake wheel's bin/cmake is a Python console script (`from cmake import cmake`),
+# and under pip's build isolation that import fails -> exit 1 -> "CMake must be
+# installed". Put the wheel's REAL cmake binary (site-packages/cmake/data/bin)
+# first on PATH instead; it has no Python dependency.
+CMAKE_REAL_BIN=$("$PREFIX/bin/python" -c "import cmake,os;print(os.path.join(os.path.dirname(cmake.__file__),'data','bin'))")
+export PATH="$CMAKE_REAL_BIN:$PATH"
+command -v cmake >/dev/null && cmake --version || { echo "FATAL: no working cmake at $CMAKE_REAL_BIN"; exit 1; }
 
 echo "[pip] LeRobot @ $LEROBOT_COMMIT (with [smolvla] extra)..."
 "$PIP" install -c "$CONSTRAINTS" "lerobot[smolvla] @ git+https://github.com/huggingface/lerobot.git@${LEROBOT_COMMIT}" \
