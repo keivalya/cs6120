@@ -15,11 +15,13 @@
 #
 #SBATCH --job-name=p2-rq1-sm
 #SBATCH --partition=gpu
+# Untyped on purpose: SmolVLA is 0.45B and runs fine on v100 (the existing
+# data was measured there and on h200), so keep the widest node pool. Pass
+# --gres=gpu:h200:1 when you want the fast pool.
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
 #SBATCH --time=08:00:00
-#SBATCH --exclude=d4054
 #SBATCH --output=p2-rq1-sm-%j.out
 #SBATCH --error=p2-rq1-sm-%j.out
 
@@ -31,7 +33,12 @@ export SCRATCH=/scratch/pandya.kei
 export HF_HOME=$SCRATCH/hf_home
 export HF_HUB_CACHE=$HF_HOME/hub
 export MUJOCO_GL=egl
-export MUJOCO_EGL_DEVICE_ID=0
+# EGL enumerates PHYSICAL devices and ignores CUDA_VISIBLE_DEVICES, so a
+# hardcoded 0 makes every concurrent job on a node render on physical GPU 0 while
+# computing on its own GPU. That is the documented NVRM Xid 31 / degraded-channel
+# trigger (report/GATE3_STATUS.md) and it only bites once >1 of these run per
+# node — which is exactly what filling 4+ GPU slots does. Derive it instead.
+export MUJOCO_EGL_DEVICE_ID=$(echo "${SLURM_STEP_GPUS:-${SLURM_JOB_GPUS:-0}}" | cut -d, -f1)
 export TOKENIZERS_PARALLELISM=false
 export TF_XLA_FLAGS="--tf_xla_auto_jit=-1"
 
