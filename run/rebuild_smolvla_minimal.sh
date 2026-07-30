@@ -29,16 +29,29 @@ echo "=== minimal vla-smolvla -> $PREFIX (python 3.12) ==="
 rm -rf "$PREFIX"
 conda create -y -p "$PREFIX" python=3.12 || { echo "FATAL: conda create failed"; exit 1; }
 PIP="$PREFIX/bin/pip"
+# egl_probe/hf-egl-probe shell out to `cmake` during their build, so the env's
+# bin/ must be on PATH — pip-installing cmake alone is not enough.
+export PATH="$PREFIX/bin:$PATH"
+
+# Hold the four packages the measured runs used (envs/vla-smolvla.lock.txt) so a
+# loose resolve can't silently swap the torch/transformers the results were made on.
+CONSTRAINTS="$PREFIX/constraints.txt"
+cat > "$CONSTRAINTS" <<'EOF'
+torch==2.10.0
+torchvision==0.25.0
+transformers==5.1.0
+numpy==2.2.6
+EOF
 
 "$PIP" install --upgrade pip wheel setuptools
 "$PIP" install "cmake<4" num2words
 
 echo "[pip] LeRobot @ $LEROBOT_COMMIT (with [smolvla] extra)..."
-"$PIP" install "lerobot[smolvla] @ git+https://github.com/huggingface/lerobot.git@${LEROBOT_COMMIT}" \
-  || "$PIP" install "lerobot @ git+https://github.com/huggingface/lerobot.git@${LEROBOT_COMMIT}"
+"$PIP" install -c "$CONSTRAINTS" "lerobot[smolvla] @ git+https://github.com/huggingface/lerobot.git@${LEROBOT_COMMIT}" \
+  || "$PIP" install -c "$CONSTRAINTS" "lerobot @ git+https://github.com/huggingface/lerobot.git@${LEROBOT_COMMIT}"
 
 echo "[pip] LIBERO env deps (hf_libero provides the 'libero' module)..."
-"$PIP" install "hf_libero==0.1.4" "robosuite==1.4.0" "mujoco==3.4.0"
+"$PIP" install -c "$CONSTRAINTS" "hf_libero==0.1.4" "robosuite==1.4.0" "mujoco==3.4.0"
 
 echo "[smoke] importing exactly what run/eval_task.py needs..."
 "$PREFIX/bin/python" - <<'PY'
