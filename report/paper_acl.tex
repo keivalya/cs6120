@@ -89,7 +89,7 @@ policies scale vision-language pretraining to robot control. RT-1 and RT-2
 transformer policies that ingest language and pixels; OpenVLA \citep{kim2025openvla}
 open-sourced a 7B Prismatic-backbone policy with discretized action tokens, and
 SmolVLA \citep{shukor2025smolvla} showed a compact ($<1$B) alternative. We study
-these families directly, adding OpenVLA-OFT (an L1-regression, FiLM-conditioned
+these families directly, adding OpenVLA-OFT (an L1-regression continuous-action
 fine-tune), to probe whether language grounding changes with scale or action-head
 design.
 
@@ -113,7 +113,10 @@ cross-attention correlate for it---moving from ``VLAs are language-fragile'' tow
 We conduct all evaluations on the \texttt{LIBERO-Goal} benchmarking suite in MuJoCo, chosen because every task in the suite shares an identical initial scene, so the instruction is the only cue that disambiguates the task. Initial simulator physical states are verified for $100\%$ scene-fixed invariance ($S_0(I_{\text{orig}}) \equiv S_0(I_{\text{pert}})$). We evaluate three representative VLA model backbones:
 (1) \textbf{SmolVLA-500M} (SigLIP + SmolVLM + tokenized action head, $256\times256$ observations);
 (2) \textbf{OpenVLA-7B} (Prismatic VLM backbone with LLaMA-2 7B, $224\times224$ observations);
-(3) \textbf{OpenVLA-OFT-7.5B} (Orthogonal Fine-Tuning with FiLM feature modulation layers).
+(3) \textbf{OpenVLA-OFT-7.5B} (Orthogonal Fine-Tuning with an L1-regression
+continuous action head, an 8-step action chunk, plus a wrist camera and 8-dimensional
+proprioception; the public LIBERO-Goal release we evaluate is trained \emph{without}
+FiLM, so we make no FiLM claims).
 
 All experiments are evaluated across random seeds ($7, 42$) with maximum rollout
 horizon $T=300$ steps per episode; each reported cell aggregates all episodes for
@@ -148,23 +151,27 @@ goal predicate) under condition $c$, and $\text{TSR}_0$ the baseline
 \section{Empirical Results \& Analysis}
 
 \subsection{RQ1: Structural \& Semantic Causal Probes}
-Table~\ref{tab:rq1_causal} details Task Success Rates (TSR), Change Severity Scores (CSS), and Object Action Reliance (OAR) metrics under structural and semantic instruction corruptions ($N=40$ per condition across seeds 7, 42).
+Table~\ref{tab:rq1_causal} details Task Success Rates (TSR), Change Severity Scores (CSS), and Object Action Reliance (OAR) metrics under structural and semantic instruction corruptions. Per-condition episode counts are given in the table; Table~\ref{tab:rq1_causal_full} reports each cell with its 95\% Wilson confidence interval.
 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lcccccc}
-\toprule
-\textbf{Model} & \textbf{Baseline TSR} & \textbf{Blank (CSS)} & \textbf{Nonsense (CSS)} & \textbf{Wrong Action} & \textbf{Wrong Object} & \textbf{Wrong Task (OAR)} \\
-\midrule
-SmolVLA (500M) & 72.5\% & 0.0\% (1.00) & 0.0\% (1.00) & 57.5\% & \textbf{7.1\%} & 0.0\% (0.00) \\
-OpenVLA (7B) & 70.0\% & 0.0\% (1.00) & 0.0\% (1.00) & 50.0\% & \textbf{7.1\%} & 0.0\% (0.00) \\
-OpenVLA-OFT (7.5B) & \textbf{97.5\%} & \textbf{12.5\%} (0.87) & \textbf{7.5\%} (0.92) & \textbf{97.5\%} & \textbf{7.1\%} & 0.0\% (0.00) \\
-\bottomrule
-\end{tabular}
-\caption{Causal Sensitivity Probe Results across Structural and Semantic Instruction Perturbations (LIBERO-Goal).}
+\input{tables/rq1_causal}
+\caption{Causal Sensitivity Probe Results across Structural and Semantic Instruction Perturbations (LIBERO-Goal). \input{tables/rq1_n_note}}
 \label{tab:rq1_causal}
 \end{table*}
+
+\begin{table}[t]
+\centering
+\small
+\input{tables/rq1_causal_full}
+\caption{Every RQ1 cell with its episode count and 95\% Wilson confidence interval,
+pooled over seeds 7 and 42. The intervals are wide where $n$ is small: the
+\texttt{wrong\_object} rate, our largest behavioural effect, rests on $n=28$ per model
+and its interval spans roughly 20 points, so we read it as ``near-total collapse''
+rather than as a precise value shared across architectures.}
+\label{tab:rq1_causal_full}
+\end{table}
 
 \begin{figure}[h]
 \centering
@@ -181,31 +188,12 @@ Table~\ref{tab:rq2_para} evaluates model degradation and PRIDE metrics across na
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Model} & \textbf{Paraphrase Axis} & \textbf{TSR} & \textbf{$\Delta$TSR (pp)} & \textbf{PRIDE} \\
-\midrule
-SmolVLA & Object & 29.73\% & -42.77 & 28.7 \\
-SmolVLA & Action & 7.24\% & -65.26 & 4.8 \\
-SmolVLA & Compositional & 1.78\% & -70.72 & \textbf{1.5} \\
-SmolVLA & \textbf{ALL AXES} & \textbf{4.69\%} & \textbf{-67.81} & \textbf{2.7} \\
-\hline
-OpenVLA & Object & 48.00\% & -22.00 & 36.3 \\
-OpenVLA & Action & 60.67\% & -9.33 & 51.8 \\
-OpenVLA & Compositional & 24.00\% & -46.00 & 20.2 \\
-OpenVLA & \textbf{ALL AXES} & \textbf{44.22\%} & \textbf{-25.78} & \textbf{33.3} \\
-\hline
-OpenVLA-OFT & Object & 78.00\% & -19.50 & 72.5 \\
-OpenVLA-OFT & Action & 90.67\% & -6.83 & 86.3 \\
-OpenVLA-OFT & Compositional & 54.00\% & -43.50 & 50.3 \\
-OpenVLA-OFT & \textbf{ALL AXES} & \textbf{74.22\%} & \textbf{-23.28} & \textbf{65.8} \\
-\bottomrule
-\end{tabular}
+\input{tables/rq2_para}
 \caption{Paraphrase Robustness \& PRIDE Evaluation Metrics.}
 \label{tab:rq2_para}
 \end{table}
 
-SmolVLA-500M exhibits catastrophic representation collapse ($4.69\%$ overall TSR, PRIDE 2.7). OpenVLA-OFT maintains $74.22\%$ overall paraphrase TSR due to FiLM feature modulation layers.
+SmolVLA-500M exhibits catastrophic representation collapse ($4.69\%$ overall TSR, PRIDE 2.7). OpenVLA-OFT maintains $74.22\%$ overall paraphrase TSR. We do not attribute this to FiLM: the checkpoint we evaluate is the plain OFT release (\texttt{use\_film=false} in our config), and no FiLM-trained LIBERO-Goal checkpoint is publicly available, so a FiLM-conditioned comparison remains untested here.
 
 \subsection{RQ3: Kinematic Trajectory Divergence Profile}
 Table~\ref{tab:rq3_divergence} details kinematic trajectory divergence metrics between canonical and perturbed rollouts sharing identical initial physical states $S_0$.
@@ -213,18 +201,7 @@ Table~\ref{tab:rq3_divergence} details kinematic trajectory divergence metrics b
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{llcc}
-\toprule
-\textbf{Model} & \textbf{Condition} & \textbf{$t_{\text{div}}$ Step} & \textbf{$e(T)$ Error [m]} \\
-\midrule
-SmolVLA & blank & 1.00 & 0.5285 \\
-SmolVLA & nonsense & 1.85 & 0.3846 \\
-SmolVLA & wrong\_action & 8.31 & 0.1845 \\
-OpenVLA-OFT & blank & 1.33 & 0.6333 \\
-OpenVLA-OFT & wrong\_action & 11.33 & \textbf{0.0201} \\
-OpenVLA-OFT & para\_action & 12.78 & \textbf{0.0075} \\
-\bottomrule
-\end{tabular}
+\input{tables/rq3_divergence}
 \caption{Kinematic Divergence Timesteps ($t_{\text{div}}$) and EEF Error $e(T)$.}
 \label{tab:rq3_divergence}
 \end{table}
@@ -282,9 +259,13 @@ mechanistically---noun tokens allocate progressively more visual cross-attention
 than verb tokens with depth (RQ4). We report this as a correlate rather than a
 proven cause; the measured ratio is modest ($\text{AAR}\!\approx\!1.24$ at the
 final layers), so the behavioral asymmetry does not rest on it.
-(3) \textbf{FiLM Visual Shortcutting}: FiLM feature modulation raises baseline
-success but introduces a measurable visual shortcut ($12.5\%$ success under blank
-prompts, versus $0\%$ for the non-FiLM backbones).
+(3) \textbf{Extra Observation Streams and Visual Shortcutting}: OpenVLA-OFT is the
+only model here with a wrist camera and proprioceptive input, and it is also the only
+one that retains measurable success without a usable instruction ($12.5\%$ under blank
+prompts, versus $0\%$ for the two single-camera policies). We flag the association
+between richer non-linguistic observation and residual visual shortcutting; with one
+model in that configuration we cannot isolate the cause, and it is not attributable to
+FiLM, which this checkpoint does not use.
 
 \section{Conclusion}
 We presented a scene-fixed causal and paraphrase evaluation of three
