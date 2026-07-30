@@ -33,12 +33,16 @@ export SCRATCH=/scratch/pandya.kei
 export HF_HOME=$SCRATCH/hf_home
 export HF_HUB_CACHE=$HF_HOME/hub
 export MUJOCO_GL=egl
-# EGL enumerates PHYSICAL devices and ignores CUDA_VISIBLE_DEVICES, so a
-# hardcoded 0 makes every concurrent job on a node render on physical GPU 0 while
-# computing on its own GPU. That is the documented NVRM Xid 31 / degraded-channel
-# trigger (report/GATE3_STATUS.md) and it only bites once >1 of these run per
-# node — which is exactly what filling 4+ GPU slots does. Derive it instead.
-export MUJOCO_EGL_DEVICE_ID=$(echo "${SLURM_STEP_GPUS:-${SLURM_JOB_GPUS:-0}}" | cut -d, -f1)
+# Must be an index INTO CUDA_VISIBLE_DEVICES, not a physical device id:
+# robosuite/utils/binding_utils.py:31-35 asserts MUJOCO_EGL_DEVICE_ID is one of the
+# ids in CUDA_VISIBLE_DEVICES and aborts the import otherwise.
+# Measured on this cluster (job 8827909): a 1-GPU job gets CUDA_VISIBLE_DEVICES=0
+# while SLURM_JOB_GPUS=2 (the physical index), nvidia-smi -L lists exactly one
+# device, and egl_probe.get_available_devices() returns [0]. So SLURM's device
+# cgroup already isolates the GPU: 0 IS the allocated device, and concurrent jobs
+# on one node do NOT collide on physical GPU 0. Deriving this from SLURM_JOB_GPUS
+# instead looks safer but breaks the assertion outright (job 8827887).
+export MUJOCO_EGL_DEVICE_ID=$(echo "${CUDA_VISIBLE_DEVICES:-0}" | cut -d, -f1)
 export TOKENIZERS_PARALLELISM=false
 export TF_XLA_FLAGS="--tf_xla_auto_jit=-1"
 

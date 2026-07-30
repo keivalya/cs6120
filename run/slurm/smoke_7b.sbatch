@@ -25,7 +25,8 @@ export HF_HOME=$SCRATCH/hf_home
 export HF_HUB_CACHE=$HF_HOME/hub
 export HF_HUB_OFFLINE=1
 export MUJOCO_GL=egl
-export MUJOCO_EGL_DEVICE_ID=$(echo "${SLURM_STEP_GPUS:-${SLURM_JOB_GPUS:-0}}" | cut -d, -f1)
+# index into CUDA_VISIBLE_DEVICES — robosuite asserts this (see p2_rq1_*.sbatch)
+export MUJOCO_EGL_DEVICE_ID=$(echo "${CUDA_VISIBLE_DEVICES:-0}" | cut -d, -f1)
 export LIBERO_CONFIG_PATH=/home/pandya.kei/.libero_openvla
 export TOKENIZERS_PARALLELISM=false
 export TF_CPP_MIN_LOG_LEVEL=3
