@@ -22,6 +22,14 @@ import torch
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "run"))
 
+# Must happen before any libero/lerobot.envs.libero import: LIBERO reads
+# LIBERO_CONFIG_PATH at import time. A stale config is what this check used to
+# misreport as a degraded GPU channel.
+from libero_paths import assert_libero_config, use_smolvla_config  # noqa: E402
+
+use_smolvla_config()
+assert_libero_config()
+
 ap = argparse.ArgumentParser()
 ap.add_argument("--task_id", type=int, default=1)
 ap.add_argument("--obs_hw", type=int, default=360)

@@ -47,7 +47,11 @@ if [ -n "${SEED_ONLY:-}" ]; then SEEDS="$SEED_ONLY"; else SEEDS="7 42"; fi
 LOG=$SCRATCH/p2_rq1_oft_${SLURM_JOB_ID:-manual}.log
 echo "=== P2 OFT RQ1 | seeds=[$SEEDS] tasks=[$TASKS] n_ep=$N_EPISODES | $(hostname|cut -d. -f1) $(date) ===" | tee "$LOG"
 
-$SM run/preflight.py >> "$LOG" 2>&1 || { echo "PREFLIGHT FAILED — channel degraded, need a fresh node." | tee -a "$LOG"; exit 1; }
+$SM run/preflight.py >> "$LOG" 2>&1 || {
+  echo "PREFLIGHT FAILED on $(hostname|cut -d. -f1) — real error below (do NOT assume a bad node):" | tee -a "$LOG"
+  tail -30 "$LOG"
+  exit 1
+}
 
 for SEED in $SEEDS; do
   for TID in $TASKS; do

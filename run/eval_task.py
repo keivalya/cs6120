@@ -34,6 +34,12 @@ import torch
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "run"))
 
+# Before any libero import (LIBERO reads LIBERO_CONFIG_PATH at import time).
+from libero_paths import assert_libero_config, use_smolvla_config  # noqa: E402
+
+use_smolvla_config()
+assert_libero_config()
+
 ap = argparse.ArgumentParser()
 ap.add_argument("--model", default="smolvla")
 ap.add_argument("--suite", default="libero_goal")
