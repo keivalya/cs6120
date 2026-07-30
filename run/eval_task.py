@@ -258,7 +258,15 @@ for label, items in groups:
             if ep_global < len(existing_records):
                 ep_global += 1
                 continue
-            vec.set_attr("init_state_id", ep_global % 2)
+            # Episode k -> init state k (50 available per LIBERO task). ep_global
+            # restarts at 0 for every condition group, so episode k sees the SAME
+            # scene in every condition — that matching is what makes the causal
+            # claims scene-fixed. This used to be `ep_global % 2`, which pinned
+            # every episode to one of just 2 scenes: at 10 eps/task that is 5
+            # repeats of 2 scenes, so extra episodes bought policy-seed variance
+            # only, left the CIs scene-limited, and kept RQ3's pair count at 2.
+            # The 7B runners already index all init states this way.
+            vec.set_attr("init_state_id", ep_global)
             vec.set_attr("task_description", text)
             policy.reset()
             set_all_seeds(args.seed + ep_global)

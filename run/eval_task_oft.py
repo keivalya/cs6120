@@ -261,10 +261,26 @@ for label, items in groups:
         except Exception:
             pass
 
+    # Resume, don't restart — see the same block in run/eval_task_openvla.py.
+    # "w" mode meant a wall-time kill discarded the whole in-progress task.
+    existing_records = []
+    if out_file.exists():
+        try:
+            with open(out_file) as f:
+                existing_records = [json.loads(l) for l in f if l.strip()]
+        except Exception:
+            pass
+    if existing_records:
+        print(f"[{args.model} {tid} {label}] resuming after {len(existing_records)}"
+              f"/{expected_lines} eps", flush=True)
+
     ep_global = 0
-    with open(out_file, "w") as ep_file:
+    with open(out_file, "a" if existing_records else "w") as ep_file:
         for text, extra in items:
           for ep in range(args.n_episodes):
+            if ep_global < len(existing_records):
+                ep_global += 1
+                continue
             set_all_seeds(args.seed + ep_global)
             env.reset()
             obs = env.set_init_state(init_states[ep_global % len(init_states)])
