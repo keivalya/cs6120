@@ -22,6 +22,9 @@ Used by the runners (called at each episode's final state) to record
 from __future__ import annotations
 
 import os
+import sys
+
+_WARNED = False  # print the first predicate-evaluation failure, then stay quiet
 
 
 def load_goal_states(suite, bddl_dir, task_name_by_id):
@@ -43,9 +46,29 @@ def load_goal_states(suite, bddl_dir, task_name_by_id):
 def _problem_env(env):
     """Unwrap to the robosuite problem env exposing _eval_predicate/object_states_dict.
 
-    Runners pass an OffScreenRenderEnv (ControlEnv): its `.env` is the problem env.
+    A bare `return env.env` only works when the caller hands us an OffScreenRenderEnv
+    (ControlEnv), which is true for the 7B runners but not in general — the SmolVLA
+    path goes through lerobot wrappers, and one wrong hop returns an object with no
+    _eval_predicate, whereupon eval_goal_on_env's except-clause silently reports "goal
+    not achieved". That is what produced empty achieved_task_ids on successful SmolVLA
+    episodes (12 such records remain in the committed data vs 0 for both 7B models).
+    So walk the wrapper chain and stop at the first object that can actually answer.
     """
-    return env.env
+    seen = set()
+    cur = env
+    for _ in range(8):  # bounded: wrapper chains are short, and .env can self-reference
+        if cur is None or id(cur) in seen:
+            break
+        seen.add(id(cur))
+        if hasattr(cur, "_eval_predicate") and hasattr(cur, "object_states_dict"):
+            return cur
+        cur = getattr(cur, "env", None) or getattr(cur, "unwrapped", None)
+    # Nothing in the chain can evaluate predicates. Say so instead of letting the
+    # caller's except-clause turn it into a quiet False.
+    raise AttributeError(
+        f"no robosuite problem env with _eval_predicate/object_states_dict found by "
+        f"unwrapping {type(env).__name__}"
+    )
 
 
 def eval_goal_on_env(env, goal_state):
@@ -67,8 +90,16 @@ def eval_goal_on_env(env, goal_state):
             if not pe._eval_predicate(state):
                 return False
         return True
-    except Exception:
-        # Never let a predicate quirk crash the rollout; treat as unsatisfied.
+    except Exception as e:
+        # Never let a predicate quirk crash the rollout; treat as unsatisfied. But do
+        # NOT swallow it silently — a mis-resolved env used to look exactly like "goal
+        # not achieved", which is how the SmolVLA goal-logging bug stayed invisible.
+        global _WARNED
+        if not _WARNED:
+            _WARNED = True
+            print(f"[goal_eval] WARNING: predicate evaluation failed ({type(e).__name__}: "
+                  f"{e}); reporting goals as unachieved. Further warnings suppressed.",
+                  file=sys.stderr, flush=True)
         return False
 
 

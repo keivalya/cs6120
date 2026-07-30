@@ -95,12 +95,56 @@ summary.json files persist. Decide a retention policy for the raw eef/episode
 trajectories (external archive or documented re-run recipe) before release.
 
 --------------------------------------------------------------------------------
-5. RQ4 ATTENTION: VALIDATE THE VISUAL-TOKEN SPAN  (OPEN — verify before paper)
+5. RQ4 ATTENTION  (OPEN — the shipped CSV covers 2 models, not 3)
 --------------------------------------------------------------------------------
-RQ4 (report/rq4_attention.csv via analyze/attention_extract.py) is REAL — real
-forward passes, honestly reported (measured AAR ~1.005 -> ~1.24, far below the
-old fabricated 12.14x; the noun>>verb trend is what matters and it holds). Two
-things to validate before the paper leans on the magnitudes:
+CORRECTION (2026-07-29). This section previously stated that RQ4 "is REAL". That
+was too strong and is now known to be wrong for one of the three models. What the
+committed report/rq4_attention.csv actually contains:
+
+  (a) DUPLICATED MODEL BLOCK — SHIPPED, NOW BEING RE-MEASURED. The openvla_oft
+      rows are BIT-IDENTICAL to the openvla rows across all 32 layers and both
+      attention columns (64/64 values equal to 6 decimals). The two checkpoints
+      are different repos whose safetensors differ by md5, so identical values to
+      1e-6 are not physically possible: the openvla_oft block is a relabelled copy
+      of the openvla block. RQ4 as shipped measured TWO models, and
+      report/paper_acl.tex:255's "Architectural Universality ... across both
+      LLaMA-based and SmolLM2-based backbone families" had no third measurement
+      behind it.
+      ROOT CAUSE (a real script bug, not a transcription slip):
+      analyze/attention_extract.py wrote ONE combined CSV and overwrote it on
+      every invocation, while the three models require three different conda envs
+      and therefore three separate processes — so each per-model run clobbered the
+      previous one and recombining was a manual step.
+      FIX (commit 50b999b): per-model shards report/rq4_attention_<model>.csv;
+      `--merge` builds the combined CSV and REFUSES if two models' rows are
+      identical; `--model all` now errors out instead of appearing to work.
+
+  (b) BLANK-IMAGE INPUT — SHIPPED, NOW FIXED. The OpenVLA/OFT path forwarded
+      np.zeros((224,224,3)) — an all-black image — while SmolVLA used the real env
+      observation. The two families were therefore never comparable, and
+      OpenVLA's near-uniform ~0.0039 values (= 1/256, the uniform ceiling) are
+      consistent with a degenerate input rather than a finding. This contradicted
+      both report/RQ4_RQ5_SPEC.txt:17-18 and the script's own docstring.
+      FIX (commit 50b999b): builds the real LIBERO initial observation and applies
+      the full runner pipeline (180-degree rotate -> jpeg roundtrip -> lanczos3 to
+      224 -> center-crop 0.9), so attention is measured on the exact tensor the
+      policy acts on.
+
+  (c) NO PROVENANCE — SHIPPED, NOW FIXED. The RQ4 run appears nowhere in
+      MANIFEST.json (grep -c attention -> 0) and left no SLURM log: the CSV, the
+      PNG, the plotting script and the paper section all landed in one commit
+      (023c7d0) with no run artifact. That is the same unverifiability that let
+      the original fabrication through.
+      FIX (commit 50b999b): every run appends a kind=rq4_attention record (repo
+      sha, node, GPU, slurm job id) to MANIFEST.json. Also removed
+      analyze/plot_rq4.py's silent fallback to an ungitted
+      /scratch/pandya.kei/rq4_attention.csv.
+
+STATUS: all three fixes are in; the re-measurement itself is BLOCKED on the
+vla-openvla / vla-oft envs being rebuilt (they were empty python shells). Until
+all three shards exist and merge cleanly, RQ4 must NOT be cited for 3 models.
+
+Two further items to validate before the paper leans on the magnitudes:
   (a) OpenVLA/OFT use a HARDCODED visual-token span: visual_indices =
       range(40, 296). The measured per-visual-token attention (~0.005) is ABOVE
       the uniform ceiling (1/256 ~= 0.0039), which suggests that span may include

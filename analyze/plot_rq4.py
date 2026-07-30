@@ -13,25 +13,19 @@ import matplotlib.pyplot as plt
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = REPO_ROOT / "report"
-SCRATCH_DIR = Path("/scratch/pandya.kei")
 
-def find_csv():
-    candidates = [
-        REPORT_DIR / "rq4_attention.csv",
-        SCRATCH_DIR / "rq4_attention.csv",
-    ]
-    for c in candidates:
-        if c.exists():
-            with open(c) as f:
-                lines = f.readlines()
-            if len(lines) > 1:
-                return c
-    return candidates[0]
 
 def main():
-    csv_path = find_csv()
+    # Only ever plot the in-repo, version-controlled CSV. This used to fall back to
+    # /scratch/pandya.kei/rq4_attention.csv — an ungitted, off-repo file — whenever
+    # the report copy was missing or short, so a figure could silently be built from
+    # a number nobody could trace. In a project that already shipped fabricated RQ4
+    # values, a silent alternate data source is the exact bug class to remove.
+    csv_path = REPORT_DIR / "rq4_attention.csv"
     if not csv_path.exists():
-        print(f"Error: {csv_path} does not exist.", file=sys.stderr)
+        print(f"Error: {csv_path} does not exist. Build it with:\n"
+              f"  <per-env python> analyze/attention_extract.py --model <name>   # one per env\n"
+              f"  python analyze/attention_extract.py --merge", file=sys.stderr)
         sys.exit(1)
 
     data = {}
@@ -89,7 +83,7 @@ def main():
     ax2.grid(True, linestyle="--", alpha=0.5)
 
     plt.tight_layout()
-    for out in [REPORT_DIR / "rq4_attention.png", SCRATCH_DIR / "rq4_attention.png"]:
+    for out in [REPORT_DIR / "rq4_attention.png"]:
         out.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(out, bbox_inches="tight")
         print(f"Successfully generated plot at {out}")
