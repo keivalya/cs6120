@@ -245,12 +245,23 @@ P6. REPRODUCIBILITY (KNOWN_ISSUES #4, open). .gitignore excludes
 --------------------------------------------------------------------------------
 5. CLUSTER FACTS THAT MATTER FOR SCHEDULING
 --------------------------------------------------------------------------------
-  * You have EIGHT concurrent GPUs, not four — three INDEPENDENT QOS:
+  * On paper you have EIGHT concurrent GPUs across three INDEPENDENT QOS:
       gpu              8 h wall   4 running   8 submitted   4 GPUs
       gpu-short        2 h wall   2 running   8 submitted   2 GPUs
       gpu-interactive  2 h wall   2 running   4 submitted
-    `short` is CPU-only, 2-day wall, 50 jobs — put env builds and ALL aggregation
-    there. Only analyze/attention_extract.py needs a GPU outside the runners.
+    IN PRACTICE (measured 2026-07-30) that is closer to four. `gpu` outranks the
+    other two on the shared nodes, so while `gpu` is saturated — 128 jobs deep —
+    jobs on gpu-short/gpu-interactive sit at
+      "Nodes required for job are DOWN, DRAINED or reserved for jobs in higher
+       priority partitions"
+    and never start. Both a gpu-short and a gpu-interactive submission of the 7B
+    smoke test were starved this way for over an hour. Plan the real work on `gpu`
+    and treat the small QOS as opportunistic only. Short --time requests are the
+    one lever that reliably helps: a 25-minute job backfills into gaps that an 8 h
+    job cannot.
+    `short` is CPU-only, 2-day wall, 50 jobs, and is NOT contended — put env
+    builds and ALL aggregation there. Only analyze/attention_extract.py needs a
+    GPU outside the runners.
   * GPUs are heavily contended: 128 jobs pending on `gpu` and every GPU on
     d4055/d1026/d1013/d1022/c2204 allocated at the time of writing. Queue time,
     not GPU-hours, is the binding constraint. Short --time requests backfill much
