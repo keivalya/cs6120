@@ -91,6 +91,18 @@ EOF
 
 "$PIP" install -e "$REPO/openvla-oft/LIBERO" --config-settings editable_mode=compat --no-deps || exit 1
 
+# (5) The import tail of experiments.robot.*. These are NOT used by evaluation, but
+# they are imported at module scope on the way to get_model/get_action, so the env
+# cannot run a single episode without them:
+#   openvla_utils.py       -> json_numpy
+#   prismatic.vla...oxe    -> tensorflow_graphics (only for zero_action_filter)
+#   prismatic.training     -> jsonlines
+# tensorflow-graphics is --no-deps on purpose: its dependency set is unpinned and
+# pulls a protobuf that breaks the 3.20.3 world this whole script exists to build.
+# Verified after install: numpy/protobuf/tf-metadata/wandb/peft/diffusers all held.
+"$PIP" install -c "$C" json_numpy jsonlines || exit 1
+"$PIP" install --no-deps tensorflow-graphics==2021.12.3 || exit 1
+
 # The lazy prismatic/__init__.py patch is what keeps `import prismatic` from
 # pulling the training stack. It is currently applied in the checkout; re-apply if
 # the checkout was ever reset.

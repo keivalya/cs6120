@@ -72,7 +72,7 @@ for SEED in $SEEDS; do
     env $OVENV "$OFT" run/eval_task_oft.py --model openvla_oft --suite libero_goal \
         --task_id "$TID" --conditions "$CONDITIONS" \
         --seed "$SEED" --n_episodes "$N_EPISODES" 2>&1 \
-      | grep -aE "ready|success=|DONE|skip|Error|Traceback|abort" | grep -avE "%\|" | tee -a "$LOG"
+      | grep -aE "ready|success=|DONE|skip|Error|Traceback|abort|scene_atomic" | grep -avE "%\|" | tee -a "$LOG"
   done
 done
 

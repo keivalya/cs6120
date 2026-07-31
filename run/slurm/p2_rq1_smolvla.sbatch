@@ -71,7 +71,7 @@ for SEED in $SEEDS; do
     $SM run/eval_task.py --model smolvla --suite libero_goal \
         --task_id "$TID" --conditions "$CONDITIONS" \
         --seed "$SEED" --n_episodes "$N_EPISODES" --obs_hw 256 2>&1 \
-      | grep -aE "ready|success=|DONE|skip|Error|Traceback|abort" | grep -avE "%\|" | tee -a "$LOG"
+      | grep -aE "ready|success=|DONE|skip|Error|Traceback|abort|scene_atomic" | grep -avE "%\|" | tee -a "$LOG"
   done
 done
 
