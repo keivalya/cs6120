@@ -1,0 +1,12 @@
+section,model,subset,n,value,note
+information,,,10,0.0,H(task|nouns) bits
+information,,,10,1.551,H(task|verbs) bits
+wrong_action_split,smolvla,antonym,50,0.48,orig=0.7333 delta_pp=25.3
+wrong_action_split,smolvla,near-syn,120,0.7,orig=0.8071 delta_pp=10.7
+wrong_action_split,openvla,antonym,10,0.6,orig=0.7333 delta_pp=13.3
+wrong_action_split,openvla,near-syn,28,0.5,orig=0.6786 delta_pp=17.9
+wrong_action_split,openvla_oft,antonym,12,1.0,orig=1.0000 delta_pp=0.0
+wrong_action_split,openvla_oft,near-syn,28,0.9643,orig=0.9643 delta_pp=0.0
+wrong_object_compliance,smolvla,task4->task2,20,0.85,did_original=0
+wrong_object_compliance,openvla,task4->task2,4,1.0,did_original=0
+wrong_object_compliance,openvla_oft,task4->task2,4,1.0,did_original=0

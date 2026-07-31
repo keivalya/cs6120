@@ -44,6 +44,15 @@ WRONG_VERB = {
     "turn on": "turn off",
 }
 
+# Every noun that can carry task identity in LIBERO-Goal, longest-first so that
+# "wine bottle" and "top drawer" are matched before "bottle" / "drawer".
+ALL_TASK_NOUNS = ["middle drawer", "top drawer", "wine bottle", "cream cheese",
+                  "cabinet", "drawer", "bowl", "stove", "plate", "rack"]
+NOUN_MASK = "thing"
+
+# Verbs that can appear at the head of a LIBERO-Goal instruction.
+ALL_TASK_VERBS = ["turn on", "turn off", "open", "close", "put", "push", "lift"]
+
 # Out-of-domain word pools for length-matched nonsense (grammatical salad).
 NONSENSE_VERBS = ["ponder", "orbit", "whisper", "calibrate", "summon", "dissolve", "archive", "juggle"]
 NONSENSE_NOUNS = ["nebula", "syntax", "meadow", "quartz", "lantern", "algorithm", "monsoon", "trombone"]
@@ -90,6 +99,24 @@ def replace_verb(instr: str, verb: str, new_verb: str) -> str | None:
         return None
     repl = new_verb.capitalize() if instr[:1].isupper() else new_verb
     return pat.sub(repl, instr, count=1)
+
+
+def mask_nouns(instr: str) -> str:
+    """'put the bowl on the stove' -> 'put the thing on the thing'."""
+    out = instr
+    for n in ALL_TASK_NOUNS:                      # longest-first, see ALL_TASK_NOUNS
+        out = re.compile(re.escape(n), re.IGNORECASE).sub(NOUN_MASK, out)
+    return re.sub(r"\s+", " ", out).strip()
+
+
+def drop_verb(instr: str) -> str | None:
+    """'put the bowl on the stove' -> 'the bowl on the stove'. None if no verb found."""
+    for v in sorted(ALL_TASK_VERBS, key=len, reverse=True):
+        pat = re.compile(r"^\s*" + re.escape(v) + r"\b", re.IGNORECASE)
+        if pat.search(instr):
+            out = re.sub(r"\s+", " ", pat.sub("", instr)).strip()
+            return out or None
+    return None
 
 
 def build_for_task(meta: dict, all_tasks: list[dict], rng: random.Random) -> list[dict]:
@@ -142,6 +169,34 @@ def build_for_task(meta: dict, all_tasks: list[dict], rng: random.Random) -> lis
             recs.append(rec("wrong_action", None, f"verb {verb!r} not at instruction start", skip=True))
     else:
         recs.append(rec("wrong_action", None, f"no wrong-verb mapping for verb={verb!r}", skip=True))
+
+    # --- ablate one word class at a time (the RQ2 information probe) -----------
+    # In LIBERO-Goal the unordered NOUN SET uniquely identifies all 10 tasks, while
+    # the verb leaves 1.55 bits of residual uncertainty ("put" covers 6 of 10). So
+    # conditional on the nouns the verb carries ZERO task information. wrong_action
+    # cannot detect verb-blindness for that reason: 7 of its 10 substitutions are
+    # put->push, which preserves the noun set and therefore the task identity.
+    # These two conditions ablate each word class directly and make the prediction
+    # falsifiable:
+    #   verb_dropped -> TSR should stay near original (0 bits removed)
+    #   nouns_masked -> TSR should collapse to ~0 (all 3.32 bits removed)
+    # If verb_dropped collapses, the information account is wrong and the models
+    # genuinely need the verb token.
+    nm = mask_nouns(I)
+    if nm != I:
+        recs.append(rec("nouns_masked", nm,
+                        f"all task nouns -> {NOUN_MASK!r}; verb and syntax preserved "
+                        f"(removes the 3.32 bits that identify the task)"))
+    else:
+        recs.append(rec("nouns_masked", None, "no task noun found in instruction", skip=True))
+
+    vd = drop_verb(I)
+    if vd:
+        recs.append(rec("verb_dropped", vd,
+                        "leading verb deleted; noun set and syntax otherwise preserved "
+                        "(removes 0 bits conditional on the nouns)"))
+    else:
+        recs.append(rec("verb_dropped", None, "no leading verb found in instruction", skip=True))
 
     other = all_tasks[(tid + 5) % len(all_tasks)]
     if other["task_id"] == tid:
@@ -221,7 +276,7 @@ def main():
     c = Counter(r["condition"] for r in all_recs)
     skipped = Counter(r["condition"] for r in all_recs if r.get("skip"))
     print(f"Wrote {len(all_recs)} records to {out_path}")
-    for cond in ["original", "blank", "nonsense", "wrong_object", "wrong_action", "wrong_task", "repeated"]:
+    for cond in ["original", "blank", "nonsense", "wrong_object", "wrong_action", "wrong_task", "repeated", "nouns_masked", "verb_dropped"]:
         print(f"  {cond:14s} n={c[cond]:2d}  skipped={skipped.get(cond,0)}")
 
 
