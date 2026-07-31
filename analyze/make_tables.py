@@ -302,11 +302,66 @@ def wordclass_table(rows: list[dict]) -> None:
     write("rq2_wordclass.tex", "\n".join(lines) + "\n")
 
 
+def ablation_table(rows: list[dict]) -> None:
+    """The word-class removal test — the paper's decisive experiment.
+
+    Rows from analyze/make_ablation_csv.py. The baseline here is scene-matched: the
+    ablation conditions are produced in the same process as `original`, so they share
+    initial scenes and the delta is a clean within-scene contrast (unlike the
+    paraphrase pools, cf. Section 'scenefixed').
+    """
+    if not rows:
+        return
+    order = ["original", "verb_dropped", "nouns_masked", "blank"]
+    pretty = {"original": r"\texttt{original} (reference)",
+              "verb_dropped": r"\texttt{verb\_dropped}",
+              "nouns_masked": r"\texttt{nouns\_masked}",
+              "blank": r"\texttt{blank}"}
+    lines = [r"\begin{tabular}{llrrcc}", r"\toprule",
+             r"\textbf{Model} & \textbf{Condition} & \textbf{bits removed} & "
+             r"\textbf{$n$} & \textbf{TSR} & \textbf{$\Delta$ vs.\ matched} \\",
+             r"\midrule"]
+    any_row = False
+    for i, m in enumerate(MODEL_ORDER):
+        mr = [r for r in rows if r["model"] == m and
+              any(r["condition"] == a for a in ("verb_dropped", "nouns_masked"))]
+        if not mr:
+            continue  # a model with no ablation data yet contributes no block
+        if any_row:
+            lines.append(r"\midrule")
+        any_row = True
+        for cond in order:
+            r = next((x for x in rows if x["model"] == m and x["condition"] == cond), None)
+            if r is None:
+                continue
+            d = fnum(r.get("delta_pp_matched"))
+            dcell = "--" if d is None else (
+                r"\phantom{$-$}$0.0$" if abs(d) < 0.05 else f"${-d:+.1f}$")
+            lines.append(
+                f"{model_label(m)} & {pretty[cond]} & {r['bits_removed']} & "
+                f"{int(fnum(r['n'], 0))} & {pct(fnum(r['TSR']), 1)} & {dcell} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    if any_row:
+        write("rq_ablation.tex", "\n".join(lines) + "\n")
+        # A one-sentence coverage note, so partial data cannot read as complete.
+        cov = []
+        for m in MODEL_ORDER:
+            r = next((x for x in rows if x["model"] == m and
+                      x["condition"] == "nouns_masked"), None)
+            if r:
+                cov.append(f"{PRETTY[m]} on {int(fnum(r['n_tasks'], 0))} of 10 tasks")
+        write("rq_ablation_note.tex",
+              ("Coverage: " + "; ".join(cov) + ". " if cov else "") +
+              "The ablation conditions are generated in the same process as "
+              "\\texttt{original}, so the $\\Delta$ column is a within-scene contrast.\n")
+
+
 def main() -> None:
     rq1_tables(read_csv("rq1_causal.csv"))
     rq2_table(read_csv("rq2_paraphrase.csv"))
     rq3_table(read_csv("rq3_divergence.csv"))
     wordclass_table(read_csv("instruction_information.csv"))
+    ablation_table(read_csv("rq_ablation.csv"))
     scene_note()
     for m in MODEL_ORDER:
         st = scene_status(m)

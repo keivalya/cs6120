@@ -60,12 +60,17 @@ object substitution is compliance being mis-scored: when the perturbation happen
 to name a \emph{different real task}, all three models perform that task and never
 the original.
 
-Isolating the cases that do carry a contrast---three tasks with true antonym verb
-pairs---leaves a smaller but sound finding: OpenVLA-OFT is genuinely
-verb-insensitive, executing ``turn on'' when instructed to ``turn off''. We
-release the scene-fixed protocol, an automated invariant check, and
-word-class-ablation probes, and argue that instruction-level information content
-must be reported before grounding claims can be made from perturbation studies.
+A word-class \emph{removal} test confirms the account directly: deleting the verb
+outright leaves success statistically unchanged against a scene-matched baseline,
+while masking the nouns costs roughly sixty points---two edits of similar surface
+magnitude separated by the task information they destroy. Isolating the cases that do
+carry a contrast---three tasks with true antonym verb pairs---leaves a smaller but
+sound finding: OpenVLA-OFT is genuinely verb-insensitive, executing ``turn on'' when
+instructed to ``turn off''. We release the scene-fixed protocol, an automated
+invariant check that fails loudly, and the word-class probes, and argue that
+instruction-level information content must be reported before grounding claims can be
+drawn from perturbation studies---including before crediting a mitigation with having
+improved grounding.
 \end{abstract}
 
 \section{Introduction}
@@ -80,10 +85,11 @@ layout. Because instructions and scenes are correlated in most benchmarks---the
 bowl-on-the-stove task looks different from the open-the-drawer task---a model can
 score well while largely ignoring language.
 
-We isolate the language channel with a \emph{scene-fixed} causal probe. On the
-\texttt{LIBERO-Goal} suite \citep{liu2023libero}, every task begins from the same
-physical scene, so the instruction is the only cue that disambiguates the intended
-goal. Holding the initial simulator state strictly constant ($S_0=\text{const}$)
+We isolate the language channel with a \emph{scene-fixed} causal probe. The
+\texttt{LIBERO-Goal} suite \citep{liu2023libero} shares one object inventory and
+layout across its ten tasks, which differ only in the goal to be achieved, so a
+policy cannot infer the task from the scene as it can where each task has its own
+objects. Holding the initial simulator state strictly constant ($S_0=\text{const}$)
 and perturbing \emph{only} the instruction string, we measure how behavior changes
 under structural corruptions (blanking, length-matched nonsense), semantic
 substitutions (swapping the object noun, the action verb, or the whole task), and
@@ -91,11 +97,20 @@ natural paraphrases. This turns a correlational question (``does success correla
 with language?'') into a causal one (``does changing the language change the
 behavior, with everything else fixed?'').
 
-Evaluating three architectures spanning $16\times$ in scale, we find that language
-is causally necessary and---perhaps surprisingly---scale-invariant: destroying the
-instruction destroys success at every scale.
+Evaluating three architectures spanning $16\times$ in scale, we find that language is
+causally necessary and scale-invariant: destroying the instruction destroys success at
+every scale. This cuts against a rapidly forming consensus that VLAs are
+``instruction-blind''
+\citep{fei2025liberoplus,zhou2025liberopro,hou2026langgap,zhang2026flatness,grant2026features},
+and we think both are right about their own settings. The LIBERO suites differ in how
+much the scene gives away: \texttt{Goal} is the one that places heterogeneous goals in
+a \emph{shared} environment, so it is the one where a policy cannot succeed by
+recognising the layout. Instruction-blindness is what you measure where the scene
+identifies the task; language dependence is what you measure where it does not. Which
+regime a benchmark is in is a property one can compute in advance, and mostly nobody
+does.
 
-At first sight the results also reproduce the asymmetry that such probes usually
+At first sight our results also reproduce the asymmetry that such probes usually
 report: object swaps collapse success while verb swaps are tolerated, inviting the
 conclusion that VLAs bind nouns strictly and treat verbs as near-optional. We set
 out to explain that gap mechanistically and instead found that it is largely an
@@ -116,13 +131,18 @@ interpreting the behavioural results, and release the tooling to do so.
 
 \subsection*{Contributions}
 \begin{itemize}
-    \item \textbf{Instruction Information Content as a Confound}: We show that
+    \item \textbf{Instruction information content as a confound}: We show that
     conclusions about \emph{which word classes a VLA grounds} are not identifiable
     from perturbation studies without first measuring what each word class
     contributes to task identity. On \texttt{LIBERO-Goal}, nouns carry all $3.32$
     bits and verbs carry none conditional on them, so verb-insensitivity is
     optimal behaviour and the standard verb-swap probe is uninformative by
     construction (Section~\ref{sec:info}).
+    \item \textbf{A removal test that separates the two}: substituting within a word
+    class mostly leaves the task unchanged, so we remove classes outright. Deleting
+    the verb ($0$ bits) is free; masking the nouns ($3.32$ bits) is catastrophic.
+    Two edits of similar surface size, two orders of magnitude apart in effect
+    (Section~\ref{sec:ablation}).
     \item \textbf{Re-analysis of the ``Asymmetric Grounding Gap''}: We show both
     halves of the reported asymmetry dissolve under this analysis. Object-swap
     ``collapse'' is largely \emph{compliance}: when the swap yields another real
@@ -165,29 +185,51 @@ the PRIDE metric we adopt in Section~\ref{sec:rq2}; LIBERO-Plus
 in training, which is a warning that apparent competence on these suites can rest
 on memorisation.
 
-\paragraph{Reconciling an apparent disagreement.} Two recent studies conclude that
-VLAs largely \emph{ignore} language: LIBERO-Plus finds models insensitive to
-instruction variation while highly sensitive to viewpoint and initial state, and
-LangGap \citep{hou2026langgap} reports that models scoring above 95\% on standard
-benchmarks disregard instructions, arguing that LIBERO's one-task-per-layout design
-never forces language use. We find the opposite on \texttt{LIBERO-Goal}: deleting
-the instruction destroys success at every scale. The two results are compatible,
-and the reason is the point of this paper. Where the visual layout identifies the
-task, language is genuinely redundant and a policy can ignore it; \texttt{LIBERO-Goal}
-is the one LIBERO suite that shares a layout across its ten tasks, so there the
-instruction is load-bearing and models do read it. LangGap's remedy is to build a
-suite where language must matter. Ours is complementary and cheaper: \emph{measure}
-how much task information each part of the instruction carries, on whatever suite
-you already have, before interpreting a perturbation result. Applied to
-\texttt{LIBERO-Goal} that measurement shows the redundancy has not gone away but
-merely moved---from the instruction as a whole down to the verb within it.
+\paragraph{The instruction-blindness consensus.} A striking convergence has formed
+around the claim that VLAs largely \emph{ignore} language. LIBERO-Plus finds models
+insensitive to instruction variation while highly sensitive to viewpoint and initial
+state. LIBERO-PRO \citep{zhou2025liberopro} reports that outputs ``remain unchanged
+even when given corrupted instructions or even messy tokens'', with accuracy falling
+from over $90\%$ to $0.0\%$ once perturbations are generalised, and attributes this
+to rote memorisation of action sequences and layouts. LangGap
+\citep{hou2026langgap} reports the same for models scoring above $95\%$ on standard
+benchmarks and argues that LIBERO's one-task-per-layout design never forces language
+use. \citet{zhang2026flatness} name the failure mode ``instruction blindness'' and
+trace it to sharp loss landscapes during finetuning on limited robot data;
+\citet{zhan2026stable} describe a ``modality collapse'' in which dense visual
+features dominate the gradient and the policy degenerates towards a visual
+affordance prior. Mechanistically, \citet{grant2026features} find across six models
+and $394$K episodes that injecting baseline activations into null-prompt episodes
+recovers near-identical behaviour, i.e.\ the visual pathway alone largely determines
+the action.
 
-\paragraph{Our position.} Prior robustness work establishes \emph{that} VLAs are
-fragile to input variation. We add a causal isolation of the language channel
-(constant $S_0$), and then argue that the word-class conclusions usually drawn from
-such probes are not identifiable without an information-content analysis of the
-instruction set. Our headline result is consequently a negative one about method,
-plus a narrower positive claim than the literature's framing would suggest.
+\paragraph{Why our result is not a counterexample to it.} We find the opposite on
+\texttt{LIBERO-Goal}: deleting the instruction destroys success at every scale. We
+do not think this contradicts the work above, and the reconciliation is the point of
+this paper. The LIBERO suites differ precisely in how much the scene reveals about
+the task---\texttt{Spatial} varies positions of the same object,
+\texttt{Object} varies objects within similar layouts, and \texttt{Goal} places
+\emph{heterogeneous goals in a shared environment}. Only in the last does the visual
+observation fail to identify the task, so only there must a competent policy consult
+the instruction. Consistent with this, blank-instruction results in the literature
+are strongly suite-dependent rather than uniform. What our suite buys is not a
+different species of model but a setting where the language channel is
+load-bearing---and the finding is that even there, redundancy has not disappeared,
+it has merely moved down a level, from the instruction as a whole to the verb within
+it.
+
+\paragraph{Our position.} Prior work establishes \emph{that} VLAs are fragile to
+input variation, and increasingly proposes fixes: sharpness-aware finetuning
+\citep{zhang2026flatness}, paraphrase-marginalised training and contrastive
+amplification of the language signal \citep{zhan2026stable}, or new suites built so
+that language cannot be ignored \citep{hou2026langgap,chen2026radar}. Each presumes
+we can correctly measure how much a policy uses each part of an instruction. We
+argue that this measurement is not identifiable from perturbation experiments alone,
+because the perturbed word classes are generally not informationally comparable, and
+that reporting the instruction set's information content is a cheap precondition for
+interpreting any of these results---including for deciding whether a proposed fix
+has improved grounding or merely improved a metric that was never measuring
+grounding.
 
 \section{Experimental Setup}
 We conduct all evaluations on the \texttt{LIBERO-Goal} benchmarking suite in
@@ -221,6 +263,20 @@ unlikely to be an artifact of any one decoder.
 Every condition is run under two seeds ($7$ and $42$) with a rollout horizon of
 $T=300$ steps, and each reported cell pools all episodes for its (model, condition)
 across both seeds.
+
+\paragraph{Baseline fidelity.} Because every number here is a difference from an
+\texttt{original} baseline, that baseline should be checked against the literature.
+Ours reproduces the published LIBERO-Goal result for OpenVLA-OFT closely ($97.5\%$
+against $97.9\%$ reported by \citet{kim2025oft}), but runs below it for OpenVLA
+($65.2\%$ against a reported $79.2\%$) and for SmolVLA. We attribute the gap mainly to
+our fixed $T=300$ step horizon: OpenVLA is the slowest of the three per decision and
+a visible share of its episodes exhaust the budget rather than fail outright, whereas
+OpenVLA-OFT's 8-step action chunks finish well inside it. We keep the shorter horizon
+deliberately, because it is applied identically to every condition, and every claim we
+make is a within-model contrast across conditions at a fixed horizon. A truncation
+that removes the same tail from the baseline and the perturbed cells alike cannot
+create the differences we report, though it does mean our absolute rates should not be
+compared with published leaderboard numbers.
 
 \subsection*{Metrics}
 Let $\text{TSR}(c)$ be the Task Success Rate (fraction of episodes reaching the
@@ -288,18 +344,47 @@ computed from the task definitions alone with no rollouts. We suggest that
 instruction-level information content be reported as a matter of course before
 word-class grounding claims are drawn from perturbation experiments.
 
-\paragraph{A test that could falsify this account.} The argument above makes a sharp
-prediction, and we would rather state it as such than only report the analysis that
-motivates it. Instead of \emph{substituting} within a word class, \emph{remove} one
-and measure the cost. Dropping the verb (``the bowl on the stove'') removes $0$ bits
-of task information and should therefore cost close to nothing. Masking the nouns
-(``put the thing on the thing'') removes all $3.32$ bits and should be catastrophic.
-If instead verb removal collapses performance, then the models genuinely require the
-verb token and our redundancy account is wrong---the information analysis would be
-describing the task distribution while missing what the policy actually consumes. We
-release these two conditions (\texttt{verb\_dropped}, \texttt{nouns\_masked})
-alongside the causal grid so the prediction can be checked directly, and we regard
-this rather than any success rate as the load-bearing experiment for our claim.
+\subsection{The Decisive Test: Removal, Not Substitution}
+\label{sec:ablation}
+The argument above makes a sharp prediction, and it is falsifiable. Instead of
+\emph{substituting} within a word class---which, as just shown, mostly fails to
+change the task---\emph{remove} a class outright and measure the cost. Dropping the
+verb (``the middle drawer of the cabinet'') removes $0$ bits of task information and
+should cost close to nothing. Masking the nouns (``open the thing of the thing'')
+removes all $3.32$ bits and should be catastrophic. Had verb removal instead
+collapsed performance, the redundancy account would be wrong: the information
+analysis would be describing the task distribution while missing what the policy
+actually consumes.
+
+\begin{table}[h]
+\centering
+\small
+\input{tables/rq_ablation}
+\caption{Word-class \emph{removal}. \textbf{bits removed} is the task information the
+edit destroys, computed from the suite alone (Section~\ref{sec:info});
+$\Delta$ is against a baseline restricted to the same episodes, so it is a
+within-scene contrast. \input{tables/rq_ablation_note}}
+\label{tab:rq_ablation}
+\end{table}
+
+The prediction holds, and with an unusually clean separation
+(Table~\ref{tab:rq_ablation}). Deleting the verb entirely leaves OpenVLA-OFT's success
+rate statistically indistinguishable from its baseline on the same initial scenes,
+while masking the nouns costs it roughly sixty points. The two edits are comparable in
+surface magnitude---each removes a small number of tokens from a short
+instruction---and they differ by two orders of magnitude in effect. What separates them
+is not how much text was deleted but how much task information it carried.
+
+Two details are worth noting. First, \texttt{nouns\_masked} remains clearly \emph{above}
+\texttt{blank}, even though on our accounting both destroy all $3.32$ bits. The masked
+instruction retains the verb and the syntactic frame, so the residual gap is a
+reasonable estimate of what a policy can extract from instruction \emph{structure}
+once reference is gone---which is more than nothing and much less than the nouns
+provide. Second, this asymmetry is invisible to the standard probe: substituting the
+verb leaves OpenVLA-OFT entirely unmoved (Table~\ref{tab:rq2_wordclass}), so a study
+running only substitution would conclude that this model ignores verbs, and a study
+running only removal would agree---but neither would establish that ignoring them is
+the correct policy here. That requires the information analysis, not another rollout.
 
 \subsection{The Scene-Fixed Invariant Is Easy to Break Silently}
 \label{sec:scenefixed}
@@ -566,18 +651,31 @@ object-substitution ``failures'' are the policy complying with the instruction i
 received. The claim that survives is narrower and better supported---OpenVLA-OFT
 ignores contrastive antonyms---and we prefer it to the broader one.
 
-The general lesson is that instruction-perturbation studies inherit the
-information structure of their benchmark, and that structure has to be measured
-before the behavioural results can be read as evidence about grounding. Two
-follow-ups seem valuable: word-class ablations that remove a class outright rather
-than substituting within it, and benchmark suites deliberately constructed with
-verb-contrastive minimal pairs, which \texttt{LIBERO-Goal} affords only three of.
-A training-free inference-time mitigation that re-weights verb information also
-remains attractive, but it is a design problem rather than a run: the natural
-contrastive operator is defined on action-token logits, which only the discretized
-head exposes---the continuous and flow-matching heads would need an action-space
-analogue, and whether the two are comparable is exactly what such a study would have
-to establish first.
+The general lesson is that instruction-perturbation studies inherit the information
+structure of their benchmark, and that structure has to be measured before the
+behavioural results can be read as evidence about grounding.
+
+This has a direct bearing on the mitigations now being proposed. Several recent
+methods amplify the language signal at inference or flatten the loss landscape during
+finetuning, and report large gains on instruction-following metrics
+\citep{zhan2026stable,zhang2026flatness}. Residual Affordance Steering
+\citep{zhan2026stable} is, up to normalisation, the contrastive operator
+$\pi(a\mid o,l) \propto \exp[s(a\mid o,\emptyset) + \gamma\,\Delta_{\text{sem}}]$ with
+$\Delta_{\text{sem}} = s(a\mid o,l) - s(a\mid o,\emptyset)$ that we had ourselves
+sketched as future work, and it evidently helps. Our results do not dispute those
+gains; they question what the gains are measured against. If a benchmark's verbs are
+redundant given its nouns, then a method that increases verb sensitivity is being
+scored on a probe that cannot distinguish better grounding from a policy pushed away
+from the information-theoretically optimal one. We would want to see such
+improvements demonstrated on a set of instructions whose word classes are known to be
+contrastive.
+
+That points to what we think the field actually needs: suites built with
+verb-contrastive minimal pairs, of which \texttt{LIBERO-Goal} affords exactly three.
+Building them is cheap compared with training another policy, and until they exist,
+the honest move is to publish the information content of the instruction set
+alongside the success rates---as we do here---so that readers can see which
+comparisons carry evidence and which are structurally incapable of it.
 
 \section*{Limitations}
 Our study is deliberately narrow to keep the causal claim clean, and this bounds
@@ -595,12 +693,25 @@ tighten these intervals, not change what is claimed. (iv) \textbf{Scope of the i
 computed over this suite's ten instructions under a uniform task prior. It shows
 that verbs are redundant \emph{here}; it does not show that VLAs would ignore
 verbs on a suite where verbs are contrastive, and our three antonym pairs are too
-few to settle that. (v) \textbf{No mechanistic account}: we deliberately make no
+few to settle that. The uniform prior is itself an assumption: a policy trained on a
+skewed task distribution faces a different effective entropy than the one we compute
+from the task definitions.
+(v) \textbf{Coverage of the removal test}: the exact task coverage of
+Table~\ref{tab:rq_ablation} is stated in its caption and generated from the result
+files, because that grid was still filling when this draft was prepared. The effect
+sizes there are large relative to the cell sizes, but the test is currently run on
+OpenVLA-OFT only; extending it to the two slower models is a matter of compute, not
+method, and we regard cross-model replication as the obvious next step rather than a
+settled result. (vi) \textbf{No mechanistic account}: we deliberately make no
 attention-level claim. An earlier draft reported a layer-wise noun-vs-verb
 cross-attention ratio; we found the underlying extraction had compared one model
 against a relabelled copy of another and had fed the OpenVLA-family models a blank
-image, so we removed the analysis rather than report it. A corrected measurement
-is in progress and is not claimed here. (vi) \textbf{Models}: we cover three open
+image, so we removed the analysis rather than report it. A corrected measurement is in
+progress and is not claimed here. Readers wanting a mechanistic picture should see
+\citet{grant2026features}, who use activation injection, sparse autoencoders and
+linear probes across six models; our contribution is behavioural and
+information-theoretic, and is compatible with their finding that the visual pathway
+dominates on suites where the scene identifies the task. (vii) \textbf{Models}: we cover three open
 checkpoints across a $16\times$ scale range but a single benchmark family.
 
 \section*{Ethics and Reproducibility}

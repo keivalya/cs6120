@@ -41,6 +41,7 @@ $PY analyze/make_rq1_scale.py --suite "$SUITE" >/dev/null || echo "  FAILED: rq1
 
 echo "=== 3/4 RQ2 + word-class information analysis ==="
 $PY analyze/make_rq2_csv.py --suite "$SUITE" >/dev/null || echo "  FAILED: rq2 csv"
+$PY analyze/make_ablation_csv.py --suite "$SUITE" >/dev/null 2>&1 || echo "  note: ablation csv not built"
 $PY analyze/instruction_information.py --suite "$SUITE" >/dev/null 2>&1 \
   || echo "  note: instruction_information.py did not run (report/instruction_information.csv kept)"
 
