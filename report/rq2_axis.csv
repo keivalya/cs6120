@@ -1,4 +1,4 @@
 model,TSR_original,TSR_object,TSR_action,dTSR_object_pp,dTSR_action_pp
-smolvla,0.725,0.2973,0.0724,42.77,65.26
+smolvla,0.7778,0.2973,0.0724,48.05,70.54
 openvla,0.7,0.48,0.6067,22.0,9.33
 openvla_oft,0.975,0.78,0.9067,19.5,6.83

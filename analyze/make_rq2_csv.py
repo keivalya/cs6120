@@ -5,7 +5,12 @@ From the per-paraphrase results (results/<model>/<suite>/{para_object,para_actio
 para_compositional}/seed*/task*.jsonl) + PRIDE (analyze/pride_wrap.py), emit:
 
 - report/rq2_paraphrase.csv  (RQ2.1): per model × axis + overall — TSR, ΔTSR (pp)
-  vs original, PRIDE, n. ΔTSR uses the model's original-condition TSR baseline.
+  vs original, PRIDE, n. ΔTSR uses the model's original-condition TSR baseline, and
+  is reported TWICE: against the full original pool, and against the scene-matched
+  subset of it (see _scene_matched). The two differ by up to ~12 pp because the
+  paraphrase and original cells sample different initial scenes. n_scenes is
+  reported alongside n: smolvla's 2963 paraphrase episodes cover only 2 distinct
+  scenes per task, so n overstates how much scene variation is behind the estimate.
 - report/rq2_axis.csv        (RQ2.2): object-axis vs action-axis ΔTSR side by side.
 - report/rq2_operation.csv   (RQ2.3): per operation (`mid`) — TSR, mean PD, n
   (PD = 1 - 0.5*(SK+ST), the alpha=0.5 LIBERO-Para distance) for the ΔTSR-vs-PD view.
@@ -46,6 +51,26 @@ def _tsr(recs):
     return (sum(int(r["success"]) for r in recs) / len(recs)) if recs else None
 
 
+def _scenes(recs):
+    return {r.get("reset_state_hash") for r in recs if r.get("reset_state_hash")}
+
+
+def _scene_matched(orig_recs, axis_recs):
+    """The original episodes that ran from the SAME initial scenes as this axis.
+
+    delta_TSR against the full original pool is confounded: the paraphrase cells and
+    the original cell were produced by different processes and therefore sample
+    different scenes (measured: smolvla paraphrases overlap the original pool on only
+    2 scenes per task; both 7B models overlap on none). Since the scene is a large
+    share of the variance in TSR, some of the reported "paraphrase cost" is really a
+    scene difference. Restricting the baseline to the shared scenes removes that part
+    of it. Where the overlap is empty or tiny the scene-matched delta is reported as
+    blank / on a small n rather than silently substituted — it cannot be computed.
+    """
+    sc = _scenes(axis_recs)
+    return [r for r in orig_recs if r.get("reset_state_hash") in sc]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--suite", default="libero_goal")
@@ -56,7 +81,8 @@ def main():
 
     para_rows, axis_rows, op_rows, locus_rows = [], [], [], []
     for model in MODELS:
-        orig_tsr = _tsr(_records(model, args.suite, "original", rr))
+        orig_recs = _records(model, args.suite, "original", rr)
+        orig_tsr = _tsr(orig_recs)
         if orig_tsr is None:
             continue
         # RQ2.4 failure locus per axis (planning vs execution), pooled over axes too.
@@ -80,10 +106,16 @@ def main():
             t = _tsr(recs)
             axis_tsr[axis] = t
             pride = PW.pride_for_model(model, args.suite, str(rr), axis=axis) or {}
+            sm = _scene_matched(orig_recs, recs)
+            sm_tsr = _tsr(sm)
             para_rows.append({
                 "model": model, "axis": axis, "n": len(recs),
+                "n_scenes": len(_scenes(recs)),
                 "TSR_original": round(orig_tsr, 4), "TSR": round(t, 4),
                 "delta_TSR_pp": round((orig_tsr - t) * 100, 2),
+                "n_original_scene_matched": len(sm),
+                "TSR_original_scene_matched": round(sm_tsr, 4) if sm_tsr is not None else "",
+                "delta_TSR_pp_scene_matched": round((sm_tsr - t) * 100, 2) if sm_tsr is not None else "",
                 "PRIDE": pride.get("pride", ""), "SK_score": pride.get("sk_score", ""),
                 "ST_score": pride.get("st_score", ""),
             })
@@ -104,10 +136,17 @@ def main():
         allp = [r for axis in AXES for r in _records(model, args.suite, axis, rr)]
         if allp:
             pride_all = PW.pride_for_model(model, args.suite, str(rr)) or {}
+            sm_all = _scene_matched(orig_recs, allp)
+            sm_all_tsr = _tsr(sm_all)
             para_rows.append({
                 "model": model, "axis": "ALL", "n": len(allp),
+                "n_scenes": len(_scenes(allp)),
                 "TSR_original": round(orig_tsr, 4), "TSR": round(_tsr(allp), 4),
                 "delta_TSR_pp": round((orig_tsr - _tsr(allp)) * 100, 2),
+                "n_original_scene_matched": len(sm_all),
+                "TSR_original_scene_matched": round(sm_all_tsr, 4) if sm_all_tsr is not None else "",
+                "delta_TSR_pp_scene_matched": (round((sm_all_tsr - _tsr(allp)) * 100, 2)
+                                               if sm_all_tsr is not None else ""),
                 "PRIDE": pride_all.get("pride", ""), "SK_score": pride_all.get("sk_score", ""),
                 "ST_score": pride_all.get("st_score", ""),
             })
@@ -131,7 +170,9 @@ def main():
         print("wrote", path, f"({len(rows)} rows)")
 
     _write(report / "rq2_paraphrase.csv", para_rows,
-           ["model", "axis", "n", "TSR_original", "TSR", "delta_TSR_pp", "PRIDE", "SK_score", "ST_score"])
+           ["model", "axis", "n", "n_scenes", "TSR_original", "TSR", "delta_TSR_pp",
+            "n_original_scene_matched", "TSR_original_scene_matched",
+            "delta_TSR_pp_scene_matched", "PRIDE", "SK_score", "ST_score"])
     _write(report / "rq2_axis.csv", axis_rows,
            ["model", "TSR_original", "TSR_object", "TSR_action", "dTSR_object_pp", "dTSR_action_pp"])
     _write(report / "rq2_operation.csv", op_rows,
