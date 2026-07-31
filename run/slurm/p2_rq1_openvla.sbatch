@@ -25,7 +25,11 @@
 # only sustained EGL rendering exposes it. HANDOFF 1.5 said excluding d4054 was a
 # no-op because it was DRAIN; it is schedulable again, so the exclude is live and
 # load-bearing. Drop it only after a long rollout is shown to survive there.
-#SBATCH --exclude=d4054
+# d4053 EXCLUDED TOO, same signature, measured 2026-07-31: jobs 8859517/8859518
+# SIGABRTed (exit 134, core dump) on all four of their tasks immediately after
+# "env ready", with no Python traceback, while 8859514-8859516 ran the identical
+# code over tasks 0-5 to completion on d4052 in the same hour.
+#SBATCH --exclude=d4053,d4054
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=08:00:00
