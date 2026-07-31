@@ -166,8 +166,12 @@ def rq2_table(rows: list[dict]) -> None:
         return
     axis_pretty = {"para_object": "Object", "para_action": "Action",
                    "para_compositional": "Compositional", "ALL": r"\textbf{All axes}"}
-    lines = [r"\begin{tabular}{llrccc}", r"\toprule",
-             r"\textbf{Model} & \textbf{Paraphrase Axis} & \textbf{$n$} & \textbf{TSR} & "
+    # `scenes` is not decoration: SmolVLA's 2963 compositional episodes cover only 20
+    # distinct initial scenes, so n badly overstates the independent variation behind
+    # the estimate. The paper says it reports scenes alongside n, so the table must.
+    lines = [r"\begin{tabular}{llrrccc}", r"\toprule",
+             r"\textbf{Model} & \textbf{Paraphrase Axis} & \textbf{$n$} & "
+             r"\textbf{scenes} & \textbf{TSR} & "
              r"\textbf{$\Delta$TSR (pp)} & \textbf{PRIDE} \\", r"\midrule"]
     for i, m in enumerate(MODEL_ORDER):
         mr = [r for r in rows if r["model"] == m]
@@ -176,8 +180,10 @@ def rq2_table(rows: list[dict]) -> None:
         if i:
             lines.append(r"\midrule")
         for r in mr:
+            scenes = fnum(r.get("n_scenes"))
             lines.append(
                 f"{PRETTY[m]} & {axis_pretty.get(r['axis'], r['axis'])} & {int(fnum(r['n'], 0))} & "
+                f"{'--' if scenes is None else int(scenes)} & "
                 f"{pct(fnum(r['TSR']), 2)} & $-{fnum(r['delta_TSR_pp'], 0):.2f}$ & "
                 f"{fnum(r['PRIDE'], 0):.1f} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
@@ -200,10 +206,52 @@ def rq3_table(rows: list[dict]) -> None:
     write("rq3_divergence.tex", "\n".join(lines) + "\n")
 
 
+def wordclass_table(rows: list[dict]) -> None:
+    """The antonym vs near-synonym split behind the RQ2 reframe.
+
+    This was hand-written into paper_acl.tex. Those five numbers move whenever the
+    grid is regenerated, and hand-transcribed numbers are exactly what produced this
+    project's earlier false claims -- so they are generated here instead, with n in
+    the table. Rows come from analyze/instruction_information.py.
+    """
+    split = [r for r in rows if r["section"] == "wrong_action_split"]
+    if not split:
+        return
+    by = {(r["model"], r["subset"]): r for r in split}
+    lines = [r"\begin{tabular}{lcccc}", r"\toprule",
+             r"\textbf{Model} & \multicolumn{2}{c}{\textbf{antonym}} & "
+             r"\multicolumn{2}{c}{\textbf{near-synonym}} \\",
+             r"\cmidrule(lr){2-3} \cmidrule(lr){4-5}",
+             r" & $\Delta$TSR & $n$ & $\Delta$TSR & $n$ \\", r"\midrule"]
+    for m in MODEL_ORDER:
+        cells = []
+        for subset in ("antonym", "near-syn"):
+            r = by.get((m, subset))
+            if r is None:
+                cells += ["--", "--"]
+                continue
+            # note field carries "orig=<rate> delta_pp=<pp>"; delta is a drop.
+            delta = None
+            for tok in (r.get("note") or "").split():
+                if tok.startswith("delta_pp="):
+                    delta = fnum(tok.split("=", 1)[1])
+            n = int(fnum(r["n"], 0))
+            if delta is None:
+                cells += ["--", str(n)]
+            elif abs(delta) < 0.05:  # avoid rendering a signed "-0.0"
+                cells += [r"\phantom{$-$}$0.0$ pp", str(n)]
+            else:
+                cells += [f"$-{delta:.1f}$ pp", str(n)]
+        lines.append(f"{PRETTY[m]} & " + " & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    write("rq2_wordclass.tex", "\n".join(lines) + "\n")
+
+
 def main() -> None:
     rq1_tables(read_csv("rq1_causal.csv"))
     rq2_table(read_csv("rq2_paraphrase.csv"))
     rq3_table(read_csv("rq3_divergence.csv"))
+    wordclass_table(read_csv("instruction_information.csv"))
     print("\n[make_tables] done. In paper_acl.tex, replace each hand-written tabular with:\n"
           "    \\input{tables/rq1_causal}      (and rq1_n_note in the caption)\n"
           "    \\input{tables/rq2_para}\n"
