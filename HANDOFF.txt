@@ -132,6 +132,43 @@ openvla wants 1-2 tasks per job. Short --time requests also backfill much better
 What you must NOT do is assume a resumed cell is usable: "just resubmit, it
 resumes" is exactly what broke the grid.
 
+1.7  DESIGN RULE THAT FOLLOWS FROM 1.6 — and it drives GPU cost
+Any two conditions you intend to COMPARE must be produced by the same process,
+because that is the only way they share initial scenes. So the condition list is
+not a free parameter you can extend later: adding a condition to a model means
+re-running EVERY condition you want it compared against, for every task.
+Consequence for the word-class ablation (nouns_masked / verb_dropped, see 1.8):
+  * OFT — folded in now. Its 9-condition grid (7 causal + 2 ablation) is ~1.7 h
+    per seed at ~6.8 s/episode, so it costs essentially nothing. Jobs 8853355/56.
+  * openvla / smolvla — NOT folded in. At ~160 s/episode the 2 extra conditions
+    are ~18 GPU-h per model, and the deliberate plan (2026-07-31) is to see the
+    OFT result before spending that. The catch: the openvla causal grid running
+    NOW is 7-condition, so if the ablation is later added to openvla, that grid
+    is discarded and re-run (~62 GPU-h). Decide before openvla gets far.
+
+1.8  THE RQ2 REFRAME  (2026-07-31) — read analyze/instruction_information.py
+The "asymmetric grounding gap" (nouns bound strictly, verbs near-optional) is not
+a model deficiency; it is the information structure of LIBERO-Goal.
+    H(task) = 3.32 bits | H(task | noun set) = 0.00 | H(task | verb set) = 1.55
+All 10 noun sets are distinct, while "put" alone covers 6 of 10 tasks. Conditional
+on the nouns the verb carries ZERO task information, so ignoring it is OPTIMAL
+here. wrong_action cannot detect verb-blindness either: 7 of its 10 substitutions
+are put->push, preserving the noun set and hence the task. Only tasks 0/3/7 swap a
+true antonym. Split that way, SmolVLA drops 25.3 pp on antonyms vs 10.7 pp on the
+rest, while OFT is unmoved by either (12/12 on antonyms — told "turn off the
+stove" it turns it on). OFT's verb-blindness is real; the suite-wide claim was not.
+wrong_object is three conditions in a trench coat: another task's VERBATIM
+instruction (task4 -> task2), a novel coherent goal, and DEGENERATE self-reference
+("put the bowl in the bowl") where failure is meaningless. In the decisive case
+all three models do the task the new nouns NAME and never the original (smolvla
+17/20, openvla 4/4, oft 4/4) — compliance, scored by the paper as a 0% failure and
+written up as a "universal performance collapse to 7.1%".
+FALSIFIABLE TEST, now running on OFT: verb_dropped ("the bowl on the stove",
+0 bits removed) should cost ~nothing; nouns_masked ("put the thing on the thing",
+3.32 bits removed) should be catastrophic. If verb_dropped collapses, the account
+above is WRONG and the models genuinely need the verb token. Do not write up the
+reframe until this returns.
+
 --------------------------------------------------------------------------------
 2. DECISIONS IN FORCE  (agreed 2026-07-29)
 --------------------------------------------------------------------------------
