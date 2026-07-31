@@ -58,7 +58,18 @@ OVENV="LIBERO_CONFIG_PATH=/home/pandya.kei/.libero_openvla HF_HUB_OFFLINE=1"
 
 # --- Tunables -----------------------------------------------------------------
 N_EPISODES="${N_EPISODES:-10}"
-CONDITIONS="${CONDITIONS:-original,blank,nonsense,wrong_object,wrong_action,wrong_task,repeated}"
+# NINE conditions: the 7 causal ones plus the nouns_masked/verb_dropped word-class
+# ablation. HANDOFF 1.7 deferred this for openvla on a ~18 GPU-h estimate drawn
+# from 160 s/episode; the measured rate is ~46 s/episode on h200 (job 8853238 ran
+# task0's whole grid, 60 episodes, in 46.5 min), so the 2 extra conditions cost
+# ~7 GPU-h, not 18. Folding them in now is cheaper than the alternative, because
+# conditions that get COMPARED must come from one process (1.6/1.7) — adding the
+# ablation later would discard and re-run this entire grid. Decided 2026-07-31.
+# smolvla stays at 7: there the rate really is ~161 s/episode.
+#
+# Do NOT pass this via `sbatch --export=ALL,CONDITIONS=a,b,c`: SLURM splits that
+# list on commas. Use `CONDITIONS=a,b,c sbatch --export=ALL ...` instead.
+CONDITIONS="${CONDITIONS:-original,blank,nonsense,wrong_object,wrong_action,wrong_task,repeated,nouns_masked,verb_dropped}"
 TASKS="${TASKS:-0 1 2 3 4 5 6 7 8 9}"
 if [ -n "${SEED_ONLY:-}" ]; then SEEDS="$SEED_ONLY"; else SEEDS="7 42"; fi
 # ------------------------------------------------------------------------------
