@@ -62,11 +62,13 @@ tid = args.task_id
 # instructions per condition for THIS task (plain json; no heavy imports pre-env)
 gen = REPO_ROOT / "perturb" / "generated" / f"{args.suite}.jsonl"
 instr = {}  # condition -> instruction (None/absent => skip)
+declared = set()  # every condition this file mentions for the task, skipped or not
 true_lang = task_name = None
 for line in gen.read_text().splitlines():
     r = json.loads(line)
     if int(r["task_id"]) != tid:
         continue
+    declared.add(r["condition"])
     if r["condition"] == "original":
         true_lang = r["instruction"]
         task_name = r["task_name"]
@@ -224,8 +226,25 @@ if args.paraphrase_axis:
     groups = [(args.paraphrase_axis, items)]
     print(f"[eval_task {tid}] paraphrase mode axis={args.paraphrase_axis} n_paraphrases={len(items)}", flush=True)
 else:
+    # A requested condition that this file never mentions is a HARD ERROR, not a
+    # silent drop. Job 8853538 asked for 7 conditions, built one group, ran
+    # `original` only and exited 0 — the grid looked "DONE" while 6/7 of it was
+    # never attempted. Absent (a stale/misspelled list) and skipped-by-design
+    # (wrong_object has no valid same-scene swap on tasks 0/3/7) are different
+    # things and only the second one is allowed to shrink the grid.
+    absent = [c for c in conditions if c != "original" and c not in declared]
+    assert not absent, (
+        f"--conditions names {absent}, which {gen} has no record of for task {tid}. "
+        f"Refusing to run a silently smaller grid. Declared here: {sorted(declared)}."
+    )
+    by_design = [c for c in conditions if c != "original" and c not in instr]
+    if by_design:
+        print(f"[eval_task {tid}] skip by design (no valid swap): {','.join(by_design)}",
+              flush=True)
     groups = [(c, [(true_lang if c == "original" else instr[c], {})])
               for c in conditions if (c == "original" or c in instr)]
+    print(f"[eval_task {tid}] grid: {len(groups)} conditions x {args.n_episodes} eps "
+          f"= {[lab for lab, _ in groups]}", flush=True)
 
 # Scene-fixed guard. In causal mode every condition of this task must be produced
 # by THIS process, or they land on different initial scenes and the causal contrast

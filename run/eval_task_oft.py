@@ -64,11 +64,13 @@ assert Path(os.environ["LIBERO_CONFIG_PATH"], "config.yaml").exists()
 
 gen = REPO_ROOT / "perturb" / "generated" / f"{args.suite}.jsonl"
 instr = {}
+declared = set()  # every condition this file mentions for the task, skipped or not
 true_lang = task_name = None
 for line in gen.read_text().splitlines():
     r = json.loads(line)
     if int(r["task_id"]) != tid:
         continue
+    declared.add(r["condition"])
     if r["condition"] == "original":
         true_lang = r["instruction"]; task_name = r["task_name"]
     if not (r.get("skip") or r.get("instruction") is None):
@@ -242,8 +244,21 @@ if args.paraphrase_axis:
     groups = [(args.paraphrase_axis, items)]
     print(f"[oft {tid}] paraphrase mode axis={args.paraphrase_axis} n_paraphrases={len(items)}", flush=True)
 else:
+    # See the same block in run/eval_task.py. THIS runner is where the failure was
+    # observed: jobs 8853538/8853539 requested the full grid, silently built one
+    # group, ran `original` x10 on all 10 tasks, printed DONE and exited 0.
+    absent = [c for c in conditions if c != "original" and c not in declared]
+    assert not absent, (
+        f"--conditions names {absent}, which {gen} has no record of for task {tid}. "
+        f"Refusing to run a silently smaller grid. Declared here: {sorted(declared)}."
+    )
+    by_design = [c for c in conditions if c != "original" and c not in instr]
+    if by_design:
+        print(f"[oft {tid}] skip by design (no valid swap): {','.join(by_design)}", flush=True)
     groups = [(c, [(true_lang if c == "original" else instr[c], {})])
               for c in conditions if (c == "original" or c in instr)]
+    print(f"[oft {tid}] grid: {len(groups)} conditions x {args.n_episodes} eps "
+          f"= {[lab for lab, _ in groups]}", flush=True)
 
 # Scene-fixed guard: every condition of this task must be produced by THIS
 # process, or the conditions land on different initial scenes and the causal

@@ -65,7 +65,8 @@ if [ -n "${SEED_ONLY:-}" ]; then SEEDS="$SEED_ONLY"; else SEEDS="7 42"; fi
 # ------------------------------------------------------------------------------
 
 LOG=$SCRATCH/p2_rq1_smolvla_${SLURM_JOB_ID:-manual}.log
-echo "=== P2 SmolVLA RQ1 | seeds=[$SEEDS] tasks=[$TASKS] n_ep=$N_EPISODES | $(hostname|cut -d. -f1) $(date) ===" | tee "$LOG"
+# CONDITIONS echoed: it is overridable and decides how big the grid actually is.
+echo "=== P2 SmolVLA RQ1 | seeds=[$SEEDS] tasks=[$TASKS] n_ep=$N_EPISODES conds=[$CONDITIONS] | $(hostname|cut -d. -f1) $(date) ===" | tee "$LOG"
 
 # Preflight ONCE (heavy CUDA+EGL must survive or the render channel is degraded).
 $SM run/preflight.py >> "$LOG" 2>&1 || {

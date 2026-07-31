@@ -65,7 +65,10 @@ if [ -n "${SEED_ONLY:-}" ]; then SEEDS="$SEED_ONLY"; else SEEDS="7 42"; fi
 # ------------------------------------------------------------------------------
 
 LOG=$SCRATCH/p2_rq1_oft_${SLURM_JOB_ID:-manual}.log
-echo "=== P2 OFT RQ1 | seeds=[$SEEDS] tasks=[$TASKS] n_ep=$N_EPISODES | $(hostname|cut -d. -f1) $(date) ===" | tee "$LOG"
+# CONDITIONS is echoed because it is overridable per-submission and its value is
+# the difference between a full causal grid and one condition. Jobs 8853538/8853539
+# ran `original` alone and nothing in the log said so.
+echo "=== P2 OFT RQ1 | seeds=[$SEEDS] tasks=[$TASKS] n_ep=$N_EPISODES conds=[$CONDITIONS] | $(hostname|cut -d. -f1) $(date) ===" | tee "$LOG"
 
 # Gate on THIS env, not on smolvla: run/preflight.py loads SmolVLA, so it could
 # neither validate this stack nor fail for a reason relevant to it.
