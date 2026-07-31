@@ -19,6 +19,15 @@
 # data was measured there and on h200), so keep the widest node pool. Pass
 # --gres=gpu:h200:1 when you want the fast pool.
 #SBATCH --gres=gpu:1
+# d4054 EXCLUDED. Measured 2026-07-31: every rollout process on d4054 SIGABRTs
+# (core dump) a couple of episodes after "env ready", while the identical job
+# succeeds on d4052 — openvla task0 ran 60 episodes clean on d4052 (job 8853238)
+# and job 8853239 aborted on d4054; the OFT grid aborted on ALL TEN tasks there
+# (job 8853355). A short smoke test PASSES on d4054, so the node looks healthy and
+# only sustained EGL rendering exposes it. HANDOFF 1.5 said excluding d4054 was a
+# no-op because it was DRAIN; it is schedulable again, so the exclude is live and
+# load-bearing. Drop it only after a long rollout is shown to survive there.
+#SBATCH --exclude=d4054
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
 #SBATCH --time=08:00:00
