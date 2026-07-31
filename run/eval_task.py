@@ -232,30 +232,40 @@ for label, items in groups:
     out_dir.mkdir(parents=True, exist_ok=True)
     
     out_file = out_dir / f"task{tid}.jsonl"
-    expected_lines = len(items) * args.n_episodes
+    # Resume by KEY, not by line count. A count-based fast-forward assumes the
+    # file on disk is an exact prefix of this work list; when it is not, it lands
+    # at the wrong offset and re-rolls episodes that are already present. That is
+    # how para_compositional/seed7/task7.jsonl grew 21 duplicate
+    # (para_idx, episode) pairs — 321 rows for 300 distinct episodes, silently
+    # double-counted by PRIDE (see analyze/dedupe_results.py). Every record
+    # already carries the key it belongs to, so match on that instead: correct
+    # regardless of what the file holds or what order it was written in.
+    expected_keys, _ep = [], 0
+    for _text, _extra in items:
+        for _ in range(args.n_episodes):
+            expected_keys.append((_extra.get("para_idx"), _ep))
+            _ep += 1
+
+    existing_keys = set()
     if out_file.exists():
         try:
             with open(out_file) as f:
-                lines = [l.strip() for l in f if l.strip()]
-            if len(lines) >= expected_lines:
-                print(f"[{args.model} {tid} {label}] skip (already has {len(lines)}/{expected_lines} eps)", flush=True)
-                continue
+                for line in f:
+                    if line.strip():
+                        r = json.loads(line)
+                        existing_keys.add((r.get("para_idx"), r.get("episode")))
         except Exception:
             pass
 
-    existing_records = []
-    if out_file.exists():
-        try:
-            with open(out_file) as f:
-                existing_records = [json.loads(l) for l in f if l.strip()]
-        except Exception:
-            pass
+    if out_file.exists() and all(k in existing_keys for k in expected_keys):
+        print(f"[{args.model} {tid} {label}] skip (all {len(expected_keys)} eps present)", flush=True)
+        continue
 
     ep_global = 0
-    with open(out_file, "a" if existing_records else "w") as ep_file:
+    with open(out_file, "a" if existing_keys else "w") as ep_file:
         for text, extra in items:
           for ep in range(args.n_episodes):
-            if ep_global < len(existing_records):
+            if (extra.get("para_idx"), ep_global) in existing_keys:
                 ep_global += 1
                 continue
             # Episode k -> init state k (50 available per LIBERO task). ep_global
