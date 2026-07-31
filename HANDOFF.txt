@@ -10,12 +10,16 @@ Goal:   An HONEST, reproducible ACL (or comparable) submission on whether
         instruction. Near-term deadline (weeks). Cluster GPUs are heavily
         contended; plan around queue time, not GPU-hours.
 
-STATUS: The P2 episode top-up is RUNNING at last (it was blocked for ~3 weeks by a
-        stale config file, not by GPUs — see 1.1). Both 7B envs have been rebuilt
-        from scratch and await one GPU validation job. RQ4 must be re-measured
-        before it can be cited for 3 models (1.3). Remaining: finish the top-up,
-        re-measure RQ4, regenerate CSVs/plots, re-sync the paper prose, decide the
-        raw-data retention policy.
+STATUS (2026-07-31): SmolVLA seed42 is COMPLETE at 10 eps/task; seed7 is complete
+        except tasks 0-2, which are re-running now. The 7B envs are fixed and
+        smoke_openvla passes end to end; smoke_oft is awaiting one more GPU job.
+        RQ4 must still be re-measured before it can be cited for 3 models (1.3).
+
+        !!! NEW AND IMPORTANT (1.6): the scene-fixed invariant — the basis of every
+        causal claim in the paper — is BROKEN in the data on disk, and
+        report/scene_fixed_check.json has been recording pass=false all along
+        without failing anything. The whole 7B causal grid must be regenerated.
+        Read 1.6 before running anything.
 
 --------------------------------------------------------------------------------
 0. THE ONE-PARAGRAPH SUMMARY
@@ -93,6 +97,34 @@ measured: CUDA_VISIBLE_DEVICES=0 while SLURM_JOB_GPUS=2, and
 egl_probe.get_available_devices() returns [0] — so concurrent jobs on one node do
 NOT contend for physical GPU 0, and 0 is correct. Do not "fix" this to a physical
 index; that breaks the assertion (job 8827887).
+
+1.6  "Scene is provably fixed across conditions."  (FOUND 2026-07-31)
+It is not, and report/scene_fixed_check.json has said so — "pass": false — while
+paper_acl.tex asserted the opposite. Three separate things hid it: the check wrote
+ONE shared file that each model's aggregate run overwrote (so the committed copy
+described only whichever model ran last), it keyed on LINE INDEX instead of the
+recorded episode, and its result never affected any exit code.
+ROOT CAUSE, and it is not a runner bug: the initial scene is NOT a pure function of
+(task, episode). The runners call env.seed(...) once when the env is built, and
+every reset advances that RNG, which perturbs object poses even though init_state
+pins qpos/qvel. So the scene an episode lands on ALSO depends on how many resets
+its OS process has already served. Any cell finished by a second process sits on a
+different scene than its siblings, and the output looks perfectly normal.
+MEASURED (episodes whose scene differs across conditions):
+    smolvla      seed7 task0 only (8/10); every single-process task is clean
+    openvla      EVERY task, both seeds (conditions split Jul-10 / Jul-15)
+    openvla_oft  EVERY task on seed7 (`original` alone was re-run Jul-25)
+The clincher is smolvla task0: a job hit the wall after `nonsense` ep8, and ep9 —
+written by the resuming process — is on a different scene than ep0-8 of the SAME
+condition, one episode apart.
+FIXED IN CODE (commit 953b796): run/scene_atomic.py makes the TASK the unit of
+atomicity — one process produces all conditions x all episodes for a task, or the
+task's partial output is deleted and redone. aggregate.py now exits 2 on a failing
+check and writes report/scene_fixed_check_<model>_<suite>.json per model.
+CONSEQUENCE FOR GPU PLANNING: size jobs so a task always finishes inside the wall.
+One task x 7 conditions x 10 episodes is ~3 h for smolvla and openvla, minutes for
+OFT. Submit ONE TASK PER JOB. A job that dies now costs one task instead of
+silently confounding the grid. Do NOT go back to multi-task 8 h jobs.
 
 --------------------------------------------------------------------------------
 2. DECISIONS IN FORCE  (agreed 2026-07-29)
@@ -179,24 +211,37 @@ index; that breaks the assertion (job 8827887).
 --------------------------------------------------------------------------------
 4. WHAT IS LEFT, IN ORDER
 --------------------------------------------------------------------------------
-P2a. FINISH THE SMOLVLA TOP-UP  (running)
-   8 jobs, 3 tasks each: sbatch --export=ALL,SEED_ONLY=<7|42>,TASKS="0 1 2",
-   N_EPISODES=10 run/slurm/p2_rq1_smolvla.sbatch
-   Measured 161 s/episode (median over 4402 logged episodes), so a 3-task job is
-   ~7.3 h against the 8 h wall — resubmit on a wall hit, the runner resumes.
+P2a. FINISH THE SMOLVLA TOP-UP  (tasks 0-2 seed7 running; everything else DONE)
+   ONE TASK PER JOB — see 1.6, this is not a preference:
+     sbatch --time=05:00:00 --export=ALL,SEED_ONLY=7,TASKS=<t>,N_EPISODES=10 \
+            run/slurm/p2_rq1_smolvla.sbatch
+   Measured 161 s/episode (median over 4402 logged episodes) => ~3.1 h for one
+   task's 7 conditions x 10 episodes, comfortably inside a 5 h request, and short
+   requests backfill far better than 8 h ones.
    Check progress by counting jsonl lines, NOT by reading the .out files: the
    `| grep | tee` pipeline buffers and shows nothing for a long time.
 
-P2b. 7B TOP-UP  (blocked ONLY on the smoke gate)
-   1. sbatch run/slurm/smoke_7b.sbatch  -> must print both SMOKE OK lines.
-   2. OFT first, it is the cheapest win by far (~6.8 s/episode thanks to 8-step
-      action chunks => the whole remaining grid is ~3 GPU-h):
-        sbatch --export=ALL,SEED_ONLY=7  run/slurm/p2_rq1_oft.sbatch
-        sbatch --export=ALL,SEED_ONLY=42 run/slurm/p2_rq1_oft.sbatch
-   3. OpenVLA, ~140-180 s/episode => 2 tasks per job:
-        sbatch --export=ALL,SEED_ONLY=7,TASKS="0 1",N_EPISODES=10 \
-               run/slurm/p2_rq1_openvla.sbatch      (and so on, 10 jobs)
-   NOTE openvla is missing its whole repeated/seed42 cell (20 episodes).
+P2b. 7B GRID — REGENERATE, do not top up  (decided 2026-07-31)
+   Per 1.6, every 7B causal cell is scene-broken, so the existing 2 eps/cell
+   (248 openvla + 268 oft) are discarded rather than resumed onto. scene_atomic
+   does the deletion automatically when the runner starts on a partial task;
+   nothing needs to be removed by hand. Cost ~11.5 GPU-h beyond the planned grid,
+   and it buys a clean scene-fixed n=10 with no analysis caveat.
+   1. sbatch --partition=gpu --time=00:25:00 run/slurm/smoke_7b.sbatch
+      -> must print BOTH SMOKE OK lines. smoke_openvla already passes (job
+      8853171 pending for smoke_oft). Use `gpu` with a short --time, not
+      gpu-short: that QOS is starved (see section 5).
+   2. OFT first, the cheapest win by far (~6.8 s/episode thanks to 8-step action
+      chunks => the whole grid is ~3 GPU-h), one task per job:
+        sbatch --time=01:00:00 --export=ALL,SEED_ONLY=<7|42>,TASKS=<t>,\
+               N_EPISODES=10 run/slurm/p2_rq1_oft.sbatch
+   3. OpenVLA, ~140-180 s/episode => ~3.1 h per task, ONE TASK PER JOB, 20 jobs:
+        sbatch --time=05:00:00 --export=ALL,SEED_ONLY=<7|42>,TASKS=<t>,\
+               N_EPISODES=10 run/slurm/p2_rq1_openvla.sbatch
+   4. Then confirm the invariant actually holds before believing any of it:
+        python run/aggregate.py --model openvla     --suite libero_goal
+        python run/aggregate.py --model openvla_oft --suite libero_goal
+      Exit 0 and pass=true, or the causal numbers are not usable.
 
 P2c. RQ4 RE-MEASUREMENT  (needs the 7B envs; ~1 GPU-h)
    One job PER ENV, then merge:
@@ -215,14 +260,19 @@ P4. REGENERATE EVERYTHING (CPU only, no GPU):
      $PY analyze/make_rq2_csv.py --suite libero_goal && $PY analyze/plot_rq2.py
      $PY analyze/make_tables.py                # refresh the paper's tables
    Data-quality items to settle here:
-     - De-dupe smolvla/para_compositional/seed7/task7.jsonl: 21 duplicate
-       (para_idx, episode) pairs, from resume-by-line-count in paraphrase mode
-       (the paraphrase list changed between runs). Fix before recomputing PRIDE.
+     - [DONE 2026-07-31] The 21 duplicate (para_idx, episode) pairs in
+       smolvla/para_compositional/seed7/task7.jsonl are gone (321 -> 300 rows) via
+       analyze/dedupe_results.py, and the cause is fixed at source: eval_task.py
+       now resumes on the recorded key, not the line count. Note the old diagnosis
+       here ("the paraphrase list changed between runs") was WRONG — all 21 pairs
+       have byte-identical instructions. A scan of all 532 result files found no
+       other duplicates. PRIDE must be recomputed off the deduped file.
      - report/rq3_divergence.csv is STALE (5-15 pairs vs ~20 now available).
-     - openvla RQ3 is effectively n=2: its wrong_*/para_* reset_state_hash values
-       do not match its own original cell, so pairing fails. The re-run should
-       realign them; if pair counts do not recover, chase it as a bug rather than
-       writing it up as small-n.
+     - openvla RQ3's n=2 is SOLVED, and it was a real bug, not small-n: the
+       "wrong_*/para_* reset_state_hash does not match original" symptom IS the
+       scene-fixed break in 1.6. Pairing failed because those cells genuinely ran
+       from different scenes. The P2b regeneration fixes it; if pair counts still
+       do not recover afterwards, that is a NEW bug.
 
 P5. PAPER PROSE RE-SYNC (no GPU). The tables now regenerate themselves; the PROSE
     numbers do not. After P4, re-sync: abstract, the contribution bullets, the RQ1
