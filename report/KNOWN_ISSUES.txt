@@ -156,3 +156,102 @@ Two further items to validate before the paper leans on the magnitudes:
 The AAR is a RATIO, so a consistent mis-span largely cancels and the monotone
 noun>verb-with-depth trend is probably robust — but re-run after fixing (a)/(b)
 and confirm the trend before citing exact AAR numbers.
+
+--------------------------------------------------------------------------------
+6. SCENE-FIXED INVARIANT VIOLATED IN THE SHIPPED DATA  (OPEN — GPU re-run under way)
+--------------------------------------------------------------------------------
+FOUND 2026-07-31. This is the most serious data issue in the project so far,
+because the scene-fixed property is the entire basis of the causal claims: if two
+conditions started from different initial scenes, their TSR difference is
+confounded by the scene and cannot be attributed to the instruction.
+
+report/scene_fixed_check.json has been recording "pass": false in the repo while
+report/paper_acl.tex asserted the scene is provably fixed. Three separate defects
+kept that invisible:
+  (a) run/aggregate.py wrote ONE shared scene_fixed_check.json, so each model's
+      aggregate run overwrote the previous model's result and the committed file
+      described only whichever model happened to run last. This is the SAME
+      one-output-overwritten-per-invocation bug as issue 5(a).
+  (b) The check keyed on LINE INDEX rather than the recorded episode number, so
+      once a file had gaps or duplicates it compared different episodes to each
+      other.
+  (c) The result never affected an exit code, so aggregation jobs kept exiting
+      COMPLETED with a failing invariant.
+
+ROOT CAUSE (not a runner bug). The initial scene is NOT a pure function of
+(task, episode). The runners call env.seed(...) ONCE when the env is constructed,
+and every reset advances that RNG, which perturbs object poses even though
+init_state pins qpos/qvel. So the scene an episode receives also depends on how
+many resets its OS process has already served. Any cell finished by a SECOND
+process lands on a different scene than its siblings — and the output looks
+entirely normal: ordered, complete, plausible.
+
+MEASURED (episodes whose scene differs across conditions):
+    smolvla      seed7 task0 only (8/10); every single-process task is clean
+    openvla      EVERY task, both seeds (conditions split Jul-10 / Jul-15)
+    openvla_oft  EVERY task on seed7 (`original` alone was re-run Jul-25)
+The clincher is smolvla task0: a job hit the wall-time limit after `nonsense`
+ep8, and ep9 — written by the resuming process — sits on a different scene than
+ep0-8 of the SAME condition, one episode apart.
+
+This also explains, and retires, the "openvla RQ3 is effectively n=2" item: its
+wrong_*/para_* reset_state_hash values failed to pair with its own original cell
+because those cells genuinely ran from different scenes. It was never small-n.
+
+FIX IN CODE (commit 953b796):
+  - run/scene_atomic.py, wired into all three runners: the TASK is the unit of
+    atomicity. One process produces all conditions x all episodes for a task, or
+    the task's partial output is DELETED and regenerated. Discarding paid-for
+    episodes is deliberate — they cannot be merged with a new process's episodes
+    without confounding the contrast.
+  - run/aggregate.py exits 2 on a failing check (--allow-scene-mismatch to
+    override) and writes scene_fixed_check_<model>_<suite>.json per model.
+  - The p2_rq1_* sbatch grep allowlist now passes scene_atomic messages through,
+    so a discard is auditable in the job log.
+
+SCHEDULING RULE THAT FOLLOWS: submit ONE TASK PER JOB, sized so a task always
+finishes inside the wall (~3 h for smolvla/openvla at 7 conditions x 10 episodes;
+minutes for OFT). Never "just resubmit, the runner resumes" for a causal cell.
+
+REMAINING: smolvla tasks 0-2 seed7 are regenerating; the full 7B causal grid is
+to be regenerated (decision 2026-07-31, ~11.5 GPU-h beyond the planned grid).
+No causal number may be cited until run/aggregate.py exits 0 with pass=true for
+that model.
+
+--------------------------------------------------------------------------------
+7. RQ2 PARAPHRASE DELTAS ARE SCENE-CONFOUNDED  (OPEN — partly mitigated in analysis)
+--------------------------------------------------------------------------------
+A consequence of issue 6, but it needs separate handling because RQ2 is a POOLED
+comparison (paraphrase TSR vs the original condition's TSR), not a per-episode
+pairing. The paraphrase cells and the original cell were produced by different
+processes, so they sample different initial scenes and part of the reported
+"paraphrase cost" is really a scene difference.
+
+Scene overlap between each model's paraphrase pool and its original pool:
+    smolvla      2 of 10 scenes per task
+    openvla      0 (scene-matched baseline collapses to n=2 — unusable)
+    openvla_oft  0 (n=20 available via seed42 — usable)
+
+MITIGATION IN PLACE: analyze/make_rq2_csv.py now emits the delta computed BOTH
+ways — against the full original pool and against the scene-matched subset of it
+— plus n_scenes alongside n. The qualitative RQ2 result SURVIVES (the
+object < action < compositional ordering is unchanged), but magnitudes move
+materially, e.g. smolvla para_object 48.1 -> 40.3 pp, para_action 70.5 -> 58.4 pp.
+The paper's prose must use the scene-matched column or state the confound
+explicitly.
+
+SECOND, SEPARATE PROBLEM IN THE SAME TABLE: n_scenes shows smolvla's 2963
+para_compositional episodes cover only 2 distinct scenes PER TASK (20 overall),
+because the paraphrase runs predate the init-state cycling fix. The paraphrase
+diversity behind that n is genuine, but the scene diversity is not, and a CI
+computed as though 2963 were independent draws overstates the precision. Report
+n_scenes with n.
+
+NOT FIXED, AND NOT FIXABLE BY THE ISSUE-6 REGENERATION: regenerating the 7B
+`original` cells in fresh processes gives them new scene hashes, so their overlap
+with the OLD paraphrase cells will likely drop to zero and the 7B scene-matched
+delta becomes uncomputable rather than merely small-n. Making it computable
+requires re-running the paraphrase axes IN THE SAME PROCESS as their original
+baseline (~20 GPU-h for openvla; minutes for OFT; smolvla's 4092 paraphrase
+episodes at ~161 s each are too expensive to redo before the deadline and should
+be reported with the caveat instead).
