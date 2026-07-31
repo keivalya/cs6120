@@ -48,8 +48,9 @@ action verbs as near-optional---an ``asymmetric grounding gap''. We show this
 conclusion does not follow, because it is confounded by the information structure
 of the benchmark itself. In \texttt{LIBERO-Goal} the unordered set of nouns in an
 instruction \emph{uniquely} identifies all ten tasks ($H(\text{task}\mid
-\text{nouns})=0$ bits), while the verb leaves a six-way ambiguity
-($H(\text{task}\mid\text{verb})=1.55$ bits of $3.32$). Conditional on the nouns the
+\text{nouns})=0$ bits), while the verb leaves $1.55$ of the $3.32$ bits unresolved
+---its commonest form, \texttt{put}, covers six of the ten tasks by itself.
+Conditional on the nouns the
 verb is therefore \emph{fully redundant}, and ignoring it is the
 information-theoretically optimal policy rather than a grounding failure.
 Correspondingly, the standard verb-substitution probe cannot detect
@@ -217,14 +218,15 @@ parameterisations in current VLAs, which matters for Section~\ref{sec:rq1}: a
 finding that holds across discretized, continuous and flow-matching heads is
 unlikely to be an artifact of any one decoder.
 
-All experiments are evaluated across random seeds ($7, 42$) with maximum rollout
-horizon $T=300$ steps per episode; each reported cell aggregates all episodes for
-its (model, condition) over both seeds.
+Every condition is run under two seeds ($7$ and $42$) with a rollout horizon of
+$T=300$ steps, and each reported cell pools all episodes for its (model, condition)
+across both seeds.
 
 \subsection*{Metrics}
 Let $\text{TSR}(c)$ be the Task Success Rate (fraction of episodes reaching the
 goal predicate) under condition $c$, and $\text{TSR}_0$ the baseline
-(\texttt{original} instruction). We use four diagnostics:
+(\texttt{original} instruction). We use four aggregate diagnostics, plus the
+trajectory-level measure $t_{\text{div}}$ defined in Section~\ref{sec:rq3}:
 \begin{itemize}
 \item \textbf{Causal Sensitivity Score (CSS)}, for the destructive conditions
   \texttt{blank}/\texttt{nonsense}:
@@ -285,6 +287,19 @@ We stress that this is a property of the benchmark, not of any model, and it is
 computed from the task definitions alone with no rollouts. We suggest that
 instruction-level information content be reported as a matter of course before
 word-class grounding claims are drawn from perturbation experiments.
+
+\paragraph{A test that could falsify this account.} The argument above makes a sharp
+prediction, and we would rather state it as such than only report the analysis that
+motivates it. Instead of \emph{substituting} within a word class, \emph{remove} one
+and measure the cost. Dropping the verb (``the bowl on the stove'') removes $0$ bits
+of task information and should therefore cost close to nothing. Masking the nouns
+(``put the thing on the thing'') removes all $3.32$ bits and should be catastrophic.
+If instead verb removal collapses performance, then the models genuinely require the
+verb token and our redundancy account is wrong---the information analysis would be
+describing the task distribution while missing what the policy actually consumes. We
+release these two conditions (\texttt{verb\_dropped}, \texttt{nouns\_masked})
+alongside the causal grid so the prediction can be checked directly, and we regard
+this rather than any success rate as the load-bearing experiment for our claim.
 
 \subsection{The Scene-Fixed Invariant Is Easy to Break Silently}
 \label{sec:scenefixed}
@@ -540,8 +555,11 @@ follow-ups seem valuable: word-class ablations that remove a class outright rath
 than substituting within it, and benchmark suites deliberately constructed with
 verb-contrastive minimal pairs, which \texttt{LIBERO-Goal} affords only three of.
 A training-free inference-time mitigation that re-weights verb information also
-remains attractive, though the appropriate contrastive operator differs between
-discretized-action and continuous-action heads.
+remains attractive, but it is a design problem rather than a run: the natural
+contrastive operator is defined on action-token logits, which only the discretized
+head exposes---the continuous and flow-matching heads would need an action-space
+analogue, and whether the two are comparable is exactly what such a study would have
+to establish first.
 
 \section*{Limitations}
 Our study is deliberately narrow to keep the causal claim clean, and this bounds
@@ -549,12 +567,13 @@ its scope. (i) \textbf{Single suite}: the causal isolation relies on
 \texttt{LIBERO-Goal}'s shared initial scene and does not transfer to
 scene-confounded suites; we therefore do not claim the asymmetry holds under
 visual variation. (ii) \textbf{Simulation only}: all results are in MuJoCo/LIBERO
-with no real-robot evaluation. (iii) \textbf{Sample size}: reported cells use a
-modest number of episodes per task over two seeds; we treat the qualitative
-asymmetry as the primary claim and are scaling episode counts and seeds to tighten
-confidence intervals; the antonym contrast in particular rests on three tasks, and
-we report it for the two models whose cells are large enough to separate from
-noise. (iv) \textbf{Scope of the information argument}: $H(\text{task}\mid W)$ is
+with no real-robot evaluation. (iii) \textbf{Sample size}: several cells rest on a
+modest number of episodes, so we treat the qualitative pattern rather than any point
+estimate as the claim, and report $n$ and a confidence interval for every cell so a
+reader can see which comparisons are underpowered. The antonym contrast is the
+narrowest of them: three tasks, and for OpenVLA only ten episodes---which is why we
+read its split as noise rather than as a result. Larger grids are running and will
+tighten these intervals, not change what is claimed. (iv) \textbf{Scope of the information argument}: $H(\text{task}\mid W)$ is
 computed over this suite's ten instructions under a uniform task prior. It shows
 that verbs are redundant \emph{here}; it does not show that VLAs would ignore
 verbs on a suite where verbs are contrastive, and our three antonym pairs are too
@@ -572,9 +591,11 @@ involves no human subjects or personal data. The primary societal consideration 
 safety: a policy that silently ignores the action verb could execute an unintended
 manipulation while appearing to follow instructions, which our diagnostics are
 designed to expose. For reproducibility we release per-run provenance (model,
-checkpoint hash, code revision, seed, and wall-clock in a run manifest), pinned
-environment locks for each backbone, and the scene-fixed invariance audit; every
-reported number derives from a logged run rather than a hand-entered value.
+checkpoint hash, code revision, seed and wall-clock in a run manifest), pinned
+environment locks for each backbone, and the scene-fixed invariance audit. Every
+table in this paper is generated from the result files by a script rather than
+transcribed by hand; we adopted that rule after finding that hand-copied numbers
+were how an error survived several drafts of this work.
 
 \bibliographystyle{acl_natbib}
 \bibliography{references}
