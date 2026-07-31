@@ -10,7 +10,8 @@
 \usepackage{subcaption}
 \usepackage{url}
 
-\title{Lost in Instruction: Evaluating Causal Sensitivity and Paraphrase Fragility in Vision-Language-Action Models for Robotic Manipulation}
+\title{Measuring the Benchmark, Not the Model: Instruction Information Content
+Confounds Word-Class Grounding Claims in Vision-Language-Action Models}
 
 \author{Anonymous ACL Submission}
 
@@ -22,22 +23,37 @@
 \begin{abstract}
 Vision-Language-Action (VLA) models map a natural-language instruction and a
 visual observation to robot actions, but it remains unclear how much they rely on
-the language rather than on visual priors and memorized task layouts. We introduce
-a \emph{scene-fixed} causal evaluation that holds the initial simulator state
-strictly constant and perturbs only the instruction, so that on the
-\texttt{LIBERO-Goal} suite the language is the sole cue that disambiguates the
-task. Across three architectures spanning a $16\times$ parameter range
-(SmolVLA-0.45B, OpenVLA-7B, OpenVLA-OFT-7.5B), we find that language is causally
-necessary and scale-invariant: blanking the instruction or replacing it with
-length-matched nonsense collapses task success (Causal Sensitivity Score
-$\approx 1.0$). This reliance is, however, strikingly \emph{asymmetric}:
-substituting the object noun collapses success to a near-baseline $7.1\%$, whereas
-substituting the action verb is largely tolerated (OpenVLA-OFT retains $97.5\%$).
-Paraphrase robustness (PRIDE) and end-effector kinematic-divergence analyses
-corroborate the asymmetry, and a layer-wise cross-attention analysis shows that
-noun tokens attend to visual tokens increasingly more than verb tokens with depth.
-Current VLAs thus ground object nouns strictly but treat action verbs as
-near-optional---a failure mode invisible to standard success-rate benchmarks.
+the language rather than on visual priors and memorized task layouts. We study
+this with a \emph{scene-fixed} causal evaluation that holds the initial simulator
+state constant and perturbs only the instruction, on the \texttt{LIBERO-Goal}
+suite, across three architectures spanning a $16\times$ parameter range
+(SmolVLA-0.45B, OpenVLA-7B, OpenVLA-OFT-7.5B). Language is causally necessary and
+scale-invariant: blanking the instruction or replacing it with length-matched
+nonsense collapses task success (Causal Sensitivity Score $\approx 1.0$).
+
+Our main contribution is negative and, we argue, more useful. A widely reported
+reading of results like ours is that VLAs bind object nouns strictly but treat
+action verbs as near-optional---an ``asymmetric grounding gap''. We show this
+conclusion does not follow, because it is confounded by the information structure
+of the benchmark itself. In \texttt{LIBERO-Goal} the unordered set of nouns in an
+instruction \emph{uniquely} identifies all ten tasks ($H(\text{task}\mid
+\text{nouns})=0$ bits), while the verb leaves a six-way ambiguity
+($H(\text{task}\mid\text{verb})=1.55$ bits of $3.32$). Conditional on the nouns the
+verb is therefore \emph{fully redundant}, and ignoring it is the
+information-theoretically optimal policy rather than a grounding failure.
+Correspondingly, the standard verb-substitution probe cannot detect
+verb-insensitivity at all: seven of its ten substitutions preserve the noun set
+and hence the task identity. We further show that the apparent ``collapse'' under
+object substitution is compliance being mis-scored: when the perturbation happens
+to name a \emph{different real task}, all three models perform that task and never
+the original.
+
+Isolating the cases that do carry a contrast---three tasks with true antonym verb
+pairs---leaves a smaller but sound finding: OpenVLA-OFT is genuinely
+verb-insensitive, executing ``turn on'' when instructed to ``turn off''. We
+release the scene-fixed protocol, an automated invariant check, and
+word-class-ablation probes, and argue that instruction-level information content
+must be reported before grounding claims can be made from perturbation studies.
 \end{abstract}
 
 \section{Introduction}
@@ -65,20 +81,50 @@ behavior, with everything else fixed?'').
 
 Evaluating three architectures spanning $16\times$ in scale, we find that language
 is causally necessary and---perhaps surprisingly---scale-invariant: destroying the
-instruction destroys success at every scale. But the reliance is asymmetric.
-Models bind the \emph{object noun} strictly (an object swap collapses success to
-near baseline) while treating the \emph{action verb} as near-optional (a verb swap
-is largely tolerated). Paraphrase and kinematic analyses reproduce the asymmetry,
-and a layer-wise cross-attention analysis offers a mechanistic correlate: noun
-tokens increasingly out-attend verb tokens over the visual field with depth. This
-noun~$\gg$~verb gap is a concrete, actionable failure mode that aggregate success
-rates hide.
+instruction destroys success at every scale.
+
+At first sight the results also reproduce the asymmetry that such probes usually
+report: object swaps collapse success while verb swaps are tolerated, inviting the
+conclusion that VLAs bind nouns strictly and treat verbs as near-optional. We set
+out to explain that gap mechanistically and instead found that it is largely an
+artifact of the measurement. Verbs in \texttt{LIBERO-Goal} carry no task
+information once the nouns are known, so ignoring them is optimal rather than
+deficient; most verb substitutions leave the task identity intact and so cannot
+test verb grounding; and most of the object-swap ``collapse'' is the policy
+correctly executing the instruction it was given, scored against the task it was
+not. The residual effect is real but much narrower than the literature's framing
+suggests.
+
+We think the methodological point generalises beyond this suite. Instruction
+perturbation is becoming a standard tool for probing grounding, and it silently
+assumes that the perturbed word classes are informationally comparable. Where they
+are not, the probe measures the benchmark rather than the model. We therefore
+report the information content of the instruction set as a precondition for
+interpreting the behavioural results, and release the tooling to do so.
 
 \subsection*{Our Contributions}
 Our primary contributions are summarized as follows:
 \begin{itemize}
-    \item \textbf{Scene-Fixed Causal Evaluation Framework}: We present a diagnostic evaluation paradigm holding initial physical simulator states strictly constant ($S_0 = \text{const}$), isolating the language channel across 3 VLA architectures (\textbf{SmolVLA-500M}, \textbf{OpenVLA-7B}, and \textbf{OpenVLA-OFT-7.5B}).
-    \item \textbf{Discovery of Asymmetric Language Reliance}: We discover that VLAs enforce strict target object-noun binding (dropping to a near-baseline $7.1\%$ Task Success Rate under object swaps) but exhibit striking insensitivity to action-verb substitutions (retaining up to $97.5\%$ TSR).
+    \item \textbf{Instruction Information Content as a Confound}: We show that
+    conclusions about \emph{which word classes a VLA grounds} are not identifiable
+    from perturbation studies without first measuring what each word class
+    contributes to task identity. On \texttt{LIBERO-Goal}, nouns carry all $3.32$
+    bits and verbs carry none conditional on them, so verb-insensitivity is
+    optimal behaviour and the standard verb-swap probe is uninformative by
+    construction (Section~\ref{sec:info}).
+    \item \textbf{Re-analysis of the ``Asymmetric Grounding Gap''}: We show both
+    halves of the reported asymmetry dissolve under this analysis. Object-swap
+    ``collapse'' is largely \emph{compliance}: when the swap yields another real
+    task's instruction, all three models execute that task and never the original.
+    Verb-swap ``tolerance'' is mostly measured on substitutions that leave task
+    identity intact. What survives is narrower: on the three genuine antonym pairs,
+    OpenVLA-OFT remains verb-insensitive (Section~\ref{sec:rq1}).
+    \item \textbf{Scene-Fixed Protocol and an Automated Invariant Check}: We
+    present the diagnostic paradigm holding initial simulator states constant
+    ($S_0 = \text{const}$) across 3 VLA architectures, and---because we found the
+    invariant is silently broken by ordinary evaluation practice
+    (Section~\ref{sec:scenefixed})---an automated check that fails loudly rather
+    than reporting a confounded contrast.
     \item \textbf{Kinematic Divergence Profile}: We quantify temporal end-effector divergence between canonical and perturbed rollouts sharing an identical initial state, showing that destructive corruptions diverge almost immediately ($t_{\text{div}} \le 2$) while verb substitutions track the canonical trajectory for $\approx 11$--$13$ steps.
 \end{itemize}
 
@@ -110,7 +156,15 @@ cross-attention correlate for it---moving from ``VLAs are language-fragile'' tow
 \emph{which} part of the instruction they ground and \emph{where} in the network.
 
 \section{Experimental Setup}
-We conduct all evaluations on the \texttt{LIBERO-Goal} benchmarking suite in MuJoCo, chosen because every task in the suite shares an identical initial scene, so the instruction is the only cue that disambiguates the task. Initial simulator physical states are verified for $100\%$ scene-fixed invariance ($S_0(I_{\text{orig}}) \equiv S_0(I_{\text{pert}})$). We evaluate three representative VLA model backbones:
+We conduct all evaluations on the \texttt{LIBERO-Goal} benchmarking suite in
+MuJoCo, chosen because its tasks share an object inventory and scene layout, so
+within a task the instruction is the only cue that disambiguates the goal. The
+invariant our causal claims require is per-task: for a given (task, episode), the
+initial state must be identical across all instruction conditions,
+$S_0(I_{\text{orig}}) \equiv S_0(I_{\text{pert}})$. We verify it by hashing the
+full simulator state (\texttt{qpos}, \texttt{qvel}) after reset and comparing
+across conditions; Section~\ref{sec:scenefixed} reports what that check found. We
+evaluate three representative VLA model backbones:
 (1) \textbf{SmolVLA-500M} (SigLIP + SmolVLM + tokenized action head, $256\times256$ observations);
 (2) \textbf{OpenVLA-7B} (Prismatic VLM backbone with LLaMA-2 7B, $224\times224$ observations);
 (3) \textbf{OpenVLA-OFT-7.5B} (Orthogonal Fine-Tuning with an L1-regression
@@ -143,14 +197,78 @@ goal predicate) under condition $c$, and $\text{TSR}_0$ the baseline
   $\text{PRIDE} = 100\cdot \sum_i s_i\,\text{PD}_i / \sum_i \text{PD}_i$, where
   $s_i$ is success and $\text{SK},\text{ST}$ are keyword/structural similarities;
   we reuse the reference implementation.
-\item \textbf{Attention Allocation Ratio (AAR)}: the layer-wise ratio of visual
-  cross-attention placed by object-noun versus action-verb tokens (defined in
-  Section~\ref{sec:rq4}).
+\item \textbf{Conditional task entropy} $H(\text{task}\mid W)$: the residual
+  uncertainty about which task an instruction denotes, given only its words of
+  class $W$ (nouns or verbs). This is a property of the benchmark rather than of a
+  model, and we use it in Section~\ref{sec:info} to establish which perturbations
+  can carry evidence about grounding at all.
 \end{itemize}
 
 \section{Empirical Results \& Analysis}
 
+\subsection{What the Instruction Actually Encodes}
+\label{sec:info}
+Perturbation studies infer which word classes a policy grounds by corrupting each
+in turn and reading off the damage. This is only valid if the word classes carry
+comparable information about the task. On \texttt{LIBERO-Goal} they do not, and
+the gap is total rather than marginal.
+
+We parse each of the ten instructions into its unordered noun set and its verb
+set, and compute the residual uncertainty about task identity given each. With a
+uniform prior over the ten tasks, $H(\text{task}) = \log_2 10 = 3.32$ bits:
+\begin{equation}
+H(\text{task}\mid\text{noun set}) = 0.00\ \text{bits},\qquad
+H(\text{task}\mid\text{verb set}) = 1.55\ \text{bits}.
+\end{equation}
+All ten noun sets are distinct, so the nouns alone determine the task. The verbs
+do not: \texttt{put} is the verb of six of the ten tasks. Conditional on the
+nouns, the verb therefore contributes \emph{exactly zero} bits.
+
+Two consequences follow, and both undercut the standard reading of these probes.
+First, a policy that ignores the verb entirely loses no task-relevant information
+on this suite; verb-insensitivity is the optimal policy, not a grounding deficit.
+Second, and more damaging for the method, the verb-substitution probe cannot
+detect verb-insensitivity even in principle: seven of its ten substitutions
+replace \texttt{put} with \texttt{push}, which leaves the noun set---and hence the
+task---unchanged. Only three tasks (\texttt{open}$\leftrightarrow$\texttt{close}
+twice, \texttt{turn on}$\leftrightarrow$\texttt{turn off} once) substitute a true
+antonym in a context where the nouns cannot disambiguate the goal. We report those
+three separately throughout, and treat them as the only valid verb probes the
+suite affords.
+
+We stress that this is a property of the benchmark, not of any model, and it is
+computed from the task definitions alone with no rollouts. We suggest that
+instruction-level information content be reported as a matter of course before
+word-class grounding claims are drawn from perturbation experiments.
+
+\subsection{The Scene-Fixed Invariant Is Easy to Break Silently}
+\label{sec:scenefixed}
+Our own protocol requires that all conditions for a (task, episode) start from an
+identical simulator state. Auditing this with the state hash, we found the
+invariant violated across most of our initial data, for a reason that we believe
+generalises to other LIBERO-based evaluations.
+
+The initial state is \emph{not} a pure function of (task, episode). The
+environment is seeded once at construction, and each \texttt{reset} advances that
+generator, which perturbs object poses even though the stored initial state pins
+\texttt{qpos} and \texttt{qvel}. The scene an episode receives therefore also
+depends on how many resets its process has already served. Any condition
+completed by a \emph{second} process---after a wall-clock kill, or simply because
+conditions were run in separate jobs---silently lands on different scenes, while
+the output files look ordered, complete and plausible. In our data the clearest
+case is a single condition split across a job boundary: episode~9 sits on a
+different scene from episodes~0--8 of the same condition.
+
+This matters beyond bookkeeping. Recomputing our paraphrase deltas against a
+scene-matched rather than a pooled baseline moves them by up to $12$ percentage
+points---comparable to the effect sizes such studies typically report. We
+therefore (i) treat the task as the atomic unit of evaluation, so that every
+condition for a task is produced by one process or regenerated wholesale, and
+(ii) make the invariant check a hard failure in the aggregation step rather than
+a logged diagnostic. Both are released with the code.
+
 \subsection{RQ1: Structural \& Semantic Causal Probes}
+\label{sec:rq1}
 Table~\ref{tab:rq1_causal} details Task Success Rates (TSR), Change Severity Scores (CSS), and Object Action Reliance (OAR) metrics under structural and semantic instruction corruptions. Per-condition episode counts are given in the table; Table~\ref{tab:rq1_causal_full} reports each cell with its 95\% Wilson confidence interval.
 
 \begin{table*}[t]
@@ -180,7 +298,55 @@ rather than as a precise value shared across architectures.}
 \label{fig:rq1_scale}
 \end{figure}
 
-As shown in Table~\ref{tab:rq1_causal}, target object noun substitution (\texttt{wrong\_object}) triggers a universal performance collapse to \textbf{7.1\% TSR across all models}. Conversely, verb substitution (\texttt{wrong\_action}) preserves high performance ($57.5\%$ in SmolVLA, $50.0\%$ in OpenVLA, and $97.5\%$ in OpenVLA-OFT).
+The destructive conditions behave as expected: \texttt{blank} and \texttt{nonsense}
+collapse success, giving $\text{CSS}\approx 1$ and establishing that the
+instruction is causally load-bearing. The two semantic-swap conditions are the
+ones that have been over-read, and we take them in turn.
+
+\paragraph{Object swaps measure compliance, not collapse.}
+Read naively, \texttt{wrong\_object} triggers a near-total collapse in TSR. But
+TSR here scores the policy against the \emph{original} task, so a policy that
+correctly follows the altered instruction is recorded as a failure. The condition
+also mixes three cases that warrant different treatment: the perturbed string may
+name another real task, describe a novel but coherent goal, or be degenerate
+(``put the bowl in the bowl'', ``put the plate on the plate''), where failure
+carries no information about grounding at all.
+
+The first case is decisive. For one task the object swap yields, verbatim, the
+instruction of another task in the suite. All three models perform \emph{that}
+task and never the original: SmolVLA $17/20$ episodes, OpenVLA $4/4$, OpenVLA-OFT
+$4/4$, with $0$ executions of the original task in every case. This is precise
+instruction-following, scored as total failure. We therefore report OAR against
+the \emph{named} task alongside TSR, and caution that headline ``collapse''
+numbers under object substitution should not be read as loss of grounding.
+
+\paragraph{Verb swaps mostly do not test verbs.}
+As established in Section~\ref{sec:info}, seven of the ten verb substitutions
+preserve the noun set and therefore the task, so high TSR under them is expected
+of any competent policy. Separating the three genuine antonym pairs from the rest
+changes the picture:
+
+\begin{center}
+\small
+\begin{tabular}{lcc}
+\toprule
+Model & antonym $\Delta$TSR & near-synonym $\Delta$TSR \\
+\midrule
+SmolVLA-0.45B    & $-25.3$ pp & $-10.7$ pp \\
+OpenVLA-OFT-7.5B & \phantom{$-$}$0.0$ pp & \phantom{$-$}$0.0$ pp \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+SmolVLA is more than twice as sensitive to a contrastive verb as to an
+uninformative one, which is the signature of a policy that does read the verb.
+OpenVLA-OFT is unmoved by either: instructed to ``turn off the stove'' it turns
+the stove on, succeeding at the original task in $12/12$ antonym episodes. This
+is the one place where the verb-insensitivity claim survives contact with the
+information analysis, and it is a claim about one model on three tasks rather
+than a general property of VLAs. We report OpenVLA numbers in
+Table~\ref{tab:rq1_causal} but do not draw the antonym contrast for it, as its
+antonym cell is currently too small to separate from noise.
 
 \subsection{RQ2: Paraphrase Robustness \& PRIDE Metrics}
 Table~\ref{tab:rq2_para} evaluates model degradation and PRIDE metrics across natural language paraphrases along three linguistic axes (\texttt{para\_object}, \texttt{para\_action}, \texttt{para\_compositional}).
@@ -193,7 +359,26 @@ Table~\ref{tab:rq2_para} evaluates model degradation and PRIDE metrics across na
 \label{tab:rq2_para}
 \end{table}
 
-SmolVLA-500M exhibits catastrophic representation collapse ($4.69\%$ overall TSR, PRIDE 2.7). OpenVLA-OFT maintains $74.22\%$ overall paraphrase TSR. We do not attribute this to FiLM: the checkpoint we evaluate is the plain OFT release (\texttt{use\_film=false} in our config), and no FiLM-trained LIBERO-Goal checkpoint is publicly available, so a FiLM-conditioned comparison remains untested here.
+SmolVLA-0.45B degrades severely under paraphrase ($4.72\%$ overall TSR, PRIDE
+2.7), while OpenVLA-OFT maintains $74.22\%$ (PRIDE 65.8). We do not attribute this to FiLM: the
+checkpoint we evaluate is the plain OFT release (\texttt{use\_film=false} in our
+config), and no FiLM-trained LIBERO-Goal checkpoint is publicly available, so a
+FiLM-conditioned comparison remains untested here.
+
+Two measurement caveats bound how these numbers should be read, both consequences
+of Section~\ref{sec:scenefixed}. First, $\Delta$TSR compares a paraphrase pool
+against the \texttt{original} pool, and the two were produced by different
+processes and so sample different initial scenes. Restricting the baseline to the
+scenes the paraphrase episodes actually ran on moves the deltas materially---for
+SmolVLA, $48.1\to40.3$ pp on the object axis and $70.5\to58.4$ pp on the action
+axis. The ordering across axes (object $<$ action $<$ compositional) is unchanged,
+so we regard the qualitative result as robust and the magnitudes as provisional;
+we report both baselines in the released CSV. Second, episode counts overstate the
+independent variation behind these estimates: SmolVLA's $2963$ compositional
+paraphrase episodes span only two distinct initial scenes per task, because the
+paraphrase runs predate our initial-state cycling fix. We therefore report the
+number of distinct scenes alongside $n$, and avoid confidence intervals computed
+as though episodes were independent draws.
 
 \subsection{RQ3: Kinematic Trajectory Divergence Profile}
 Table~\ref{tab:rq3_divergence} details kinematic trajectory divergence metrics between canonical and perturbed rollouts sharing identical initial physical states $S_0$.
@@ -215,29 +400,6 @@ Table~\ref{tab:rq3_divergence} details kinematic trajectory divergence metrics b
 
 Destructive text corruptions (\texttt{blank}, \texttt{nonsense}) cause \textbf{immediate kinematic divergence at step $t_{\text{div}} \le 2$} ($e(t) > 0.05\text{m}$), whereas \texttt{wrong\_action} rollouts track canonical trajectories for $t_{\text{div}} \approx 11-13$ steps.
 
-\section{RQ4: Layer-wise Noun-vs-Verb Cross-Attention Allocation (AAR)}
-\label{sec:rq4}
-To investigate the mechanistic basis of the asymmetric noun~$\gg$~verb grounding gap observed in RQ1 and RQ2, we measure real layer-wise cross-attention mass directed from object noun tokens versus action verb tokens to visual patch tokens across SmolVLA (24 layers), OpenVLA (32 layers), and OpenVLA-OFT (32 layers).
-
-We define the Attention Allocation Ratio (AAR) at layer $l$ as:
-\begin{equation}
-\text{AAR}(l) = \frac{\bar{A}_{\text{noun}}(l)}{\bar{A}_{\text{verb}}(l)}
-\end{equation}
-where $\bar{A}_{\text{noun}}(l)$ and $\bar{A}_{\text{verb}}(l)$ denote the mean attention mass assigned to visual patch tokens by object noun tokens and action verb tokens, respectively.
-
-As shown in Figure~\ref{fig:rq4_attention}, all three models display a consistent, monotonic layer-wise progression:
-\begin{itemize}
-\item \textbf{Early Layers (Near Parity)}: At Layer 0, $\text{AAR}(0) \approx 1.005$--$1.010$ across all architectures ($\bar{A}_{\text{noun}} \approx 0.0039$, $\bar{A}_{\text{verb}} \approx 0.0039$), reflecting near-equal initial cross-attention allocation across visual tokens for both object nouns and action verbs.
-\item \textbf{Monotonic Deep-Layer Bias}: As depth increases, cross-attention from noun tokens steadily outpaces verb tokens. By the final policy layers (Layer 23 for SmolVLA, Layer 31 for OpenVLA / OpenVLA-OFT), $\text{AAR}(L) \approx 1.240$--$1.297$ ($\bar{A}_{\text{noun}} \approx 0.0051$--$0.0070$ vs $\bar{A}_{\text{verb}} \approx 0.0041$--$0.0054$).
-\item \textbf{Architectural Universality}: The $\text{AAR}$ curve is remarkably consistent across both LLaMA-based (7B OpenVLA) and SmolLM2-based (0.45B SmolVLA) backbone families, providing mechanistic visual attention evidence for the asymmetric noun bias observed at the task success level.
-\end{itemize}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{rq4_attention.png}
-\caption{Layer-wise Noun vs. Verb Cross-Attention Mass (left) and Attention Allocation Ratio (AAR = $\bar{A}_{\text{noun}} / \bar{A}_{\text{verb}}$, right) to visual patch tokens across SmolVLA, OpenVLA, and OpenVLA-OFT on LIBERO-Goal.}
-\label{fig:rq4_attention}
-\end{figure}
 
 \begin{figure}[h]
 \centering
@@ -248,17 +410,18 @@ As shown in Figure~\ref{fig:rq4_attention}, all three models display a consisten
 
 \section{Discussion \& Diagnostic Insights}
 Our evaluation yields three diagnostic insights:
-(1) \textbf{Asymmetric Language Reliance}: VLAs enforce strict object-noun
-grounding (object swaps collapse success to near-baseline $7.1\%$ TSR) yet remain
-largely insensitive to action-verb substitutions (OpenVLA-OFT retains $97.5\%$
-TSR under \texttt{wrong\_action}), indicating that nouns are bound strictly while
-verbs are treated as near-optional. The paraphrase (RQ2) and kinematic-divergence
-(RQ3) results reproduce this ordering.
-(2) \textbf{An Attention Correlate}: the noun~$\gg$~verb behavioral gap is mirrored
-mechanistically---noun tokens allocate progressively more visual cross-attention
-than verb tokens with depth (RQ4). We report this as a correlate rather than a
-proven cause; the measured ratio is modest ($\text{AAR}\!\approx\!1.24$ at the
-final layers), so the behavioral asymmetry does not rest on it.
+(1) \textbf{Language is causally necessary at every scale}: destroying the
+instruction destroys success for all three architectures
+($\text{CSS}\approx1.0$), with no sign that scale substitutes for language. This
+is the one headline that survives the re-analysis unchanged.
+(2) \textbf{The ``asymmetric grounding gap'' is mostly a measurement artifact}:
+once instruction information content is accounted for, the noun~$\gg$~verb
+asymmetry largely dissolves. Verb-insensitivity is optimal on this suite; most
+verb probes cannot detect it; and most object-swap ``failures'' are compliance.
+We emphasise that the underlying \emph{numbers} are not in dispute---our TSRs
+reproduce the pattern others report---only their interpretation. What remains is
+a specific, smaller claim: OpenVLA-OFT ignores even contrastive antonyms. We would
+rather report that narrow result than a broad one the design cannot support.
 (3) \textbf{Extra Observation Streams and Visual Shortcutting}: OpenVLA-OFT is the
 only model here with a wrist camera and proprioceptive input, and it is also the only
 one that retains measurable success without a usable instruction ($12.5\%$ under blank
@@ -269,13 +432,24 @@ FiLM, which this checkpoint does not use.
 
 \section{Conclusion}
 We presented a scene-fixed causal and paraphrase evaluation of three
-Vision-Language-Action models spanning $16\times$ in scale, showing that language
-is causally necessary and scale-invariant, uncovering an asymmetric
-noun~$\gg$~verb grounding gap, and measuring a layer-wise attention correlate for
-it. A promising next step is a training-free, inference-time mitigation that
-re-weights verb information; because the appropriate contrastive operator differs
-between discretized-action and continuous-action heads, we leave a controlled
-cross-architecture study to future work.
+Vision-Language-Action models spanning $16\times$ in scale. Language is causally
+necessary and scale-invariant. The asymmetric noun~$\gg$~verb grounding gap that
+such evaluations are usually taken to demonstrate does not, we argue, follow from
+them: on \texttt{LIBERO-Goal} the verb is informationally redundant given the
+nouns, most verb-substitution probes leave task identity intact, and most
+object-substitution ``failures'' are the policy complying with the instruction it
+received. The claim that survives is narrower and better supported---OpenVLA-OFT
+ignores contrastive antonyms---and we prefer it to the broader one.
+
+The general lesson is that instruction-perturbation studies inherit the
+information structure of their benchmark, and that structure has to be measured
+before the behavioural results can be read as evidence about grounding. Two
+follow-ups seem valuable: word-class ablations that remove a class outright rather
+than substituting within it, and benchmark suites deliberately constructed with
+verb-contrastive minimal pairs, which \texttt{LIBERO-Goal} affords only three of.
+A training-free inference-time mitigation that re-weights verb information also
+remains attractive, though the appropriate contrastive operator differs between
+discretized-action and continuous-action heads.
 
 \section*{Limitations}
 Our study is deliberately narrow to keep the causal claim clean, and this bounds
@@ -286,11 +460,19 @@ visual variation. (ii) \textbf{Simulation only}: all results are in MuJoCo/LIBER
 with no real-robot evaluation. (iii) \textbf{Sample size}: reported cells use a
 modest number of episodes per task over two seeds; we treat the qualitative
 asymmetry as the primary claim and are scaling episode counts and seeds to tighten
-confidence intervals. (iv) \textbf{Attention analysis}: AAR is measured over a
-fixed set of instructions and depends on correctly identifying visual versus
-language token positions; we present it as a correlate, and the behavioral
-conclusions do not depend on its magnitude. (v) \textbf{Models}: we cover three
-open checkpoints across a $16\times$ scale range but a single benchmark family.
+confidence intervals; the antonym contrast in particular rests on three tasks, and
+we report it for the two models whose cells are large enough to separate from
+noise. (iv) \textbf{Scope of the information argument}: $H(\text{task}\mid W)$ is
+computed over this suite's ten instructions under a uniform task prior. It shows
+that verbs are redundant \emph{here}; it does not show that VLAs would ignore
+verbs on a suite where verbs are contrastive, and our three antonym pairs are too
+few to settle that. (v) \textbf{No mechanistic account}: we deliberately make no
+attention-level claim. An earlier draft reported a layer-wise noun-vs-verb
+cross-attention ratio; we found the underlying extraction had compared one model
+against a relabelled copy of another and had fed the OpenVLA-family models a blank
+image, so we removed the analysis rather than report it. A corrected measurement
+is in progress and is not claimed here. (vi) \textbf{Models}: we cover three open
+checkpoints across a $16\times$ scale range but a single benchmark family.
 
 \section*{Ethics and Reproducibility}
 This work uses only simulated manipulation tasks and public model checkpoints; it
