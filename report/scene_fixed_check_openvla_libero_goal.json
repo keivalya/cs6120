@@ -1,15 +1,14 @@
 {
   "pass": false,
-  "n_keys_comparable": 36,
-  "n_keys_vacuous": 3,
-  "n_keys_total": 39,
+  "n_keys_comparable": 80,
+  "n_keys_vacuous": 0,
+  "n_keys_total": 80,
   "conds_per_key": {
-    "1": 3,
     "5": 6,
-    "6": 18,
-    "7": 12
+    "6": 34,
+    "7": 40
   },
-  "n_mismatches": 36,
+  "n_mismatches": 20,
   "mismatches": [
     {
       "key": "task0_ep0_seed42",

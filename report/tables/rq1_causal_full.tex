@@ -4,28 +4,22 @@
 \toprule
 \textbf{Model} & \textbf{Condition} & \textbf{$n$} & \textbf{TSR (95\% CI)} & \textbf{CSS} \\
 \midrule
-SmolVLA (0.45B) & \texttt{original} & 190 & 78.4\% [72.0, 83.7] & -- \\
-SmolVLA (0.45B) & \texttt{blank} & 190 & 0.0\% [0.0, 2.0] & 1.00 \\
-SmolVLA (0.45B) & \texttt{nonsense} & 190 & 0.0\% [0.0, 2.0] & 1.00 \\
-SmolVLA (0.45B) & \texttt{wrong\_action} & 190 & 64.2\% [57.2, 70.7] & -- \\
-SmolVLA (0.45B) & \texttt{wrong\_object} & 130 & 10.0\% [5.9, 16.4] & -- \\
-SmolVLA (0.45B) & \texttt{wrong\_task} & 190 & 0.0\% [0.0, 2.0] & -- \\
-SmolVLA (0.45B) & \texttt{repeated} & 190 & 10.0\% [6.5, 15.1] & -- \\
+SmolVLA (0.45B) & \texttt{original} & 200 & 78.5\% [72.3, 83.6] & -- \\
+SmolVLA (0.45B) & \texttt{blank} & 200 & 0.0\% [0.0, 1.9] & 1.00 \\
+SmolVLA (0.45B) & \texttt{nonsense} & 200 & 0.0\% [0.0, 1.9] & 1.00 \\
+SmolVLA (0.45B) & \texttt{wrong\_action} & 200 & 64.5\% [57.7, 70.8] & -- \\
+SmolVLA (0.45B) & \texttt{wrong\_object} & 140 & 9.3\% [5.5, 15.2] & -- \\
+SmolVLA (0.45B) & \texttt{wrong\_task} & 200 & 0.0\% [0.0, 1.9] & -- \\
+SmolVLA (0.45B) & \texttt{repeated} & 200 & 10.0\% [6.6, 14.9] & -- \\
 \midrule
-OpenVLA (7B)$^{\ddagger}$ & \texttt{original} & 37 & 70.3\% [54.2, 82.5] & -- \\
-OpenVLA (7B)$^{\ddagger}$ & \texttt{blank} & 36 & 0.0\% [0.0, 9.6] & 1.00 \\
-OpenVLA (7B)$^{\ddagger}$ & \texttt{nonsense} & 36 & 0.0\% [0.0, 9.6] & 1.00 \\
-OpenVLA (7B)$^{\ddagger}$ & \texttt{wrong\_action} & 36 & 52.8\% [37.0, 68.0] & -- \\
-OpenVLA (7B)$^{\ddagger}$ & \texttt{wrong\_object} & 26 & 7.7\% [2.1, 24.1] & -- \\
-OpenVLA (7B)$^{\ddagger}$ & \texttt{wrong\_task} & 36 & 0.0\% [0.0, 9.6] & -- \\
-OpenVLA (7B)$^{\ddagger}$ & \texttt{repeated} & 16 & 62.5\% [38.6, 81.5] & -- \\
+OpenVLA (7B)$^{\ddagger}$ & \textit{(grid regenerating)} & \textemdash & \textemdash & \textemdash \\
 \midrule
-OpenVLA-OFT (7.5B)$^{\dagger}$ & \texttt{original} & 200 & 97.5\% [94.3, 98.9] & -- \\
-OpenVLA-OFT (7.5B)$^{\dagger}$ & \texttt{blank} & 36 & 13.9\% [6.1, 28.7] & 0.86 \\
-OpenVLA-OFT (7.5B)$^{\dagger}$ & \texttt{nonsense} & 36 & 8.3\% [2.9, 21.8] & 0.91 \\
-OpenVLA-OFT (7.5B)$^{\dagger}$ & \texttt{wrong\_action} & 36 & 97.2\% [85.8, 99.5] & -- \\
-OpenVLA-OFT (7.5B)$^{\dagger}$ & \texttt{wrong\_object} & 28 & 7.1\% [2.0, 22.6] & -- \\
-OpenVLA-OFT (7.5B)$^{\dagger}$ & \texttt{wrong\_task} & 36 & 0.0\% [0.0, 9.6] & -- \\
-OpenVLA-OFT (7.5B)$^{\dagger}$ & \texttt{repeated} & 36 & 94.4\% [81.9, 98.5] & -- \\
+OpenVLA-OFT (7.5B) & \texttt{original} & 200 & 97.5\% [94.3, 98.9] & -- \\
+OpenVLA-OFT (7.5B) & \texttt{blank} & 192 & 13.0\% [9.0, 18.5] & 0.87 \\
+OpenVLA-OFT (7.5B) & \texttt{nonsense} & 192 & 14.6\% [10.3, 20.3] & 0.85 \\
+OpenVLA-OFT (7.5B) & \texttt{wrong\_action} & 184 & 95.1\% [91.0, 97.4] & -- \\
+OpenVLA-OFT (7.5B) & \texttt{wrong\_object} & 132 & 12.1\% [7.6, 18.8] & -- \\
+OpenVLA-OFT (7.5B) & \texttt{wrong\_task} & 182 & 0.0\% [0.0, 2.1] & -- \\
+OpenVLA-OFT (7.5B) & \texttt{repeated} & 182 & 96.7\% [93.0, 98.5] & -- \\
 \bottomrule
 \end{tabular}

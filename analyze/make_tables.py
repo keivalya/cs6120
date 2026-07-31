@@ -66,9 +66,94 @@ def scene_status(model: str, suite: str = "libero_goal") -> dict:
 MARK = {"failed": r"$^{\ddagger}$", "thin": r"$^{\dagger}$", "unverified": r"$^{\ddagger}$",
         "passed": ""}
 
+# A cell we deliberately leave empty because the measurement is not trustworthy yet.
+# Visually distinct from "--", which means "this cell has no data at all".
+PENDING = r"\textemdash"
+PENDING_ROW = r"\textit{(grid regenerating)}"
+
+SHOW_UNVERIFIED = False  # --show-unverified flips this, for internal inspection only
+
+
+def suppressed(model: str) -> bool:
+    """True when a model's numbers must be WITHHELD from the paper, not merely marked.
+
+    A footnote saying "confounded, we do not interpret this" does not survive contact
+    with a reader: the number is still on the page, still quotable, and this project
+    has already shipped one table whose numbers were wrong while a caveat sat beside
+    them. So a model that fails the scene-fixed check renders as em-dashes until the
+    check passes. The verdict comes from the data, so the blanks fill themselves in
+    on the next refresh --- nobody has to remember to unblank the paper.
+    """
+    return (not SHOW_UNVERIFIED) and scene_status(model)["state"] in ("failed", "unverified")
+
 
 def model_label(model: str) -> str:
     return PRETTY[model] + MARK[scene_status(model)["state"]]
+
+
+def prose_macros(rq1: list[dict], abl: list[dict]) -> None:
+    """LaTeX macros for the handful of numbers the PROSE quotes.
+
+    Tables have been generated from the CSVs since the hand-transcription incident,
+    but the abstract and discussion still quoted figures by hand, which is the same
+    failure with a smaller blast radius -- the abstract said "roughly sixty points"
+    while the table said 74.4. Anything the prose states about a measured quantity
+    comes from here, so it moves when the data moves. A macro whose model is
+    suppressed renders as an em-dash and will look obviously wrong in the PDF, which
+    is the intended behaviour: the sentence around it needs rewriting, not the number.
+    """
+    by1 = {(r["model"], r["condition"]): r for r in rq1}
+    byA = {(r["model"], r["condition"]): r for r in abl}
+    out = []
+
+    def emit(name: str, model: str, value, fmt: str) -> None:
+        if suppressed(model) or value is None:
+            out.append(rf"\newcommand{{\{name}}}{{\textemdash}}")
+        else:
+            out.append(rf"\newcommand{{\{name}}}{{{format(value, fmt)}}}")
+
+    for name, model, cond in [("oftBaseline", "openvla_oft", "original"),
+                              ("oftBlank", "openvla_oft", "blank"),
+                              ("oftNonsense", "openvla_oft", "nonsense"),
+                              ("smolBaseline", "smolvla", "original")]:
+        r = by1.get((model, cond))
+        tsr = fnum(r["TSR"]) if r else None
+        emit(name, model, None if tsr is None else 100 * tsr, ".1f")
+    for name, model, cond in [("oftCssBlank", "openvla_oft", "blank"),
+                              ("oftCssNonsense", "openvla_oft", "nonsense")]:
+        r = by1.get((model, cond))
+        emit(name, model, fnum(r["CSS"]) if r else None, ".2f")
+    for name, model, cond in [("oftVerbDrop", "openvla_oft", "verb_dropped"),
+                              ("oftNounMask", "openvla_oft", "nouns_masked")]:
+        r = byA.get((model, cond))
+        d = fnum(r.get("delta_pp_matched")) if r else None
+        emit(name, model, None if d is None else abs(d), ".1f")
+    write("macros.tex", "\n".join(out) + "\n")
+
+
+def draft_status() -> None:
+    """A sentence naming the models whose cells are currently blank, or nothing.
+
+    Generated rather than written, so that when the last grid passes its check this
+    sentence becomes empty on the next refresh and the paper stops describing itself
+    as provisional. A hand-written "OpenVLA is still running" would outlive the fact.
+    """
+    pending = [PRETTY[m] for m in MODEL_ORDER if suppressed(m)]
+    if not pending:
+        write("draft_status.tex", "%% all models verified; no pending note needed\n")
+        return
+    names = pending[0] if len(pending) == 1 else (
+        ", ".join(pending[:-1]) + " and " + pending[-1])
+    verb = "is" if len(pending) == 1 else "are"
+    write("draft_status.tex",
+          f"\\paragraph{{Status of this draft.}} The causal grid for {names} {verb} "
+          f"being regenerated after the scene-fixed failure described in "
+          f"Section~\\ref{{sec:scenefixed}}, so every cell for "
+          f"{'that model' if len(pending) == 1 else 'those models'} is left blank "
+          f"(\\textemdash) throughout. We report the models that pass the check and "
+          f"withhold the ones that do not, rather than printing a confounded number "
+          f"beside a caveat. The tables are generated from the result files, so they "
+          f"fill in as the runs land.\n")
 
 
 def scene_note() -> None:
@@ -86,9 +171,11 @@ def scene_note() -> None:
     body = (" ".join(bits) if bits else
             "All models pass the scene-fixed check on every comparable episode.")
     if bits:
-        body += (" Causal contrasts for a $\\ddagger$ model are confounded by "
-                 "differing initial scenes and we do not interpret them; a "
-                 "$\\dagger$ model's grid is incomplete rather than broken.")
+        body += (" A $\\ddagger$ model's causal contrasts are confounded by differing "
+                 "initial scenes, so its cells are left blank (\\textemdash) rather "
+                 "than printed with a caveat: the grid is being regenerated and the "
+                 "tables fill in automatically once the check passes. A $\\dagger$ "
+                 "model's grid is incomplete rather than broken.")
     write("scene_note.tex", body + "\n")
 COND_ORDER = ["original", "blank", "nonsense", "wrong_action", "wrong_object",
               "wrong_task", "repeated"]
@@ -154,6 +241,10 @@ def rq1_tables(rows: list[dict]) -> None:
              " & ".join(rf"\textbf{{{COND_PRETTY[c]}}}" for c in COND_ORDER) + r" \\",
              r"\midrule"]
     for m in MODEL_ORDER:
+        if suppressed(m):
+            lines.append(f"{model_label(m)} & " +
+                         " & ".join([PENDING] * len(COND_ORDER)) + r" \\")
+            continue
         cells = []
         for c in COND_ORDER:
             r = by.get((m, c))
@@ -173,7 +264,8 @@ def rq1_tables(rows: list[dict]) -> None:
     # collapsing to one number here is how "N=40 per condition" got into the paper.
     n_cells = []
     for c in COND_ORDER:
-        ns = sorted({int(fnum(by[(m, c)]["n_total"], 0)) for m in MODEL_ORDER if (m, c) in by})
+        ns = sorted({int(fnum(by[(m, c)]["n_total"], 0)) for m in MODEL_ORDER
+                     if (m, c) in by and not suppressed(m)})
         n_cells.append("/".join(str(n) for n in ns) if ns else "--")
     lines += [r"\midrule",
               r"\textit{episodes per cell} & " + " & ".join(n_cells) + r" \\",
@@ -187,6 +279,10 @@ def rq1_tables(rows: list[dict]) -> None:
     for i, m in enumerate(MODEL_ORDER):
         if i:
             lines.append(r"\midrule")
+        if suppressed(m):
+            lines.append(f"{model_label(m)} & {PENDING_ROW} & {PENDING} & "
+                         f"{PENDING} & {PENDING} \\\\")
+            continue
         for c in COND_ORDER:
             r = by.get((m, c))
             if not r:
@@ -204,12 +300,14 @@ def rq1_tables(rows: list[dict]) -> None:
     # --- the note that replaces the false "N=40 per condition" ---------------
     counts = {}
     for c in COND_ORDER:
-        ns = {int(fnum(by[(m, c)]["n_total"], 0)) for m in MODEL_ORDER if (m, c) in by}
+        ns = {int(fnum(by[(m, c)]["n_total"], 0)) for m in MODEL_ORDER
+              if (m, c) in by and not suppressed(m)}
         counts[c] = ns
     parts = []
     for c in COND_ORDER:
         ns = counts[c]
-        parts.append(rf"\texttt{{{c.replace('_', chr(92) + '_')}}} $n={'/'.join(str(n) for n in sorted(ns))}$")
+        shown = "/".join(str(n) for n in sorted(ns)) if ns else r"\textemdash"
+        parts.append(rf"\texttt{{{c.replace('_', chr(92) + '_')}}} $n={shown}$")
     seeds = sorted({s for r in rows for s in r["seeds"].split(";")})
     write("rq1_n_note.tex",
           "Episode counts differ by condition and model, so there is no single $N$: " +
@@ -234,6 +332,10 @@ def rq2_table(rows: list[dict]) -> None:
             continue
         if i:
             lines.append(r"\midrule")
+        if suppressed(m):
+            lines.append(f"{model_label(m)} & {PENDING_ROW} & {PENDING} & {PENDING} & "
+                         f"{PENDING} & {PENDING} & {PENDING} \\\\")
+            continue
         for r in mr:
             scenes = fnum(r.get("n_scenes"))
             lines.append(
@@ -252,7 +354,12 @@ def rq3_table(rows: list[dict]) -> None:
              r"\textbf{Model} & \textbf{Condition} & \textbf{pairs} & "
              r"\textbf{$t_{\text{div}}$ (samples)} & \textbf{$e(T)$ [m]} \\", r"\midrule"]
     for m in MODEL_ORDER:
-        for r in [x for x in rows if x["model"] == m]:
+        mr = [x for x in rows if x["model"] == m]
+        if mr and suppressed(m):
+            lines.append(f"{model_label(m)} & {PENDING_ROW} & {PENDING} & "
+                         f"{PENDING} & {PENDING} \\\\")
+            continue
+        for r in mr:
             cond = r["condition"].replace("_", chr(92) + "_")
             lines.append(
                 f"{model_label(m)} & \\texttt{{{cond}}} & {int(fnum(r['n_pairs'], 0))} & "
@@ -279,6 +386,9 @@ def wordclass_table(rows: list[dict]) -> None:
              r"\cmidrule(lr){2-3} \cmidrule(lr){4-5}",
              r" & $\Delta$TSR & $n$ & $\Delta$TSR & $n$ \\", r"\midrule"]
     for m in MODEL_ORDER:
+        if suppressed(m):
+            lines.append(f"{model_label(m)} & " + " & ".join([PENDING] * 4) + r" \\")
+            continue
         cells = []
         for subset in ("antonym", "near-syn"):
             r = by.get((m, subset))
@@ -330,6 +440,10 @@ def ablation_table(rows: list[dict]) -> None:
         if any_row:
             lines.append(r"\midrule")
         any_row = True
+        if suppressed(m):
+            lines.append(f"{model_label(m)} & {PENDING_ROW} & {PENDING} & {PENDING} & "
+                         f"{PENDING} & {PENDING} \\\\")
+            continue
         for cond in order:
             r = next((x for x in rows if x["model"] == m and x["condition"] == cond), None)
             if r is None:
@@ -348,7 +462,7 @@ def ablation_table(rows: list[dict]) -> None:
         for m in MODEL_ORDER:
             r = next((x for x in rows if x["model"] == m and
                       x["condition"] == "nouns_masked"), None)
-            if r:
+            if r and not suppressed(m):
                 cov.append(f"{PRETTY[m]} on {int(fnum(r['n_tasks'], 0))} of 10 tasks")
         write("rq_ablation_note.tex",
               ("Coverage: " + "; ".join(cov) + ". " if cov else "") +
@@ -357,15 +471,23 @@ def ablation_table(rows: list[dict]) -> None:
 
 
 def main() -> None:
+    global SHOW_UNVERIFIED
+    if "--show-unverified" in sys.argv:
+        SHOW_UNVERIFIED = True
+        print("[make_tables] --show-unverified: printing numbers that FAIL the "
+              "scene-fixed check. Do NOT ship these tables.", file=sys.stderr)
+    prose_macros(read_csv("rq1_causal.csv"), read_csv("rq_ablation.csv"))
     rq1_tables(read_csv("rq1_causal.csv"))
     rq2_table(read_csv("rq2_paraphrase.csv"))
     rq3_table(read_csv("rq3_divergence.csv"))
     wordclass_table(read_csv("instruction_information.csv"))
     ablation_table(read_csv("rq_ablation.csv"))
     scene_note()
+    draft_status()
     for m in MODEL_ORDER:
         st = scene_status(m)
-        print(f"[make_tables] scene-fixed {m}: {st['state']} -- {st['detail']}")
+        held = "  [NUMBERS WITHHELD FROM TABLES]" if suppressed(m) else ""
+        print(f"[make_tables] scene-fixed {m}: {st['state']} -- {st['detail']}{held}")
     print("\n[make_tables] done. In paper_acl.tex, replace each hand-written tabular with:\n"
           "    \\input{tables/rq1_causal}      (and rq1_n_note in the caption)\n"
           "    \\input{tables/rq2_para}\n"
