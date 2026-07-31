@@ -5,50 +5,46 @@
   "seed": 42,
   "checkpoint": "HuggingFaceVLA/smolvla_libero",
   "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
-  "n_episodes": 2,
-  "n_total_episodes": 20,
-  "n_success": 13,
-  "tsr": 0.65,
+  "n_episodes": 10,
+  "n_total_episodes": 90,
+  "n_success": 68,
+  "tsr": 0.7555555555555555,
   "per_task": {
     "0": {
-      "n": 2,
-      "success": 1
+      "n": 10,
+      "success": 8
     },
     "1": {
-      "n": 2,
-      "success": 1
-    },
-    "2": {
-      "n": 2,
-      "success": 2
+      "n": 10,
+      "success": 8
     },
     "3": {
-      "n": 2,
-      "success": 2
+      "n": 10,
+      "success": 4
     },
     "4": {
-      "n": 2,
-      "success": 1
+      "n": 10,
+      "success": 8
     },
     "5": {
-      "n": 2,
-      "success": 2
+      "n": 10,
+      "success": 10
     },
     "6": {
-      "n": 2,
-      "success": 1
+      "n": 10,
+      "success": 5
     },
     "7": {
-      "n": 2,
-      "success": 2
+      "n": 10,
+      "success": 10
     },
     "8": {
-      "n": 2,
-      "success": 1
+      "n": 10,
+      "success": 8
     },
     "9": {
-      "n": 2,
-      "success": 0
+      "n": 10,
+      "success": 7
     }
   },
   "framework": "lerobot",

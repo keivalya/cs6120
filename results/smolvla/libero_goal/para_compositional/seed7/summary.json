@@ -5,10 +5,10 @@
   "seed": 7,
   "checkpoint": "HuggingFaceVLA/smolvla_libero",
   "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
-  "n_episodes": 321,
-  "n_total_episodes": 2984,
+  "n_episodes": 300,
+  "n_total_episodes": 2963,
   "n_success": 53,
-  "tsr": 0.017761394101876677,
+  "tsr": 0.017887276409044885,
   "per_task": {
     "0": {
       "n": 300,
@@ -39,7 +39,7 @@
       "success": 2
     },
     "7": {
-      "n": 321,
+      "n": 300,
       "success": 19
     },
     "8": {

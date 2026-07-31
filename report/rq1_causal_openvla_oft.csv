@@ -1,8 +1,8 @@
 model,suite,condition,TSR,TSR_std_over_seeds,delta_TSR_pp,CSS,n_total,seeds
 openvla_oft,libero_goal,original,0.9750,0.0150,0.00,,200,7;42
-openvla_oft,libero_goal,blank,0.1250,0.0250,85.00,0.8718,40,7;42
-openvla_oft,libero_goal,nonsense,0.0750,0.0250,90.00,0.9231,40,7;42
+openvla_oft,libero_goal,blank,0.1389,0.0278,83.61,0.8575,36,7;42
+openvla_oft,libero_goal,nonsense,0.0833,0.0278,89.17,0.9145,36,7;42
 openvla_oft,libero_goal,wrong_object,0.0714,0.0000,90.36,,28,7;42
-openvla_oft,libero_goal,wrong_action,0.9750,0.0250,0.00,,40,7;42
-openvla_oft,libero_goal,wrong_task,0.0000,0.0000,97.50,,40,7;42
-openvla_oft,libero_goal,repeated,0.9500,0.0000,2.50,,40,7;42
+openvla_oft,libero_goal,wrong_action,0.9722,0.0278,0.28,,36,7;42
+openvla_oft,libero_goal,wrong_task,0.0000,0.0000,97.50,,36,7;42
+openvla_oft,libero_goal,repeated,0.9444,0.0000,3.06,,36,7;42

@@ -1,11 +1,11 @@
 {
   "pass": true,
-  "n_keys_comparable": 40,
-  "n_keys_vacuous": 160,
+  "n_keys_comparable": 36,
+  "n_keys_vacuous": 164,
   "n_keys_total": 200,
   "conds_per_key": {
-    "1": 160,
-    "6": 12,
+    "1": 164,
+    "6": 8,
     "7": 28
   },
   "n_mismatches": 0,

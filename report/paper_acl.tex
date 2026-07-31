@@ -462,13 +462,14 @@ checkpoint is public, so that comparison is simply untested.
 
 Two measurement caveats bound how these numbers should be read, both consequences
 of Section~\ref{sec:scenefixed}. First, $\Delta$TSR compares a paraphrase pool
-against the \texttt{original} pool, and the two were produced by different
-processes and so sample different initial scenes. Restricting the baseline to the
-scenes the paraphrase episodes actually ran on moves the deltas materially---for
-SmolVLA, $48.1\to40.3$ pp on the object axis and $70.5\to58.4$ pp on the action
-axis. The ordering across axes (object $<$ action $<$ compositional) is unchanged,
-so we regard the qualitative result as robust and the magnitudes as provisional;
-we report both baselines in the released CSV. Second, episode counts overstate the
+against the \texttt{original} pool, and the two were produced by different processes
+and so sample different initial scenes. Restricting the baseline to the scenes the
+paraphrase episodes actually ran on shifts each delta by roughly ten percentage
+points, which is the size of the effects such studies typically report. Crucially the
+\emph{ordering} across axes (object $<$ action $<$ compositional) is identical under
+either baseline, so we treat the ordering as the result and the magnitudes as
+provisional; both baselines ship in the released CSV
+(\texttt{delta\_TSR\_pp} and \texttt{delta\_TSR\_pp\_scene\_matched}). Second, episode counts overstate the
 independent variation behind these estimates: SmolVLA's $2963$ compositional
 paraphrase episodes span only two distinct initial scenes per task, because the
 paraphrase runs predate our initial-state cycling fix. We therefore report the
