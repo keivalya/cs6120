@@ -215,6 +215,51 @@ re-running the entire grid later, so the ablation was FOLDED IN (commit d3e56b2,
 decided 2026-07-31). smolvla stays at 7 conditions: its ~161 s/episode is real
 (median over 4402 logged episodes) and there the 2 conditions do cost ~18 GPU-h.
 
+1.11 LITERATURE SURVEY 2026-07-31 — the paper's positioning changed
+Five papers now report that VLAs largely IGNORE language, which looks like a direct
+contradiction of our RQ1. All verified and cited:
+  LIBERO-PRO      2510.03827  Zhou et al.  outputs unchanged under corrupted
+                              instructions / messy tokens; 90% -> 0.0% generalised
+  Flatness        2606.23641  Zhang & Bisk  names "instruction blindness"; SAM
+                              finetuning, >60% improvement in instruction following
+  Stable Lang.    2601.04052  Zhan et al.   "modality collapse"; visual features
+                  Guidance                  dominate the gradient
+  Not All Feat.   2603.19233  Grant et al.  mechanistic; injecting baseline
+                              activations into NULL-PROMPT episodes recovers
+                              near-identical behaviour (6 models, 394K episodes)
+  RADAR           2602.10980  Chen et al.   generalisation benchmark
+THE RECONCILIATION, and it is now the paper's opening move: instruction-blindness is
+what you measure where the SCENE identifies the task. The LIBERO suites differ
+exactly here — Spatial varies positions of one object, Object varies objects in
+similar layouts, and GOAL puts heterogeneous goals in a SHARED environment. Only in
+Goal can a policy not succeed by recognising the layout. Our suite is the one where
+language must matter, and the finding is that even there redundancy has not gone
+away, it moved down to the verb.
+>>> A SCOOP THAT ISN'T, but nearly was. Zhan et al.'s Residual Affordance Steering
+    is, up to normalisation, the RQ5 operator in report/RQ4_RQ5_SPEC.txt:
+      pi(a|o,l) ~ exp[s(a|o,EMPTY) + gamma*(s(a|o,l) - s(a|o,EMPTY))]
+    and it reports +29.85 points. RQ5 as specified is DONE, by someone else, and it
+    works. Do not run it as a contribution. The Conclusion now cites it and makes the
+    sharper point instead: on a suite whose verbs are redundant given its nouns, a
+    method that raises verb sensitivity is being scored on a probe that cannot
+    separate better grounding from a policy pushed OFF the optimal one.
+    Checked for a real scoop of the information-theoretic contribution — nearest work
+    is mutual-information data curation over states/actions (2502.08623), not
+    word-class content of an instruction set. Nothing overlapping found.
+
+1.12 BASELINE FIDELITY — know this before a reviewer asks
+Published LIBERO-Goal vs ours:
+    openvla_oft   97.9%  vs  97.5%   <- essentially exact
+    openvla       79.2%  vs  65.2%   <- 14 pp low
+    smolvla       (0.45B avg 87.3 over 4 suites) vs 78.5% on Goal
+CAUSE: our runners cap at max_steps=300 (configs/grid.yaml still says 600 and is
+wrong). OpenVLA is the slowest per decision and a visible share of its episodes
+exhaust the budget rather than fail — task0 seed7 shows steps=300 on 2 of the first 3.
+The paper now states this openly and argues the contrasts survive it, since the same
+truncation applies to baseline and perturbed cells alike. Do NOT quietly raise
+max_steps to chase the leaderboard number: it would invalidate every existing cell
+for comparison (same-process rule, 1.7).
+
 --------------------------------------------------------------------------------
 2. DECISIONS IN FORCE  (agreed 2026-07-29)
 --------------------------------------------------------------------------------
