@@ -10,16 +10,25 @@ Goal:   An HONEST, reproducible ACL (or comparable) submission on whether
         instruction. Near-term deadline (weeks). Cluster GPUs are heavily
         contended; plan around queue time, not GPU-hours.
 
-STATUS (2026-07-31): SmolVLA seed42 is COMPLETE at 10 eps/task; seed7 is complete
-        except tasks 0-2, which are re-running now. The 7B envs are fixed and
-        smoke_openvla passes end to end; smoke_oft is awaiting one more GPU job.
-        RQ4 must still be re-measured before it can be cited for 3 models (1.3).
+STATUS (2026-07-31, late — supersedes the earlier entry below):
 
-        !!! NEW AND IMPORTANT (1.6): the scene-fixed invariant — the basis of every
-        causal claim in the paper — is BROKEN in the data on disk, and
-        report/scene_fixed_check.json has been recording pass=false all along
-        without failing anything. The whole 7B causal grid must be regenerated.
-        Read 1.6 before running anything.
+  SmolVLA  DONE and VERIFIED. Both seeds at 10 eps/task across the 7 causal
+           conditions, and `run/aggregate.py --model smolvla --suite libero_goal`
+           now exits 0 with scene_fixed_check pass=True (200 keys, 0 mismatches).
+           That is the FIRST clean verification of the 1.6 invariant. One gap:
+           seed42/task2 repeated had n=7, re-running now (job 8859519).
+  OpenVLA  1 of 20 cells done (seed7/task0). 9-condition grid queued for seed7
+           tasks 0-9 (jobs 8859514-8859518); seed42 still to submit.
+  OFT      0 of 20 cells done. 9-condition grid queued for both seeds (8859453,
+           8859455).
+  Smokes   BOTH pass (job 8853330). The 7B envs are good.
+  RQ4      still unmeasured for 3 models (1.3). Unchanged.
+
+  !!! THE P2b "REGENERATION" IN SECTION 4 NEVER HAPPENED — see 1.9. Jobs
+  8853538/8853539 reported COMPLETED for the whole OFT grid having run ONLY the
+  `original` condition. Do not trust a progress claim in this file, or a COMPLETED
+  in sacct, without counting jsonl rows on disk first. 1.6 is now FIXED IN DATA for
+  smolvla and fixed in code for everything.
 
 --------------------------------------------------------------------------------
 0. THE ONE-PARAGRAPH SUMMARY
@@ -169,6 +178,43 @@ FALSIFIABLE TEST, now running on OFT: verb_dropped ("the bowl on the stove",
 above is WRONG and the models genuinely need the verb token. Do not write up the
 reframe until this returns.
 
+1.9  "P2b regenerated the OFT grid."  (FOUND 2026-07-31, late)
+It did not. Jobs 8853538 (seed7) and 8853539 (seed42) each ran all ten tasks,
+printed `[oft <t>] DONE` for every one, exited 0, and sacct recorded COMPLETED.
+They ran the `original` condition ONLY. On disk openvla_oft still holds 2 eps/cell
+for blank/nonsense/repeated/wrong_action/wrong_task and 10 for original — i.e. the
+scene-broken 2-episode data from 1.6 is still there, now with a 10-episode
+`original` sitting on top of it produced by a different process. Worse than
+useless: `original` and the conditions it is compared against are now guaranteed to
+be on different scenes.
+MECHANISM. The group-building filter in all three runners was
+    groups = [... for c in conditions if (c == "original" or c in instr)]
+which silently drops any requested condition absent from `instr`. scene_atomic then
+reported "PARTIAL (3 episodes across 1 conditions: original=3)" — it only inspects
+the labels in `groups`, so it could not see the other five conditions on disk
+either, and its own log line understated the damage.
+Whether the narrowing came from a CONDITIONS override at submit time or a stale
+list no longer matters: nothing in the job log recorded which conditions were
+requested, which is why the job looked identical to a real one.
+FIXED (commit 0c04138): absent conditions now ASSERT, naming them and what the
+perturbation file actually declares for that task; skipped-by-design conditions
+(wrong_object has no valid same-scene swap on tasks 0/3/7) still shrink the grid
+but announce themselves; each runner prints the grid it is about to run; and the
+three p2_rq1 sbatch headers echo $CONDITIONS. Verified: 7 groups per task, 6 on
+tasks 0/3/7, and a misspelled condition raises.
+LESSON, and it is the third instance of the same class (empty-env aggregation,
+COMPLETED-after-SIGABRT, this): exit 0 is not evidence. Count rows on disk.
+
+1.10 THE openvla RATE IN 1.7 WAS WRONG BY 3.5x  (2026-07-31)
+1.7 deferred the word-class ablation for openvla because at "~160 s/episode" two
+extra conditions looked like ~18 GPU-h. Measured on h200: job 8853238 ran task0's
+full 6-condition grid — 60 episodes — in 46.5 min, i.e. ~46 s/episode. The whole
+remaining openvla grid is ~22 GPU-h at 9 conditions, not ~62 at 7. Since compared
+conditions must come from one process, deferring would have meant discarding and
+re-running the entire grid later, so the ablation was FOLDED IN (commit d3e56b2,
+decided 2026-07-31). smolvla stays at 7 conditions: its ~161 s/episode is real
+(median over 4402 logged episodes) and there the 2 conditions do cost ~18 GPU-h.
+
 --------------------------------------------------------------------------------
 2. DECISIONS IN FORCE  (agreed 2026-07-29)
 --------------------------------------------------------------------------------
@@ -254,7 +300,14 @@ reframe until this returns.
 --------------------------------------------------------------------------------
 4. WHAT IS LEFT, IN ORDER
 --------------------------------------------------------------------------------
-P2a. FINISH THE SMOLVLA TOP-UP  (tasks 0-2 seed7 running; everything else DONE)
+P2a. SMOLVLA — DONE AND VERIFIED 2026-07-31. Both seeds, 10 eps/task, 7 causal
+   conditions, aggregate exits 0 with scene_fixed_check pass=True (200 keys, 0
+   mismatches). Only seed42/task2 is re-running (job 8859519) to close a repeated
+   n=7 gap; scene_atomic wipes and redoes all 7 conditions of that task, which is
+   why one missing episode costs ~3 GPU-h. Nothing else here needs GPU.
+   The historical instructions below are kept for the re-run recipe only.
+
+   FINISH THE SMOLVLA TOP-UP  (historical)
    One task per job, sized so the task finishes (see 1.6 for why sizing matters):
      sbatch --time=05:00:00 --export=ALL,SEED_ONLY=7,TASKS=<t>,N_EPISODES=10 \
             run/slurm/p2_rq1_smolvla.sbatch
@@ -270,19 +323,28 @@ P2b. 7B GRID — REGENERATE, do not top up  (decided 2026-07-31)
    does the deletion automatically when the runner starts on a partial task;
    nothing needs to be removed by hand. Cost ~11.5 GPU-h beyond the planned grid,
    and it buys a clean scene-fixed n=10 with no analysis caveat.
-   1. sbatch --partition=gpu --time=00:25:00 run/slurm/smoke_7b.sbatch
-      -> must print BOTH SMOKE OK lines. smoke_openvla already passes (job
-      8853171 pending for smoke_oft). Use `gpu` with a short --time, not
-      gpu-short: that QOS is starved (see section 5).
-   2. OFT first, the cheapest win by far (~6.8 s/episode thanks to 8-step action
-      chunks, ~8 min/task => all 10 tasks fit one 2 h job per seed):
-        sbatch --dependency=afterok:<smoke> --time=02:00:00 \
-               --export=ALL,SEED_ONLY=<7|42>,N_EPISODES=10 run/slurm/p2_rq1_oft.sbatch
-   3. OpenVLA, ~140-180 s/episode => ~3.1 h per task, 1-2 tasks per job, 10-20 jobs.
-      Does NOT need the smoke dependency: smoke_openvla already passed (job
-      8853012); only smoke_oft was still failing.
-        sbatch --time=05:00:00 --export=ALL,SEED_ONLY=<7|42>,TASKS=<t>,\
-               N_EPISODES=10 run/slurm/p2_rq1_openvla.sbatch
+   BOTH 7B GRIDS ARE NOW 9 CONDITIONS: the 7 causal + nouns_masked/verb_dropped
+   (1.10). The sbatch defaults carry that list, so no CONDITIONS override is needed
+   — and MUST NOT be passed as `--export=ALL,CONDITIONS=a,b,c`, which SLURM splits
+   on commas. Use `CONDITIONS=a,b,c sbatch --export=ALL ...` if you ever need to.
+   Likewise TASKS contains spaces: pass it through the environment, not --export.
+   1. [DONE] sbatch --partition=gpu --time=00:25:00 run/slurm/smoke_7b.sbatch
+      Both SMOKE OK lines printed (job 8853330). No dependency needed any more.
+   2. OFT, ~6.8 s/episode; 9 conditions => ~12 min/task, all 10 tasks in one 3 h
+      job per seed. SUBMITTED 2026-07-31: jobs 8859453 (seed7), 8859455 (seed42).
+        sbatch --time=03:00:00 --export=ALL,SEED_ONLY=<7|42>,N_EPISODES=10 \
+               run/slurm/p2_rq1_oft.sbatch
+   3. OpenVLA, ~46 s/episode measured on h200 (NOT the 140-180 in the old text —
+      see 1.10) => ~67 min/task at 9 conditions, so 2 tasks per job in 3 h.
+      SUBMITTED for seed7 tasks 0-9: jobs 8859514-8859518.
+        for T in "0 1" "2 3" "4 5" "6 7" "8 9"; do
+          TASKS="$T" SEED_ONLY=7 N_EPISODES=10 \
+            sbatch --export=ALL --time=03:00:00 run/slurm/p2_rq1_openvla.sbatch
+        done
+      STILL TO SUBMIT: the same five jobs with SEED_ONLY=42. They did not fit —
+      `gpu` allows only 8 SUBMITTED jobs per user and all 8 slots are in use.
+      Note seed7/task0 already had a clean 7-condition grid; requesting 9 makes
+      scene_atomic wipe and redo it, which is correct — all 9 must share a process.
    4. Then confirm the invariant actually holds before believing any of it:
         python run/aggregate.py --model openvla     --suite libero_goal
         python run/aggregate.py --model openvla_oft --suite libero_goal
