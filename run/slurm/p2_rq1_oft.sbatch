@@ -59,7 +59,20 @@ OVENV="LIBERO_CONFIG_PATH=/home/pandya.kei/.libero_openvla HF_HUB_OFFLINE=1"
 
 # --- Tunables -----------------------------------------------------------------
 N_EPISODES="${N_EPISODES:-10}"
-CONDITIONS="${CONDITIONS:-original,blank,nonsense,wrong_object,wrong_action,wrong_task,repeated}"
+# NINE conditions for OFT: the 7 causal ones plus the nouns_masked/verb_dropped
+# word-class ablation, folded in here and NOT in the openvla/smolvla sbatch. That
+# asymmetry is deliberate (HANDOFF 1.7): conditions you intend to COMPARE must be
+# produced by the same process, so adding one later means re-running every other
+# condition of every task. At ~6.8 s/episode the 2 extra conditions cost OFT ~1.7 h
+# total; at ~160 s/episode they would cost openvla/smolvla ~18 GPU-h each, so those
+# wait for the OFT result. HANDOFF 1.8 is the falsifiable test this feeds:
+# verb_dropped removes 0 bits of task information and should cost ~nothing, while
+# nouns_masked removes all 3.32 bits and should be catastrophic.
+#
+# Do NOT pass this via `sbatch --export=ALL,CONDITIONS=a,b,c`: SLURM splits that
+# list on commas and you get CONDITIONS=a plus bogus exports b and c. Either edit
+# this default or use `CONDITIONS=a,b,c sbatch --export=ALL ...`.
+CONDITIONS="${CONDITIONS:-original,blank,nonsense,wrong_object,wrong_action,wrong_task,repeated,nouns_masked,verb_dropped}"
 TASKS="${TASKS:-0 1 2 3 4 5 6 7 8 9}"
 if [ -n "${SEED_ONLY:-}" ]; then SEEDS="$SEED_ONLY"; else SEEDS="7 42"; fi
 # ------------------------------------------------------------------------------
