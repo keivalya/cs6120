@@ -65,6 +65,7 @@ env $OVENV $OV run/preflight_libero.py >> "$LOG" 2>&1 || {
   exit 1
 }
 
+rc=0
 for SEED in $SEEDS; do
   for TID in $TASKS; do
     echo "### openvla seed=$SEED task=$TID ###" | tee -a "$LOG"
@@ -72,7 +73,18 @@ for SEED in $SEEDS; do
         --task_id "$TID" --conditions "$CONDITIONS" \
         --seed "$SEED" --n_episodes "$N_EPISODES" 2>&1 \
       | grep -aE "ready|success=|DONE|skip|Error|Traceback|abort|scene_atomic" | grep -avE "%\|" | tee -a "$LOG"
+    # PIPESTATUS[0] is the RUNNER's status, not tee's. Without this a runner that
+    # SIGABRTs (job 8853239 core-dumped right after "env ready") still let the
+    # script fall through to its final echo and exit 0, so SLURM recorded
+    # COMPLETED for a task that produced nothing. Same silent-success class as the
+    # p2-agg jobs that "COMPLETED" against an empty env.
+    st=${PIPESTATUS[0]}
+    if [ "$st" -ne 0 ]; then
+      rc=1
+      echo "!!! RUNNER FAILED (exit $st) seed=$SEED task=$TID — cell left INCOMPLETE" | tee -a "$LOG"
+    fi
   done
 done
 
 echo "=== P2 OpenVLA RQ1 DONE $(date) ===" | tee -a "$LOG"
+exit $rc
