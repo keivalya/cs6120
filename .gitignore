@@ -34,3 +34,10 @@ openvla-oft/
 scratch_*.txt
 temp_*.txt
 paper_submission.zip
+
+# Deliberately untracked (see the P2 push discussion 2026-07-31):
+# src/libero is a nested checkout with its own .git — committing it produces a
+# broken gitlink (mode 160000) with no .gitmodules, i.e. an empty dir on clone.
+src/libero/
+scratch/
+*.jsonl.bak
