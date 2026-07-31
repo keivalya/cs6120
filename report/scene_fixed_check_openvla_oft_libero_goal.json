@@ -1,15 +1,16 @@
 {
   "pass": true,
-  "n_keys_comparable": 200,
-  "n_keys_vacuous": 0,
+  "n_keys_comparable": 40,
+  "n_keys_vacuous": 160,
   "n_keys_total": 200,
   "conds_per_key": {
-    "6": 63,
-    "7": 137
+    "1": 160,
+    "6": 12,
+    "7": 28
   },
   "n_mismatches": 0,
   "mismatches": [],
   "note": "scene provably fixed iff pass; only keys carrying >=2 conditions are evidence, and n_keys_vacuous are single-condition keys that cannot mismatch",
-  "model": "smolvla",
+  "model": "openvla_oft",
   "suite": "libero_goal"
 }

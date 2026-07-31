@@ -4,10 +4,10 @@
 \toprule
 \textbf{Model} & \textbf{Baseline} & \textbf{Blank} & \textbf{Nonsense} & \textbf{Wrong Action} & \textbf{Wrong Object} & \textbf{Wrong Task} & \textbf{Repeated} \\
 \midrule
-SmolVLA (0.45B) & 72.5\%$\pm$7.5 & 0.0\% (1.00) & 0.0\% (1.00) & 57.5\%$\pm$2.5 & 7.1\% & 0.0\% & 10.0\% \\
-OpenVLA (7B) & 70.0\% & 0.0\% (1.00) & 0.0\% (1.00) & 50.0\% & 7.1\% & 0.0\% & 60.0\% \\
-OpenVLA-OFT (7.5B) & 97.5\%$\pm$2.5 & 12.5\%$\pm$2.5 (0.87) & 7.5\%$\pm$2.5 (0.92) & 97.5\%$\pm$2.5 & 7.1\% & 0.0\% & 95.0\% \\
+SmolVLA (0.45B) & 78.5\%$\pm$2.5 & 0.0\% (1.00) & 0.0\% (1.00) & 64.5\%$\pm$0.5 & 9.3\%$\pm$2.1 & 0.0\% & 10.2\%$\pm$1.9 \\
+OpenVLA (7B)$^{\ddagger}$ & 65.2\%$\pm$4.2 & 0.0\% (1.00) & 0.0\% (1.00) & 41.3\%$\pm$7.7 & 7.7\%$\pm$0.6 & 0.0\% & 53.8\% \\
+OpenVLA-OFT (7.5B)$^{\dagger}$ & 97.5\%$\pm$1.5 & 12.5\%$\pm$2.5 (0.87) & 7.5\%$\pm$2.5 (0.92) & 97.5\%$\pm$2.5 & 7.1\% & 0.0\% & 95.0\% \\
 \midrule
-\textit{episodes per cell} & 40 & 40 & 40 & 40 & 28 & 40 & 20/40 \\
+\textit{episodes per cell} & 46/200 & 40/46/200 & 40/46/200 & 40/46/200 & 26/28/140 & 40/46/200 & 26/40/197 \\
 \bottomrule
 \end{tabular}

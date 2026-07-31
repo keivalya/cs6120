@@ -94,19 +94,37 @@ def scene_fixed_check(base: Path):
                             hashes[key][cond_dir.name] = r["reset_state_hash"]
                     except Exception:
                         continue
+    # A key holding ONE condition cannot mismatch -- there is nothing to compare it
+    # against -- so counting it as "checked" inflates the check's apparent coverage.
+    # Measured 2026-07-31 on openvla_oft: 200 keys reported, but 160 of them held
+    # only `original` (its 10-episode rerun) while the other conditions sat at 2
+    # episodes. The honest coverage was 40 keys, not 200. Reporting the larger number
+    # is the same silent-success pattern as the rest of this pipeline's history, so
+    # comparable and vacuous keys are now counted separately and a tree with nothing
+    # to compare FAILS instead of passing.
     mismatches = []
-    checked = 0
+    comparable = 0
+    vacuous = 0
+    depth: dict[int, int] = defaultdict(int)
     for key, cond_hash in hashes.items():
-        uniq = set(cond_hash.values())
-        checked += 1
-        if len(uniq) > 1:
+        depth[len(cond_hash)] += 1
+        if len(cond_hash) < 2:
+            vacuous += 1
+            continue
+        comparable += 1
+        if len(set(cond_hash.values())) > 1:
             mismatches.append({"key": key, "hashes": cond_hash})
     return {
-        "pass": len(mismatches) == 0,
-        "n_keys_checked": checked,
+        "pass": comparable > 0 and not mismatches,
+        "n_keys_comparable": comparable,
+        "n_keys_vacuous": vacuous,
+        "n_keys_total": comparable + vacuous,
+        "conds_per_key": dict(sorted(depth.items())),
         "n_mismatches": len(mismatches),
         "mismatches": mismatches[:20],
-        "note": "scene provably fixed across conditions iff pass (§5/§12)",
+        "note": ("scene provably fixed iff pass; only keys carrying >=2 conditions "
+                 "are evidence, and n_keys_vacuous are single-condition keys that "
+                 "cannot mismatch"),
     }
 
 
@@ -151,7 +169,15 @@ def main():
     # block. The unsuffixed name is kept as a pointer to the per-model files.
     atomic_write_json(REPO_ROOT / "report" / f"scene_fixed_check_{args.model}_{args.suite}.json", check)
     print(f"[aggregate] scene_fixed_check: pass={check['pass']} "
-          f"({check['n_keys_checked']} keys, {check['n_mismatches']} mismatches)")
+          f"({check['n_keys_comparable']} comparable keys, "
+          f"{check['n_mismatches']} mismatches; "
+          f"{check['n_keys_vacuous']} single-condition keys carry no evidence; "
+          f"conds/key={check['conds_per_key']})")
+    if check["pass"] and check["n_keys_vacuous"] > check["n_keys_comparable"]:
+        print(f"[aggregate] WARNING: most keys ({check['n_keys_vacuous']} of "
+              f"{check['n_keys_total']}) hold a single condition, so this pass rests "
+              f"on {check['n_keys_comparable']} keys. Thin, not clean -- the grid is "
+              f"incomplete rather than verified.", file=sys.stderr)
 
     if not check["pass"]:
         # Do NOT let this pass silently. The scene-fixed property is the entire
@@ -160,8 +186,10 @@ def main():
         # be attributed to the instruction. This sat at pass=false in the repo
         # while the paper asserted the opposite.
         print(f"\n!!! SCENE-FIXED CHECK FAILED for {args.model}/{args.suite}: "
-              f"{check['n_mismatches']}/{check['n_keys_checked']} episodes ran from "
-              f"different scenes across conditions.\n"
+              f"{check['n_mismatches']}/{check['n_keys_comparable']} comparable "
+              f"episodes ran from different scenes across conditions "
+              f"({check['n_keys_vacuous']} further keys held one condition and "
+              f"could not be checked at all).\n"
               f"!!! Causal claims for this model are NOT valid until this passes.\n"
               f"!!! All 7 conditions for a (task, seed) must be produced by ONE "
               f"runner process; cross-process cells do not share scenes.",

@@ -35,6 +35,61 @@ OUT = REPORT / "tables"
 PRETTY = {"smolvla": "SmolVLA (0.45B)", "openvla": "OpenVLA (7B)",
           "openvla_oft": "OpenVLA-OFT (7.5B)"}
 MODEL_ORDER = ["smolvla", "openvla", "openvla_oft"]
+
+
+def scene_status(model: str, suite: str = "libero_goal") -> dict:
+    """The per-model scene-fixed verdict, read from run/aggregate.py's output.
+
+    The causal contrast is only interpretable where this passes, so the tables mark
+    the models where it does not instead of presenting every column as equivalent.
+    A missing file is treated as unverified, never as a pass.
+    """
+    import json
+    p = REPORT / f"scene_fixed_check_{model}_{suite}.json"
+    if not p.exists():
+        return {"state": "unverified", "detail": "no check on record"}
+    d = json.loads(p.read_text())
+    comparable = d.get("n_keys_comparable", d.get("n_keys_checked", 0))
+    vacuous = d.get("n_keys_vacuous", 0)
+    if not d.get("pass"):
+        return {"state": "failed",
+                "detail": f"{d.get('n_mismatches', 0)} of {comparable} comparable "
+                          f"episodes started from different scenes across conditions"}
+    if vacuous > comparable:
+        return {"state": "thin",
+                "detail": f"passes on {comparable} comparable episodes, but {vacuous} "
+                          f"further episodes exist in only one condition and are "
+                          f"unchecked"}
+    return {"state": "passed", "detail": f"{comparable} comparable episodes, 0 mismatches"}
+
+
+MARK = {"failed": r"$^{\ddagger}$", "thin": r"$^{\dagger}$", "unverified": r"$^{\ddagger}$",
+        "passed": ""}
+
+
+def model_label(model: str) -> str:
+    return PRETTY[model] + MARK[scene_status(model)["state"]]
+
+
+def scene_note() -> None:
+    """One generated sentence per non-passing model, for the table captions."""
+    bits = []
+    for m in MODEL_ORDER:
+        st = scene_status(m)
+        if st["state"] == "passed":
+            continue
+        sym = {"failed": r"$\ddagger$", "unverified": r"$\ddagger$",
+               "thin": r"$\dagger$"}[st["state"]]
+        verb = ("scene-fixed check FAILS" if st["state"] in ("failed", "unverified")
+                else "scene-fixed check passes only thinly")
+        bits.append(f"{sym}~{PRETTY[m]}: {verb} --- {st['detail']}.")
+    body = (" ".join(bits) if bits else
+            "All models pass the scene-fixed check on every comparable episode.")
+    if bits:
+        body += (" Causal contrasts for a $\\ddagger$ model are confounded by "
+                 "differing initial scenes and we do not interpret them; a "
+                 "$\\dagger$ model's grid is incomplete rather than broken.")
+    write("scene_note.tex", body + "\n")
 COND_ORDER = ["original", "blank", "nonsense", "wrong_action", "wrong_object",
               "wrong_task", "repeated"]
 COND_PRETTY = {"original": "Baseline", "blank": "Blank", "nonsense": "Nonsense",
@@ -112,7 +167,7 @@ def rq1_tables(rows: list[dict]) -> None:
             if css is not None:
                 cell += f" ({css:.2f})"
             cells.append(cell)
-        lines.append(f"{PRETTY[m]} & " + " & ".join(cells) + r" \\")
+        lines.append(f"{model_label(m)} & " + " & ".join(cells) + r" \\")
     # n per condition, pooled over seeds. Show every distinct value when the models
     # disagree (openvla/repeated is seed-7 only, n=20, while the others are 40) —
     # collapsing to one number here is how "N=40 per condition" got into the paper.
@@ -141,7 +196,7 @@ def rq1_tables(rows: list[dict]) -> None:
             css = fnum(r["CSS"])
             lo, hi = wilson(round(tsr * n), n) if (tsr is not None and n) else (None, None)
             ci = "--" if lo is None else f"[{100 * lo:.1f}, {100 * hi:.1f}]"
-            lines.append(f"{PRETTY[m]} & \\texttt{{{c.replace('_', chr(92) + '_')}}} & {n} & "
+            lines.append(f"{model_label(m)} & \\texttt{{{c.replace('_', chr(92) + '_')}}} & {n} & "
                          f"{pct(tsr)} {ci} & {'--' if css is None else f'{css:.2f}'} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     write("rq1_causal_full.tex", "\n".join(lines) + "\n")
@@ -200,7 +255,7 @@ def rq3_table(rows: list[dict]) -> None:
         for r in [x for x in rows if x["model"] == m]:
             cond = r["condition"].replace("_", chr(92) + "_")
             lines.append(
-                f"{PRETTY[m]} & \\texttt{{{cond}}} & {int(fnum(r['n_pairs'], 0))} & "
+                f"{model_label(m)} & \\texttt{{{cond}}} & {int(fnum(r['n_pairs'], 0))} & "
                 f"{fnum(r['mean_tdiv_step'], 0):.2f} & {fnum(r['final_error_m'], 0):.4f} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     write("rq3_divergence.tex", "\n".join(lines) + "\n")
@@ -242,7 +297,7 @@ def wordclass_table(rows: list[dict]) -> None:
                 cells += [r"\phantom{$-$}$0.0$ pp", str(n)]
             else:
                 cells += [f"$-{delta:.1f}$ pp", str(n)]
-        lines.append(f"{PRETTY[m]} & " + " & ".join(cells) + r" \\")
+        lines.append(f"{model_label(m)} & " + " & ".join(cells) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     write("rq2_wordclass.tex", "\n".join(lines) + "\n")
 
@@ -252,6 +307,10 @@ def main() -> None:
     rq2_table(read_csv("rq2_paraphrase.csv"))
     rq3_table(read_csv("rq3_divergence.csv"))
     wordclass_table(read_csv("instruction_information.csv"))
+    scene_note()
+    for m in MODEL_ORDER:
+        st = scene_status(m)
+        print(f"[make_tables] scene-fixed {m}: {st['state']} -- {st['detail']}")
     print("\n[make_tables] done. In paper_acl.tex, replace each hand-written tabular with:\n"
           "    \\input{tables/rq1_causal}      (and rq1_n_note in the caption)\n"
           "    \\input{tables/rq2_para}\n"

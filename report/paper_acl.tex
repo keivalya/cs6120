@@ -337,7 +337,10 @@ Table~\ref{tab:rq1_causal_full} gives every cell with a 95\% Wilson interval.
 \centering
 \small
 \input{tables/rq1_causal}
-\caption{Causal Sensitivity Probe Results across Structural and Semantic Instruction Perturbations (LIBERO-Goal). \input{tables/rq1_n_note}}
+\caption{TSR under each structural and semantic perturbation on
+\texttt{LIBERO-Goal}, with CSS in parentheses for the destructive conditions and
+$\pm$ the spread across seeds where the seeds disagree.
+\input{tables/rq1_n_note} \input{tables/scene_note}}
 \label{tab:rq1_causal}
 \end{table*}
 
@@ -368,6 +371,20 @@ collapse success, giving $\text{CSS}\approx 1$ and establishing that the instruc
 is causally load-bearing. Figure~\ref{fig:rq1_scale} shows this is flat in scale.
 The two semantic-swap conditions are the ones that have been over-read, and we take
 them in turn.
+
+\paragraph{What the scene-fixed audit lets us claim.} Our own check (Section~\ref{sec:scenefixed})
+marks two of these rows. OpenVLA's grid fails it outright: $36$ of $46$ comparable
+episodes began from different scenes across conditions, so its \emph{graded}
+contrasts---\texttt{wrong\_action} at $41.3\%$, for instance---are confounded and we
+do not interpret them. OpenVLA-OFT's grid passes but thinly, on $40$ episodes.
+Two things are worth separating here. A scene confound can inflate or deflate a
+partial difference, but it cannot manufacture a floor: \texttt{blank},
+\texttt{nonsense} and \texttt{wrong\_task} sit at exactly $0\%$ for both 7B models
+across every episode, and no redistribution of initial scenes turns a uniform zero
+into a $65\%$ baseline. The CSS$\,\approx\!1$ result is therefore robust to the
+confound, while the intermediate rates are not, and we lean only on the former. We
+report the failing row rather than deleting it, and we would rather show a marked
+table than a clean-looking one.
 
 \paragraph{Object swaps measure compliance, not collapse.}
 Read naively, \texttt{wrong\_object} triggers a near-total collapse in TSR. But
