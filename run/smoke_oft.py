@@ -50,7 +50,7 @@ from experiments.robot.robot_utils import (  # noqa: E402
     get_action, get_image_resize_size, get_model,
 )
 from experiments.robot.openvla_utils import (  # noqa: E402
-    get_action_head, get_processor, get_proprio_projector,
+    get_action_head, get_processor, get_proprio_projector, resize_image_for_policy,
 )
 from experiments.robot.libero.libero_utils import (  # noqa: E402
     get_libero_dummy_action, get_libero_image, get_libero_wrist_image, quat2axisangle,
@@ -100,8 +100,13 @@ try:
     chunk = get_action(
         cfg, model,
         {
-            "full_image": get_libero_image(obs, resize_size),
-            "wrist_image": get_libero_wrist_image(obs, resize_size),
+            # OFT's get_libero_image takes ONLY obs and does not resize — resizing
+            # is a separate call. (OpenVLA's takes (obs, resize_size), which is
+            # what this smoke test wrongly copied.) Mirror eval_task_oft.py:211
+            # exactly; a smoke test that calls a different API than the runner
+            # validates nothing.
+            "full_image": resize_image_for_policy(get_libero_image(obs), resize_size),
+            "wrist_image": resize_image_for_policy(get_libero_wrist_image(obs), resize_size),
             "state": np.concatenate([
                 obs["robot0_eef_pos"], quat2axisangle(obs["robot0_eef_quat"]),
                 obs["robot0_gripper_qpos"],
