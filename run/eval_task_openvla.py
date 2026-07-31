@@ -282,6 +282,19 @@ else:
     groups = [(c, [(true_lang if c == "original" else instr[c], {})])
               for c in conditions if (c == "original" or c in instr)]
 
+# Scene-fixed guard: every condition of this task must be produced by THIS
+# process, or the conditions land on different initial scenes and the causal
+# contrast is confounded. This model's whole grid was broken that way — its
+# conditions were split across separate jobs. See run/scene_atomic.py.
+if not args.paraphrase_axis:
+    sys.path.insert(0, str(REPO_ROOT / "run"))
+    from scene_atomic import enforce_task_atomicity  # noqa: E402
+    if enforce_task_atomicity(results_root, args.model, args.suite, args.seed, tid,
+                              [lab for lab, _ in groups], args.n_episodes) == "complete":
+        env.close()
+        print(f"[eval_task {tid}] DONE (already complete)", flush=True)
+        sys.exit(0)
+
 for label, items in groups:
     out_dir = results_root / args.model / args.suite / label / f"seed{args.seed}"
     out_dir.mkdir(parents=True, exist_ok=True)

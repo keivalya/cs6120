@@ -10,7 +10,9 @@ and appends a MANIFEST.json record.
 
 Scene-fixed assertion (§5/§12): for each (task_id, episode), the reset_state_hash
 must be IDENTICAL across all conditions (only the instruction string changes;
-init state is chosen by episode index alone). Result -> report/scene_fixed_check.json.
+init state is chosen by episode index alone). Result ->
+report/scene_fixed_check_<model>_<suite>.json, and a FAILING check exits 2 — the
+causal claims are only valid while it passes.
 
 Usage: python run/aggregate.py [--model smolvla --suite libero_goal --results_root ...]
 """
@@ -69,7 +71,7 @@ def aggregate_condition(seed_dir: Path, model, suite, condition, seed) -> dict |
 
 
 def scene_fixed_check(base: Path):
-    """reset_state_hash must match across core conditions per (task_id, episode_idx)."""
+    """reset_state_hash must match across core conditions per (task_id, episode)."""
     hashes = defaultdict(dict)
     core_conds = {"original", "blank", "nonsense", "wrong_action", "wrong_object", "wrong_task", "repeated"}
     for cond_dir in sorted(base.iterdir()):
@@ -78,10 +80,16 @@ def scene_fixed_check(base: Path):
         for seed_dir in cond_dir.glob("seed*"):
             for tf in seed_dir.glob("task*.jsonl"):
                 lines = [l for l in tf.read_text().splitlines() if l.strip()]
-                for ep_idx, line in enumerate(lines):
+                for line in lines:
                     try:
                         r = json.loads(line.replace("\x00", "").strip())
-                        key = f"task{r['task_id']}_ep{ep_idx}_{seed_dir.name}"
+                        # Key on the RECORDED episode, not the line index. Line
+                        # position only equals the episode number when the file is
+                        # a gapless, duplicate-free, in-order prefix — which is
+                        # exactly what the resume bug in eval_task.py broke. A
+                        # position-keyed check silently compares different
+                        # episodes to each other.
+                        key = f"task{r['task_id']}_ep{r['episode']}_{seed_dir.name}"
                         if r.get("reset_state_hash") is not None:
                             hashes[key][cond_dir.name] = r["reset_state_hash"]
                     except Exception:
@@ -107,11 +115,14 @@ def main():
     ap.add_argument("--model", default="smolvla")
     ap.add_argument("--suite", default="libero_goal")
     ap.add_argument("--results_root", default=str(REPO_ROOT / "results"))
+    ap.add_argument("--allow-scene-mismatch", action="store_true",
+                    help="report a scene-fixed failure but still exit 0 (for "
+                         "inspecting a known-broken tree; never for paper data)")
     args = ap.parse_args()
     base = Path(args.results_root) / args.model / args.suite
     if not base.exists():
         print(f"[aggregate] nothing at {base}")
-        return
+        return 0
     manifest = REPO_ROOT / "MANIFEST.json"
     for cond_dir in sorted(base.iterdir()):
         if not cond_dir.is_dir():
@@ -131,11 +142,34 @@ def main():
             })
             print(f"[aggregate] {cond_dir.name}/seed{seed}: TSR={s['tsr']} ({s['n_success']}/{s['n_total_episodes']})")
     check = scene_fixed_check(base)
+    check["model"], check["suite"] = args.model, args.suite
     (REPO_ROOT / "report").mkdir(exist_ok=True)
-    atomic_write_json(REPO_ROOT / "report" / "scene_fixed_check.json", check)
+    # PER-MODEL path. This used to write one shared scene_fixed_check.json, so
+    # each model's aggregate run overwrote the previous one and the committed file
+    # described only whichever model happened to run last — the same
+    # one-output-overwritten-per-invocation bug that produced RQ4's duplicated
+    # block. The unsuffixed name is kept as a pointer to the per-model files.
+    atomic_write_json(REPO_ROOT / "report" / f"scene_fixed_check_{args.model}_{args.suite}.json", check)
     print(f"[aggregate] scene_fixed_check: pass={check['pass']} "
           f"({check['n_keys_checked']} keys, {check['n_mismatches']} mismatches)")
 
+    if not check["pass"]:
+        # Do NOT let this pass silently. The scene-fixed property is the entire
+        # basis for the causal claims (§5/§12): if two conditions ran from
+        # different initial scenes, their TSR difference is confounded and cannot
+        # be attributed to the instruction. This sat at pass=false in the repo
+        # while the paper asserted the opposite.
+        print(f"\n!!! SCENE-FIXED CHECK FAILED for {args.model}/{args.suite}: "
+              f"{check['n_mismatches']}/{check['n_keys_checked']} episodes ran from "
+              f"different scenes across conditions.\n"
+              f"!!! Causal claims for this model are NOT valid until this passes.\n"
+              f"!!! All 7 conditions for a (task, seed) must be produced by ONE "
+              f"runner process; cross-process cells do not share scenes.",
+              file=sys.stderr)
+        if not args.allow_scene_mismatch:
+            return 2
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
