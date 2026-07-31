@@ -48,6 +48,7 @@ protobuf==4.25.9
 mujoco==2.3.2
 robosuite==1.4.1
 opencv-python==4.11.0.86
+matplotlib==3.9.4
 EOF
 
 "$PIP" install --upgrade pip wheel setuptools || exit 1
@@ -69,7 +70,12 @@ EOF
 
 "$PIP" install -c "$C" mujoco==2.3.2 robosuite==1.4.1 bddl easydict h5py \
     imageio imageio-ffmpeg opencv-python==4.11.0.86 termcolor cloudpickle \
-    "gym==0.26.2" numba scipy PyYAML pillow trimesh PyOpenGL glfw tqdm || exit 1
+    "gym==0.26.2" numba scipy PyYAML pillow trimesh PyOpenGL glfw tqdm \
+    matplotlib==3.9.4 || exit 1
+# matplotlib is NOT optional and NOT a plotting convenience here: LIBERO's
+# libero/libero/envs/env_wrapper.py does `import matplotlib.cm` at module scope, so
+# OffScreenRenderEnv cannot even be imported without it. Omitting it made every
+# preflight and smoke run fail with ModuleNotFoundError (job 8828378).
 
 # LIBERO editable, from the checkout ~/.libero_openvla/config.yaml already points
 # at. setup.py has install_requires=[], so --no-deps is belt and braces.
@@ -83,7 +89,8 @@ echo "[gate] checking the pins that matter..."
 import sys
 from importlib.metadata import version
 want = {"numpy": "1.26.4", "protobuf": "4.25.9", "transformers": "4.40.1",
-        "mujoco": "2.3.2", "robosuite": "1.4.1", "torch": "2.2.0"}
+        "mujoco": "2.3.2", "robosuite": "1.4.1", "torch": "2.2.0",
+        "matplotlib": "3.9.4"}
 bad = []
 for pkg, exp in want.items():
     got = version(pkg)

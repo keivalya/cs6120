@@ -56,6 +56,7 @@ diffusers==0.30.3
 mujoco==2.3.2
 robosuite==1.4.1
 opencv-python==4.11.0.86
+matplotlib==3.9.4
 EOF
 
 "$PIP" install --upgrade pip wheel setuptools || exit 1
@@ -83,7 +84,10 @@ EOF
 
 "$PIP" install -c "$C" mujoco==2.3.2 robosuite==1.4.1 bddl easydict h5py \
     imageio imageio-ffmpeg opencv-python==4.11.0.86 termcolor cloudpickle \
-    "gym==0.26.2" numba scipy PyYAML pillow trimesh PyOpenGL glfw tqdm || exit 1
+    "gym==0.26.2" numba scipy PyYAML pillow trimesh PyOpenGL glfw tqdm \
+    matplotlib==3.9.4 || exit 1
+# Required, not cosmetic: LIBERO's envs/env_wrapper.py imports matplotlib.cm at
+# module scope, so OffScreenRenderEnv is unimportable without it (job 8828378).
 
 "$PIP" install -e "$REPO/openvla-oft/LIBERO" --config-settings editable_mode=compat --no-deps || exit 1
 
@@ -102,7 +106,8 @@ import sys
 from importlib.metadata import version
 want = {"numpy": "1.26.4", "protobuf": "3.20.3", "tensorflow-metadata": "1.14.0",
         "wandb": "0.16.6", "peft": "0.11.1", "diffusers": "0.30.3",
-        "mujoco": "2.3.2", "robosuite": "1.4.1", "torch": "2.2.0"}
+        "mujoco": "2.3.2", "robosuite": "1.4.1", "torch": "2.2.0",
+        "matplotlib": "3.9.4"}
 bad = []
 for pkg, exp in want.items():
     got = version(pkg)

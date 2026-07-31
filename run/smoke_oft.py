@@ -35,12 +35,17 @@ tf.config.set_visible_devices([], "GPU")
 assert torch.cuda.is_available(), "no CUDA — run this on a GPU node"
 assert np.__version__.startswith("1.26"), f"numpy drifted to {np.__version__}"
 
+# prismatic is NOT pip-installed; it is imported off the openvla-oft checkout, the
+# same way run/eval_task_oft.py:118 does it. This insert must therefore come BEFORE
+# the import below — otherwise the smoke test fails with ModuleNotFoundError on an
+# env that is actually fine (job 8828378).
+sys.path.insert(0, str(REPO_ROOT / "openvla-oft"))
+
 # The regression tests for this env's whole reason to exist.
 import prismatic  # noqa: E402
 import dlimp  # noqa: E402
 print(f"prismatic OK ({prismatic.__file__})\ndlimp OK", flush=True)
 
-sys.path.insert(0, str(REPO_ROOT / "openvla-oft"))
 from experiments.robot.robot_utils import (  # noqa: E402
     get_action, get_image_resize_size, get_model,
 )
