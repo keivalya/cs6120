@@ -121,10 +121,16 @@ FIXED IN CODE (commit 953b796): run/scene_atomic.py makes the TASK the unit of
 atomicity — one process produces all conditions x all episodes for a task, or the
 task's partial output is deleted and redone. aggregate.py now exits 2 on a failing
 check and writes report/scene_fixed_check_<model>_<suite>.json per model.
-CONSEQUENCE FOR GPU PLANNING: size jobs so a task always finishes inside the wall.
-One task x 7 conditions x 10 episodes is ~3 h for smolvla and openvla, minutes for
-OFT. Submit ONE TASK PER JOB. A job that dies now costs one task instead of
-silently confounding the grid. Do NOT go back to multi-task 8 h jobs.
+CONSEQUENCE FOR GPU PLANNING. The invariant to protect is "a task is never split
+across two PROCESSES", and scene_atomic now enforces that on its own: a task cut
+off by the wall is wiped and redone from scratch on the next run, never merged.
+So a multi-task job is still CORRECT — the sbatch already starts a fresh process
+per task — and job sizing is purely about not wasting GPU time. Size so a task
+comfortably finishes: ~3 h per task for smolvla and openvla (7 conditions x 10
+episodes), ~8 min for OFT, so OFT can do all 10 tasks in one 2 h job while
+openvla wants 1-2 tasks per job. Short --time requests also backfill much better.
+What you must NOT do is assume a resumed cell is usable: "just resubmit, it
+resumes" is exactly what broke the grid.
 
 --------------------------------------------------------------------------------
 2. DECISIONS IN FORCE  (agreed 2026-07-29)
@@ -212,7 +218,7 @@ silently confounding the grid. Do NOT go back to multi-task 8 h jobs.
 4. WHAT IS LEFT, IN ORDER
 --------------------------------------------------------------------------------
 P2a. FINISH THE SMOLVLA TOP-UP  (tasks 0-2 seed7 running; everything else DONE)
-   ONE TASK PER JOB — see 1.6, this is not a preference:
+   One task per job, sized so the task finishes (see 1.6 for why sizing matters):
      sbatch --time=05:00:00 --export=ALL,SEED_ONLY=7,TASKS=<t>,N_EPISODES=10 \
             run/slurm/p2_rq1_smolvla.sbatch
    Measured 161 s/episode (median over 4402 logged episodes) => ~3.1 h for one
@@ -232,10 +238,12 @@ P2b. 7B GRID — REGENERATE, do not top up  (decided 2026-07-31)
       8853171 pending for smoke_oft). Use `gpu` with a short --time, not
       gpu-short: that QOS is starved (see section 5).
    2. OFT first, the cheapest win by far (~6.8 s/episode thanks to 8-step action
-      chunks => the whole grid is ~3 GPU-h), one task per job:
-        sbatch --time=01:00:00 --export=ALL,SEED_ONLY=<7|42>,TASKS=<t>,\
-               N_EPISODES=10 run/slurm/p2_rq1_oft.sbatch
-   3. OpenVLA, ~140-180 s/episode => ~3.1 h per task, ONE TASK PER JOB, 20 jobs:
+      chunks, ~8 min/task => all 10 tasks fit one 2 h job per seed):
+        sbatch --dependency=afterok:<smoke> --time=02:00:00 \
+               --export=ALL,SEED_ONLY=<7|42>,N_EPISODES=10 run/slurm/p2_rq1_oft.sbatch
+   3. OpenVLA, ~140-180 s/episode => ~3.1 h per task, 1-2 tasks per job, 10-20 jobs.
+      Does NOT need the smoke dependency: smoke_openvla already passed (job
+      8853012); only smoke_oft was still failing.
         sbatch --time=05:00:00 --export=ALL,SEED_ONLY=<7|42>,TASKS=<t>,\
                N_EPISODES=10 run/slurm/p2_rq1_openvla.sbatch
    4. Then confirm the invariant actually holds before believing any of it:
