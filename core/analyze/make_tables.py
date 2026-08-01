@@ -115,7 +115,8 @@ def prose_macros(rq1: list[dict], abl: list[dict]) -> None:
     for name, model, cond in [("oftBaseline", "openvla_oft", "original"),
                               ("oftBlank", "openvla_oft", "blank"),
                               ("oftNonsense", "openvla_oft", "nonsense"),
-                              ("smolBaseline", "smolvla", "original")]:
+                              ("smolBaseline", "smolvla", "original"),
+                              ("ovBaseline", "openvla", "original")]:
         r = by1.get((model, cond))
         tsr = fnum(r["TSR"]) if r else None
         emit(name, model, None if tsr is None else 100 * tsr, ".1f")

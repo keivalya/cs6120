@@ -285,8 +285,9 @@ across both seeds.
 \paragraph{Baseline fidelity.} Because every number here is a difference from an
 \texttt{original} baseline, that baseline should be checked against the literature.
 Ours reproduces the published LIBERO-Goal result for OpenVLA-OFT closely ($\oftBaseline\%$
-against $97.9\%$ reported by \citet{kim2025oft}), and runs below the published figure
-for SmolVLA. We attribute the gap mainly to
+against $97.9\%$ reported by \citet{kim2025oft}), and runs below the published figures
+for the other two, at $\smolBaseline\%$ for SmolVLA and $\ovBaseline\%$ for OpenVLA-7B.
+We attribute the gap mainly to
 our fixed $T=300$ step horizon: a visible share of episodes exhaust the budget rather
 than fail outright, whereas
 OpenVLA-OFT's 8-step action chunks finish well inside it. We keep the shorter horizon
@@ -695,8 +696,8 @@ Figure~\ref{fig:rq3_divergence} shows the shape of this.
 The pattern matches the causal results. With no usable instruction
 (\texttt{blank}, \texttt{nonsense}) the policy departs from the canonical trajectory
 within the first step or two: it never begins the right motion. Under
-\texttt{wrong\_action} it does begin the right motion and holds it for roughly a
-dozen steps before diverging, which is what one expects when the noun set has already
+\texttt{wrong\_action} it does begin the right motion and holds it for six to eleven
+steps before diverging, depending on the model, which is what one expects when the noun set has already
 determined where to go and only the manner of acting is in question. We report this
 as a qualitative ordering rather than a precise timing: the pair counts per cell are
 small, and $t_{\text{div}}$ depends on the $5$\,cm threshold.
@@ -749,10 +750,13 @@ such evaluations are usually taken to demonstrate does not, we argue, follow fro
 them: on \texttt{LIBERO-Goal} the verb is informationally redundant given the
 nouns, most verb-substitution probes leave task identity intact, and most
 object-substitution ``failures'' are the policy complying with the instruction it
-received. The claim that survives is narrower and better supported---on the only
-three tasks where a verb swap changes the goal, OpenVLA-OFT shows no detectable
-response to it ($p=0.45$) while SmolVLA does ($p=0.002$)---and we prefer it to the
-broader one.
+received. The claim that survives is narrower and better supported. On the only
+three tasks where a verb swap changes the goal, OpenVLA-7B loses $31.7$ points
+($p<10^{-5}$) and SmolVLA $21.7$ ($p=0.002$), while OpenVLA-OFT shows no detectable
+response ($p=0.45$): verb-insensitivity is a property of one of these models, not of
+the class, and the suite-wide probe conventionally used to establish it reports a
+mild $-12.0$ points for the model it most clearly fails to describe. We prefer that
+claim to the broader one.
 
 The general lesson is that instruction-perturbation studies inherit the information
 structure of their benchmark, and that structure has to be measured before the
@@ -811,8 +815,8 @@ same account. (vi) \textbf{No mechanistic account}: we deliberately make no
 attention-level claim. An earlier draft reported a layer-wise noun-vs-verb
 cross-attention ratio; we found the underlying extraction had compared one model
 against a relabelled copy of another and had fed the OpenVLA-family models a blank
-image, so we removed the analysis rather than report it. A corrected measurement is in
-progress and is not claimed here. Readers wanting a mechanistic picture should see
+image, so we removed the analysis rather than report it, and we leave a corrected
+measurement to future work rather than claim one here. Readers wanting a mechanistic picture should see
 \citet{grant2026features}, who use activation injection, sparse autoencoders and
 linear probes across six models; our contribution is behavioural and
 information-theoretic, and is compatible with their finding that the visual pathway
