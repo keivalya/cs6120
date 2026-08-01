@@ -108,8 +108,11 @@ def fig_information() -> None:
     h_given_verbs = sum(len(g) / n * math.log2(len(g)) for g in verb_groups.values())
     h_given_nouns = sum(len(g) / n * math.log2(len(g)) for g in noun_groups.values())
 
+    # STACKED, not side by side: as a full-width figure* this reserved a two-column
+    # float band and left the page around it about 40% empty, which cost a page we
+    # did not have against the ACL limit. One column, two rows, same content.
     fig, (ax_a, ax_b) = plt.subplots(
-        1, 2, figsize=(6.9, 2.15), gridspec_kw={"width_ratios": [1.0, 1.35], "wspace": 0.42})
+        2, 1, figsize=(3.34, 3.05), gridspec_kw={"height_ratios": [1.25, 1.0], "hspace": 0.75})
 
     # --- Panel A: one series, so one hue and no legend box.
     labels = ["no instruction\n$H(\\mathrm{task})$",
@@ -128,8 +131,8 @@ def fig_information() -> None:
     ax_a.set_xlabel("bits of task identity still unresolved", fontsize=7)
     ax_a.xaxis.grid(True, color=MUTED, lw=0.4, alpha=0.5, zorder=0)
     ax_a.set_axisbelow(True)
-    ax_a.set_title("(a) what each word class resolves", fontsize=7.6,
-                   fontweight="bold", color=INK, loc="left", pad=6)
+    ax_a.set_title("(a) what each word class resolves", fontsize=7.2,
+                   fontweight="bold", color=INK, loc="left", pad=4)
 
     # --- Panel B: the partition that produces those numbers.
     rows = [("by noun set", sorted(noun_groups.items(), key=lambda kv: kv[1][0]), BLUE),
@@ -140,27 +143,28 @@ def fig_information() -> None:
         x = 0.0
         for key, tasks in groups:
             w = len(tasks)
-            ax_b.add_patch(Rectangle((x + gap / 2, y - 0.3), w - gap, 0.6,
+            ax_b.add_patch(Rectangle((x + gap / 2, y - 0.36), w - gap, 0.72,
                                      facecolor=color, edgecolor="none", zorder=3))
             if w > 1:  # only the collapsed group gets a direct label; the rest would collide
-                ax_b.text(x + w / 2, y, f"“{'+'.join(key)}”\n{w} of {n} tasks",
-                          ha="center", va="center", fontsize=6.6,
-                          fontweight="bold", color="white", zorder=4, linespacing=1.25)
+                ax_b.text(x + w / 2, y, f"“{'+'.join(key)}” {w}/{n}",
+                          ha="center", va="center", fontsize=6.0,
+                          fontweight="bold", color="white", zorder=4)
             x += w
         ax_b.text(-0.25, y, row_label, ha="right", va="center", fontsize=7, color=INK_2)
         ax_b.text(10.25, y, f"{len(groups)} group{'s' if len(groups) > 1 else ''}",
                   ha="left", va="center", fontsize=7, fontweight="bold", color=INK)
-    ax_b.set_xlim(-3.0, 12.4)
-    ax_b.set_ylim(-0.75, 1.75)
+    ax_b.set_xlim(-4.2, 13.6)
+    ax_b.set_ylim(-1.95, 1.7)
     ax_b.set_xticks([])
     ax_b.set_yticks([])
     for s in ax_b.spines.values():
         s.set_visible(False)
-    ax_b.set_title("(b) the partition each induces over the ten tasks", fontsize=7.6,
-                   fontweight="bold", color=INK, loc="left", pad=6)
-    ax_b.text(5.0, -0.62, "each cell is one task; a wide cell is a group the word class "
-                          "cannot tell apart",
-              ha="center", va="center", fontsize=6.4, color=INK_2, style="italic")
+    ax_b.set_title("(b) the partition each induces over the ten tasks", fontsize=7.2,
+                   fontweight="bold", color=INK, loc="left", pad=4)
+    ax_b.text(5.0, -1.15, "each cell is one task; a wide cell is a group\nthe word "
+                          "class cannot tell apart",
+              ha="center", va="center", fontsize=6.2, color=INK_2, style="italic",
+              linespacing=1.3)
 
     out = PAPER / "fig_information.png"
     fig.savefig(out)
@@ -314,7 +318,7 @@ def fig_verbsplit() -> None:
     # them rather than immediately at zero.
     X_DELTA, X_P = 8.0, 22.0
 
-    fig, ax = plt.subplots(figsize=(3.34, 3.15))
+    fig, ax = plt.subplots(figsize=(3.34, 2.75))
     for yy, val, ci, color, hollow, p in rows:
         ax.barh(yy, val, height=0.62, zorder=3,
                 facecolor="white" if hollow else color,

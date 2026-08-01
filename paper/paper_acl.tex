@@ -26,6 +26,14 @@
 % sixty points" where the table said 74.4. Never hand-edit tables/macros.tex.
 \input{tables/macros}
 
+% Caption notes. These MUST be loaded here and expanded as macros in the caption,
+% never \input inside \caption itself: caption re-scans its argument and the file's
+% paragraph break aborts the build with "Argument of \caption@ydblarg has an extra
+% }". paper/check_tex.py cannot see this -- it is a linter, not a TeX run.
+\input{tables/rq1_n_note}
+\input{tables/scene_note}
+\input{tables/rq_ablation_note}
+
 \title{Measuring the Benchmark, Not the Model: Instruction Information Content
 Confounds Word-Class Grounding Claims in Vision-Language-Action Models}
 
@@ -37,52 +45,32 @@ Confounds Word-Class Grounding Claims in Vision-Language-Action Models}
 \maketitle
 
 \begin{abstract}
-Vision-Language-Action (VLA) models map a natural-language instruction and a
-visual observation to robot actions, but it remains unclear how much they rely on
-the language rather than on visual priors and memorized task layouts. We study
-this with a \emph{scene-fixed} causal evaluation that holds the initial simulator
-state constant and perturbs only the instruction, on the \texttt{LIBERO-Goal}
-suite, across three architectures spanning a $16\times$ parameter range
-(SmolVLA-0.45B, OpenVLA-7B, OpenVLA-OFT-7.5B). Language is causally necessary and
-scale-invariant: blanking the instruction or replacing it with length-matched
-nonsense collapses task success at every scale (Causal Sensitivity Score $0.85$
-to $1.00$).
+Vision-Language-Action (VLA) models map a natural-language instruction and a visual
+observation to robot actions, but it remains unclear how much they rely on the
+language rather than on visual priors and memorized task layouts. We study this with
+a \emph{scene-fixed} causal evaluation that holds the initial simulator state
+constant and perturbs only the instruction, on \texttt{LIBERO-Goal}, across three
+architectures spanning a $16\times$ parameter range. Language is causally necessary
+and scale-invariant: blanking the instruction or replacing it with length-matched
+nonsense collapses success at every scale.
 
-Our main contribution is negative and, we argue, more useful. A widely reported
-reading of results like ours is that VLAs bind object nouns strictly but treat
-action verbs as near-optional---an ``asymmetric grounding gap''. We show this
-conclusion does not follow, because it is confounded by the information structure
-of the benchmark itself. In \texttt{LIBERO-Goal} the unordered set of nouns in an
-instruction \emph{uniquely} identifies all ten tasks ($H(\text{task}\mid
-\text{nouns})=0$ bits), while the verb leaves $1.55$ of the $3.32$ bits unresolved
----its commonest form, \texttt{put}, covers six of the ten tasks by itself.
-Conditional on the nouns the
-verb is therefore \emph{fully redundant}, and ignoring it is the
-information-theoretically optimal policy rather than a grounding failure.
-Correspondingly, the standard verb-substitution probe cannot detect
-verb-insensitivity at all: seven of its ten substitutions preserve the noun set
-and hence the task identity. We further show that the apparent ``collapse'' under
-object substitution is compliance being mis-scored: when the perturbation happens
-to name a \emph{different real task}, the models perform that task and never
-the original.
-
-A word-class \emph{removal} test confirms the account directly: deleting the verb
-outright costs OpenVLA-OFT $\oftVerbDrop$ points against a scene-matched baseline,
-while masking the nouns costs it $\oftNounMask$---two edits of similar surface
-magnitude separated by the task information they destroy. Because every perturbed
-rollout starts from its baseline's exact initial state, these are matched pairs and
-we test them as such: verb deletion is indistinguishable from no edit at all
-(McNemar $p=0.34$), while noun masking flips $148$ of $200$ pairs. Isolating the
-cases that do carry a contrast---three tasks with true antonym verb pairs---reverses
-the usual reading: OpenVLA-7B loses $31.7$ points there ($p<10^{-5}$) while the seven
-uninformative substitutions move it not at all ($p=0.52$), so the standard probe hides
-a decisive verb effect by averaging it against non-events. Verb-insensitivity survives
-for exactly one of our three models, OpenVLA-OFT, which is unmoved even by an antonym
-($p=0.45$). We release the scene-fixed protocol, an automated
-invariant check that fails loudly, and the word-class probes, and argue that
-instruction-level information content must be reported before grounding claims can be
-drawn from perturbation studies---including before crediting a mitigation with having
-improved grounding.
+Our main contribution is negative. The widely reported reading of such results---that
+VLAs bind object nouns strictly but treat action verbs as near-optional---does not
+follow, because it is confounded by the information structure of the benchmark. In
+\texttt{LIBERO-Goal} the noun set uniquely identifies all ten tasks
+($H(\text{task}\mid\text{nouns})=0$ bits) while the verb leaves $1.55$ of $3.32$ bits
+unresolved, so conditional on the nouns the verb is \emph{fully redundant} and
+ignoring it is optimal rather than a grounding failure. Seven of the ten standard
+verb substitutions preserve the noun set, so the probe cannot detect
+verb-insensitivity at all; and the apparent ``collapse'' under object substitution is
+compliance being mis-scored. A word-class \emph{removal} test confirms the account:
+deleting the verb is indistinguishable from no edit (McNemar $p=0.34$) while masking
+the nouns flips $148$ of $200$ matched pairs. Isolating the three tasks with true
+antonym pairs reverses the usual reading---OpenVLA-7B loses $31.7$ points
+($p<10^{-5}$) where the uninformative substitutions move it not at all
+($p=0.52$)---so verb-insensitivity survives for exactly one of our three models. We
+argue that instruction-level information content must be reported before grounding
+claims are drawn from perturbation studies.
 \end{abstract}
 
 \section{Introduction}
@@ -114,13 +102,10 @@ causally necessary and scale-invariant: destroying the instruction destroys succ
 every scale. This cuts against a rapidly forming consensus that VLAs are
 ``instruction-blind''
 \citep{fei2025liberoplus,zhou2025liberopro,hou2026langgap,zhang2026flatness,grant2026features},
-and we think both are right about their own settings. The LIBERO suites differ in how
-much the scene gives away: \texttt{Goal} is the one that places heterogeneous goals in
-a \emph{shared} environment, so it is the one where a policy cannot succeed by
-recognising the layout. Instruction-blindness is what you measure where the scene
-identifies the task; language dependence is what you measure where it does not. Which
-regime a benchmark is in is a property one can compute in advance, and mostly nobody
-does.
+and we think both are right about their own settings---\texttt{Goal} is the LIBERO
+suite that places heterogeneous goals in a \emph{shared} environment, so it is the one
+where a policy cannot succeed by recognising the layout. Which regime a benchmark is
+in is a property one can compute in advance, and mostly nobody does.
 
 At first sight our results also reproduce the asymmetry that such probes usually
 report: object swaps collapse success while verb swaps are tolerated, inviting the
@@ -134,49 +119,33 @@ correctly executing the instruction it was given, scored against the task it was
 not. The residual effect is real but much narrower than the literature's framing
 suggests.
 
-We think the methodological point generalises beyond this suite. Instruction
-perturbation is becoming a standard tool for probing grounding, and it silently
-assumes that the perturbed word classes are informationally comparable. Where they
-are not, the probe measures the benchmark rather than the model. We therefore
-report the information content of the instruction set as a precondition for
-interpreting the behavioural results, and release the tooling to do so.
+The methodological point generalises beyond this suite: instruction perturbation
+silently assumes that the perturbed word classes are informationally comparable, and
+where they are not, the probe measures the benchmark rather than the model.
 
 \subsection*{Contributions}
-\begin{itemize}
-    \item \textbf{Instruction information content as a confound}: We show that
-    conclusions about \emph{which word classes a VLA grounds} are not identifiable
-    from perturbation studies without first measuring what each word class
-    contributes to task identity. On \texttt{LIBERO-Goal}, nouns carry all $3.32$
-    bits and verbs carry none conditional on them, so verb-insensitivity is
-    optimal behaviour and the standard verb-swap probe is uninformative by
-    construction (Section~\ref{sec:info}).
-    \item \textbf{A removal test that separates the two}: substituting within a word
-    class mostly leaves the task unchanged, so we remove classes outright. Deleting
-    the verb ($0$ bits) is free; masking the nouns ($3.32$ bits) is catastrophic.
-    Two edits of similar surface size, two orders of magnitude apart in effect
+\begin{itemize}\itemsep2pt \parskip0pt
+    \item \textbf{Instruction information content as a confound.} Conclusions about
+    which word classes a VLA grounds are not identifiable from perturbation studies
+    without first measuring what each class contributes to task identity. On
+    \texttt{LIBERO-Goal} nouns carry all $3.32$ bits and verbs none conditional on
+    them, so verb-insensitivity is optimal and the standard verb-swap probe is
+    uninformative by construction (Section~\ref{sec:info}).
+    \item \textbf{A removal test that separates the two.} Because substitution
+    mostly leaves the task unchanged, we remove classes outright: deleting the verb
+    ($0$ bits) is free, masking the nouns ($3.32$ bits) is catastrophic---two edits
+    of similar surface size, two orders of magnitude apart in effect
     (Section~\ref{sec:ablation}).
-    \item \textbf{Re-analysis of the ``Asymmetric Grounding Gap''}: We show both
-    halves of the reported asymmetry dissolve under this analysis. Object-swap
-    ``collapse'' is largely \emph{compliance}: when the swap yields another real
-    task's instruction, all three models execute that task and never the original
-    ($17/20$, $18/20$ and $20/20$ episodes).
-    Verb-swap ``tolerance'' is mostly measured on substitutions that leave task
-    identity intact. Splitting them reverses the conclusion for two of three
-    models: OpenVLA-7B loses $31.7$ pp to a contrastive verb ($p<10^{-5}$) and
-    nothing at all to an uninformative one ($p=0.52$). Only OpenVLA-OFT is
-    genuinely unmoved ($-5.0$ pp, $p=0.45$) (Section~\ref{sec:rq1}).
-    \item \textbf{Scene-Fixed Protocol and an Automated Invariant Check}: We
-    present the diagnostic paradigm holding initial simulator states constant
-    ($S_0 = \text{const}$) across 3 VLA architectures, and---because we found the
-    invariant is silently broken by ordinary evaluation practice
-    (Section~\ref{sec:scenefixed})---an automated check that fails loudly rather
-    than reporting a confounded contrast.
-    \item \textbf{A kinematic read-out of when behaviour diverges}: because
-    perturbed and canonical rollouts start from a byte-identical state, their
-    end-effector traces are directly comparable step by step. Destructive
-    corruptions separate almost immediately, whereas verb substitutions track the
-    canonical trajectory for a while before diverging---a behavioural signature
-    that success rates alone hide (Section~\ref{sec:rq3}).
+    \item \textbf{Re-analysis of the ``asymmetric grounding gap''.} Both halves
+    dissolve. Object-swap ``collapse'' is largely \emph{compliance}: where the swap
+    yields another real task's instruction, all three models perform that task and
+    never the original ($17/20$, $18/20$, $20/20$). Verb-swap ``tolerance'' is mostly
+    measured on substitutions that leave task identity intact; splitting them
+    reverses the conclusion for two of three models (Section~\ref{sec:rq1}).
+    \item \textbf{A scene-fixed protocol with an automated invariant check} that
+    fails loudly, motivated by finding the invariant silently broken by ordinary
+    evaluation practice (Section~\ref{sec:scenefixed}), plus a kinematic read-out of
+    \emph{when} behaviour diverges (Section~\ref{sec:rq3}).
 \end{itemize}
 
 \section{Related Work}
@@ -203,48 +172,33 @@ on memorisation.
 \paragraph{The instruction-blindness consensus.} A striking convergence has formed
 around the claim that VLAs largely \emph{ignore} language. LIBERO-Plus finds models
 insensitive to instruction variation while highly sensitive to viewpoint and initial
-state. LIBERO-PRO \citep{zhou2025liberopro} reports that outputs ``remain unchanged
-even when given corrupted instructions or even messy tokens'', with accuracy falling
-from over $90\%$ to $0.0\%$ once perturbations are generalised, and attributes this
-to rote memorisation of action sequences and layouts. LangGap
-\citep{hou2026langgap} reports the same for models scoring above $95\%$ on standard
-benchmarks and argues that LIBERO's one-task-per-layout design never forces language
-use. \citet{zhang2026flatness} name the failure mode ``instruction blindness'' and
-trace it to sharp loss landscapes during finetuning on limited robot data;
-\citet{zhan2026stable} describe a ``modality collapse'' in which dense visual
-features dominate the gradient and the policy degenerates towards a visual
-affordance prior. Mechanistically, \citet{grant2026features} find across six models
-and $394$K episodes that injecting baseline activations into null-prompt episodes
-recovers near-identical behaviour, i.e.\ the visual pathway alone largely determines
-the action.
+state. LIBERO-PRO \citep{zhou2025liberopro} reports outputs that ``remain unchanged
+even when given corrupted instructions or even messy tokens'' and attributes this to
+rote memorisation of action sequences and layouts; LangGap \citep{hou2026langgap}
+reports the same for models scoring above $95\%$ on standard benchmarks and argues
+that LIBERO's one-task-per-layout design never forces language use.
+\citet{zhang2026flatness} name the failure mode ``instruction blindness'', while
+\citet{zhan2026stable} describe a ``modality collapse'' towards a visual affordance
+prior. Mechanistically, \citet{grant2026features} find across six models and $394$K
+episodes that injecting baseline activations into null-prompt episodes recovers
+near-identical behaviour.
 
-\paragraph{Why our result is not a counterexample to it.} We find the opposite on
-\texttt{LIBERO-Goal}: deleting the instruction destroys success at every scale. We
-do not think this contradicts the work above, and the reconciliation is the point of
-this paper. The LIBERO suites differ precisely in how much the scene reveals about
-the task---\texttt{Spatial} varies positions of the same object,
+\paragraph{Our position.} We find the opposite on \texttt{LIBERO-Goal}: deleting the
+instruction destroys success at every scale. This does not contradict the work above,
+and the reconciliation is the point of this paper. The LIBERO suites differ in how
+much the scene reveals---\texttt{Spatial} varies positions of one object,
 \texttt{Object} varies objects within similar layouts, and \texttt{Goal} places
-\emph{heterogeneous goals in a shared environment}. Only in the last does the visual
+\emph{heterogeneous goals in a shared environment}. Only in the last does the
 observation fail to identify the task, so only there must a competent policy consult
-the instruction. Consistent with this, blank-instruction results in the literature
-are strongly suite-dependent rather than uniform. What our suite buys is not a
-different species of model but a setting where the language channel is
-load-bearing---and the finding is that even there, redundancy has not disappeared,
-it has merely moved down a level, from the instruction as a whole to the verb within
-it.
-
-\paragraph{Our position.} Prior work establishes \emph{that} VLAs are fragile to
-input variation, and increasingly proposes fixes: sharpness-aware finetuning
-\citep{zhang2026flatness}, paraphrase-marginalised training and contrastive
-amplification of the language signal \citep{zhan2026stable}, or new suites built so
-that language cannot be ignored \citep{hou2026langgap,chen2026radar}. Each presumes
-we can correctly measure how much a policy uses each part of an instruction. We
-argue that this measurement is not identifiable from perturbation experiments alone,
-because the perturbed word classes are generally not informationally comparable, and
-that reporting the instruction set's information content is a cheap precondition for
-interpreting any of these results---including for deciding whether a proposed fix
-has improved grounding or merely improved a metric that was never measuring
-grounding.
+the instruction; consistent with this, blank-instruction results in the literature are
+strongly suite-dependent. Even there, redundancy has not disappeared---it has moved
+down a level, from the instruction as a whole to the verb within it. This matters
+because prior work increasingly proposes fixes: sharpness-aware finetuning
+\citep{zhang2026flatness}, contrastive amplification of the language signal
+\citep{zhan2026stable}, or suites built so language cannot be ignored
+\citep{hou2026langgap,chen2026radar}. Each presumes we can correctly measure how much
+a policy uses each part of an instruction, and we argue that measurement is not
+identifiable from perturbation experiments alone.
 
 \section{Experimental Setup}
 \label{sec:setup}
@@ -257,24 +211,18 @@ $S_0(I_{\text{orig}}) \equiv S_0(I_{\text{pert}})$. We verify it by hashing the
 full simulator state (\texttt{qpos}, \texttt{qvel}) after reset and comparing
 across conditions; Section~\ref{sec:scenefixed} reports what that check found. We
 evaluate three checkpoints chosen to vary both scale and action-head design:
-\begin{itemize}
-\item \textbf{SmolVLA-0.45B} \citep{shukor2025smolvla}: a compact SmolVLM2
-  backbone (SigLIP vision encoder, SmolLM2 language model) with a
-  \emph{flow-matching} action expert, at $256\times256$ observations.
-\item \textbf{OpenVLA-7B} \citep{kim2025openvla}: a Prismatic VLM backbone over
-  Llama-2 7B that emits \emph{discretized} action tokens, at $224\times224$.
-\item \textbf{OpenVLA-OFT-7.5B} \citep{kim2025oft}: the Optimized Fine-Tuning
-  recipe---parallel decoding, an 8-step action chunk, a continuous action
-  representation and an L1-regression objective---which additionally consumes a
-  wrist camera and 8-dimensional proprioception. (OFT here is
-  \emph{Optimized} Fine-Tuning, not the unrelated orthogonal-fine-tuning method.)
-  The public LIBERO-Goal release we evaluate is trained \emph{without} FiLM, so we
-  make no FiLM claims.
-\end{itemize}
-The three therefore span a $16\times$ parameter range and all three major action
-parameterisations in current VLAs, which matters for Section~\ref{sec:rq1}: a
-finding that holds across discretized, continuous and flow-matching heads is
-unlikely to be an artifact of any one decoder.
+We evaluate \textbf{SmolVLA-0.45B} \citep{shukor2025smolvla}, a compact SmolVLM2
+backbone with a \emph{flow-matching} action expert; \textbf{OpenVLA-7B}
+\citep{kim2025openvla}, a Prismatic VLM over Llama-2 7B emitting \emph{discretized}
+action tokens; and \textbf{OpenVLA-OFT-7.5B} \citep{kim2025oft}, the Optimized
+Fine-Tuning recipe (parallel decoding, 8-step action chunks, a continuous action
+representation and an L1-regression objective), which additionally consumes a wrist
+camera and 8-dimensional proprioception. (OFT here is \emph{Optimized} Fine-Tuning,
+not the unrelated orthogonal-fine-tuning method; the public LIBERO-Goal release we
+evaluate is trained \emph{without} FiLM, so we make no FiLM claims.) The three span a
+$16\times$ parameter range and all three major action parameterisations, which
+matters for Section~\ref{sec:rq1}: a finding that holds across discretized,
+continuous and flow-matching heads is unlikely to be an artifact of any one decoder.
 
 Every condition is run under two seeds ($7$ and $42$) with a rollout horizon of
 $T=300$ steps, and each reported cell pools all episodes for its (model, condition)
@@ -284,47 +232,34 @@ across both seeds.
 
 \paragraph{Baseline fidelity.} Because every number here is a difference from an
 \texttt{original} baseline, that baseline should be checked against the literature.
-Ours reproduces the published LIBERO-Goal result for OpenVLA-OFT closely ($\oftBaseline\%$
-against $97.9\%$ reported by \citet{kim2025oft}), and runs below the published figures
-for the other two, at $\smolBaseline\%$ for SmolVLA and $\ovBaseline\%$ for OpenVLA-7B.
-We attribute the gap mainly to
-our fixed $T=300$ step horizon: a visible share of episodes exhaust the budget rather
-than fail outright, whereas
-OpenVLA-OFT's 8-step action chunks finish well inside it. We keep the shorter horizon
-deliberately, because it is applied identically to every condition, and every claim we
-make is a within-model contrast across conditions at a fixed horizon. A truncation
-that removes the same tail from the baseline and the perturbed cells alike cannot
-create the differences we report, though it does mean our absolute rates should not be
-compared with published leaderboard numbers.
+Ours reproduces the published LIBERO-Goal result for OpenVLA-OFT closely
+($\oftBaseline\%$ against $97.9\%$ reported by \citet{kim2025oft}) and runs below the
+published figures for the other two, at $\smolBaseline\%$ for SmolVLA and
+$\ovBaseline\%$ for OpenVLA-7B. We attribute the gap mainly to our fixed $T=300$ step
+horizon: a visible share of episodes exhaust the budget rather than fail outright,
+whereas OpenVLA-OFT's 8-step action chunks finish well inside it. We keep the shorter
+horizon deliberately, since it applies identically to every condition and every claim
+we make is a within-model contrast at a fixed horizon---a truncation removing the same
+tail from baseline and perturbed cells alike cannot create the differences we report,
+though it does mean our absolute rates should not be compared with leaderboard
+numbers.
 
 \subsection*{Metrics}
-Let $\text{TSR}(c)$ be the Task Success Rate (fraction of episodes reaching the
-goal predicate) under condition $c$, and $\text{TSR}_0$ the baseline
-(\texttt{original} instruction). We use four aggregate diagnostics, plus the
-trajectory-level measure $t_{\text{div}}$ defined in Section~\ref{sec:rq3}:
-\begin{itemize}
-\item \textbf{Causal Sensitivity Score (CSS)}, for the destructive conditions
-  \texttt{blank}/\texttt{nonsense}:
-  $\text{CSS}(c) = \big(\text{TSR}_0 - \text{TSR}(c)\big) / \max(\text{TSR}_0,\epsilon)$.
-  $\text{CSS}\!\approx\!1$ means the instruction is causally necessary;
-  $\text{CSS}\!\approx\!0$ means it is ignored.
-\item \textbf{Original-Action Rate (OAR)}, for the semantic-swap conditions
-  (\texttt{wrong\_object}/\texttt{wrong\_action}/\texttt{wrong\_task}): the fraction
-  of episodes in which the policy still executes the \emph{original} task despite
-  the altered instruction, scored against the simulator goal predicates. High OAR
-  is direct evidence the policy follows pixels over words.
-\item \textbf{PRIDE} \citep{kim2026liberopara}: a paraphrase-robustness score that
-  weights each paraphrase's success by its distance from the original instruction,
-  $\text{PD}_i = 1-\big(\alpha\, \text{SK}_i + (1-\alpha)\, \text{ST}_i\big)$ and
-  $\text{PRIDE} = 100\cdot \sum_i s_i\,\text{PD}_i / \sum_i \text{PD}_i$, where
-  $s_i$ is success and $\text{SK},\text{ST}$ are keyword/structural similarities;
-  we reuse the reference implementation.
-\item \textbf{Conditional task entropy} $H(\text{task}\mid W)$: the residual
-  uncertainty about which task an instruction denotes, given only its words of
-  class $W$ (nouns or verbs). This is a property of the benchmark rather than of a
-  model, and we use it in Section~\ref{sec:info} to establish which perturbations
-  can carry evidence about grounding at all.
-\end{itemize}
+Let $\text{TSR}(c)$ be the Task Success Rate under condition $c$ and $\text{TSR}_0$
+the \texttt{original} baseline. The \textbf{Causal Sensitivity Score}
+$\text{CSS}(c) = (\text{TSR}_0 - \text{TSR}(c)) / \max(\text{TSR}_0,\epsilon)$ scores
+the destructive conditions: $\text{CSS}\!\approx\!1$ means the instruction is causally
+necessary, $\approx\!0$ that it is ignored. The \textbf{Original-Action Rate (OAR)}
+is the fraction of semantic-swap episodes in which the policy still executes the
+\emph{original} task despite the altered instruction; high OAR is direct evidence the
+policy follows pixels over words. For paraphrases we use \textbf{PRIDE}
+\citep{kim2026liberopara}, which weights each paraphrase's success by its distance
+from the original (we reuse the reference implementation; see
+Appendix~\ref{app:pride}). Finally, \textbf{conditional task entropy}
+$H(\text{task}\mid W)$ is the residual uncertainty about which task an instruction
+denotes given only its words of class $W$---a property of the benchmark rather than of
+any model, used in Section~\ref{sec:info} to establish which perturbations can carry
+evidence about grounding at all.
 
 \section{Empirical Results \& Analysis}
 
@@ -338,9 +273,12 @@ the gap is total rather than marginal.
 We parse each of the ten instructions into its unordered noun set and its verb
 set, and compute the residual uncertainty about task identity given each. With a
 uniform prior over the ten tasks, $H(\text{task}) = \log_2 10 = 3.32$ bits:
+% One line ran 76pt past the column; split across two.
 \begin{equation}
-H(\text{task}\mid\text{noun set}) = 0.00\ \text{bits},\qquad
-H(\text{task}\mid\text{verb set}) = 1.55\ \text{bits}.
+\begin{aligned}
+H(\text{task}\mid\text{noun set}) &= 0.00\ \text{bits},\\
+H(\text{task}\mid\text{verb set}) &= 1.55\ \text{bits}.
+\end{aligned}
 \end{equation}
 All ten noun sets are distinct, so the nouns alone determine the task. The verbs
 do not: \texttt{put} is the verb of six of the ten tasks. Conditional on the
@@ -348,7 +286,7 @@ nouns, the verb therefore contributes \emph{exactly zero} bits.
 Figure~\ref{fig:information} shows both the residual uncertainty and the partition
 that produces it.
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig_information.png}
 \caption{The instruction's information structure, computed from the ten task
@@ -359,24 +297,21 @@ verbs collapse six of the ten tasks into a single \texttt{put} group they cannot
 tell apart. A word class can only be probed for grounding to the extent that it
 separates tasks in the first place.}
 \label{fig:information}
-\end{figure*}
+\end{figure}
 
 Two consequences follow, and both undercut the standard reading of these probes.
-First, a policy that ignores the verb entirely loses no task-relevant information
-on this suite; verb-insensitivity is the optimal policy, not a grounding deficit.
-Second, and more damaging for the method, the verb-substitution probe cannot
-detect verb-insensitivity even in principle: seven of its ten substitutions
-replace \texttt{put} with \texttt{push}, which leaves the noun set---and hence the
-task---unchanged. Only three tasks (\texttt{open}$\leftrightarrow$\texttt{close}
-twice, \texttt{turn on}$\leftrightarrow$\texttt{turn off} once) substitute a true
-antonym in a context where the nouns cannot disambiguate the goal. We report those
-three separately throughout, and treat them as the only valid verb probes the
-suite affords.
-
-We stress that this is a property of the benchmark, not of any model, and it is
-computed from the task definitions alone with no rollouts. We suggest that
-instruction-level information content be reported as a matter of course before
-word-class grounding claims are drawn from perturbation experiments.
+First, a policy that ignores the verb loses no task-relevant information on this
+suite: verb-insensitivity is optimal, not a grounding deficit. Second, and more
+damaging for the method, the verb-substitution probe cannot detect verb-insensitivity
+even in principle---seven of its ten substitutions replace \texttt{put} with
+\texttt{push}, leaving the noun set and hence the task unchanged. Only three tasks
+(\texttt{open}$\leftrightarrow$\texttt{close} twice,
+\texttt{turn on}$\leftrightarrow$\texttt{turn off} once) substitute a true antonym
+where the nouns cannot disambiguate the goal; we report those separately throughout
+and treat them as the only valid verb probes the suite affords. This is a property of
+the benchmark, not of any model, computed from the task definitions with no rollouts,
+and we suggest it be reported as a matter of course before word-class grounding claims
+are drawn from perturbation experiments.
 
 \subsection{The Decisive Test: Removal, Not Substitution}
 \label{sec:ablation}
@@ -390,18 +325,18 @@ collapsed performance, the redundancy account would be wrong: the information
 analysis would be describing the task distribution while missing what the policy
 actually consumes.
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
 \small
-\input{tables/rq_ablation}
-\caption{Word-class \emph{removal}. \textbf{bits removed} is the task information the
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq_ablation}}
+\caption{Word-class \emph{removal}. \textbf{bits} is the task information the
 edit destroys, computed from the suite alone (Section~\ref{sec:info});
-$\Delta$ is against a baseline restricted to the same episodes, so it is a
-within-scene contrast. \input{tables/rq_ablation_note}}
+$\Delta$ is against a baseline restricted to the same episodes; every cell is
+$n=200$. \rqAblationNote}
 \label{tab:rq_ablation}
 \end{table}
 
-\begin{figure}[h]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{fig_removal.png}
 \caption{The removal test on OpenVLA-OFT ($n=200$ per condition). Damage tracks the
@@ -412,88 +347,63 @@ the original instruction, averaged over the ten tasks.}
 \label{fig:removal}
 \end{figure}
 
-The prediction holds, and with an unusually clean separation
-(Table~\ref{tab:rq_ablation}, Figure~\ref{fig:removal}). Deleting the verb entirely leaves OpenVLA-OFT's success
-rate statistically unchanged on the same initial scenes---a point estimate of
-$\oftVerbDrop$ points with a $95\%$ interval of $[-5.0, +1.0]$ that contains zero,
-and a McNemar $p$ of $0.34$. Of $200$ matched pairs only $10$ changed outcome at
-all, $7$ one way and $3$ the other, which is what a coin looks like. Masking the
-nouns costs $\oftNounMask$ points, flips $148$ pairs, and never once flips a
-failure into a success. Because every perturbed episode starts from the same
-simulator state as its baseline, these are matched pairs and we test them as
-such; the discordant counts are the evidence, and the concordant majority
-correctly drops out. The two edits are comparable in
-surface magnitude---each removes a small number of tokens from a short
-instruction---and they differ by two orders of magnitude in effect. What separates them
-is not how much text was deleted but how much task information it carried.
+The prediction holds, with an unusually clean separation
+(Table~\ref{tab:rq_ablation}, Figure~\ref{fig:removal}). Deleting the verb leaves
+OpenVLA-OFT's success rate statistically unchanged on the same initial scenes: a point
+estimate of $\oftVerbDrop$ points with a $95\%$ interval of $[-5.0, +1.0]$ that
+contains zero, and a McNemar $p$ of $0.34$. Of $200$ matched pairs only $10$ changed
+outcome at all, $7$ one way and $3$ the other, which is what a coin looks like.
+Masking the nouns costs $\oftNounMask$ points, flips $148$ pairs, and never once flips
+a failure into a success. Because every perturbed episode starts from its baseline's
+simulator state these are matched pairs, so the discordant counts are the evidence and
+the concordant majority correctly drops out. Two edits of comparable surface
+magnitude differ by two orders of magnitude in effect; what separates them is not how
+much text was deleted but how much task information it carried.
 
-Two details are worth noting. First, \texttt{nouns\_masked} remains clearly \emph{above}
+One detail is worth noting: \texttt{nouns\_masked} remains clearly \emph{above}
 \texttt{blank}, even though on our accounting both destroy all $3.32$ bits. The masked
-instruction retains the verb and the syntactic frame, so the residual gap is a
-reasonable estimate of what a policy can extract from instruction \emph{structure}
-once reference is gone---which is more than nothing and much less than the nouns
-provide. Second, this asymmetry is invisible to the standard probe: substituting the
-verb moves OpenVLA-OFT by no detectable amount, even on the three tasks where the
-substitution is contrastive at all (Table~\ref{tab:rq2_wordclass}), so a study
-running only substitution would conclude that this model ignores verbs, and a study
-running only removal would agree---but neither would establish that ignoring them is
-the correct policy here. That requires the information analysis, not another rollout.
+instruction retains the verb and the syntactic frame, so the residual gap estimates
+what a policy extracts from instruction \emph{structure} once reference is gone---more
+than nothing, and much less than the nouns provide.
 
 \subsection{The Scene-Fixed Invariant Is Easy to Break Silently}
 \label{sec:scenefixed}
-Our own protocol requires that all conditions for a (task, episode) start from an
-identical simulator state. Auditing this with the state hash, we found the
-invariant violated across most of our initial data, for a reason that we believe
-generalises to other LIBERO-based evaluations.
+Our protocol requires that all conditions for a (task, episode) start from an
+identical simulator state. Auditing this with the state hash, we found the invariant
+violated across most of our initial data, for a reason we believe generalises to
+other LIBERO-based evaluations: the initial state is \emph{not} a pure function of
+(task, episode), because each \texttt{reset} advances the generator seeded once at
+construction, so the scene an episode receives depends on how many resets its process
+has already served. Any condition completed by a \emph{second} process---after a
+wall-clock kill, or simply because conditions were run in separate jobs---silently
+lands on different scenes while the output files look ordered, complete and plausible
+(Appendix~\ref{app:scenefixed}).
 
-The initial state is \emph{not} a pure function of (task, episode). The
-environment is seeded once at construction, and each \texttt{reset} advances that
-generator, which perturbs object poses even though the stored initial state pins
-\texttt{qpos} and \texttt{qvel}. The scene an episode receives therefore also
-depends on how many resets its process has already served. Any condition
-completed by a \emph{second} process---after a wall-clock kill, or simply because
-conditions were run in separate jobs---silently lands on different scenes, while
-the output files look ordered, complete and plausible. In our data the clearest
-case is a single condition split across a job boundary: episode~9 sits on a
-different scene from episodes~0--8 of the same condition.
-
-This matters beyond bookkeeping. Recomputing our paraphrase deltas against a
+This matters beyond bookkeeping: recomputing our paraphrase deltas against a
 scene-matched rather than a pooled baseline moves them by up to $12$ percentage
-points---comparable to the effect sizes such studies typically report. We
-therefore (i) treat the task as the atomic unit of evaluation, so that every
-condition for a task is produced by one process or regenerated wholesale, and
-(ii) make the invariant check a hard failure in the aggregation step rather than
-a logged diagnostic. Both are released with the code.
+points, comparable to the effect sizes such studies report. We therefore (i) treat
+the task as the atomic unit of evaluation, so every condition for a task is produced
+by one process or regenerated wholesale, and (ii) make the invariant check a hard
+failure in aggregation rather than a logged diagnostic. Both are released with the
+code.
 
 \subsection{What the Causal Probes Show}
 \label{sec:rq1}
 Table~\ref{tab:rq1_causal} reports TSR, CSS and OAR under each structural and
 semantic corruption, with per-condition episode counts;
-Table~\ref{tab:rq1_causal_full} gives every cell with a 95\% Wilson interval.
+Appendix~\ref{app:full} gives every cell with a 95\% Wilson interval.
 
 \begin{table*}[t]
 \centering
 \small
-\input{tables/rq1_causal}
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq1_causal}}
 \caption{TSR under each structural and semantic perturbation on
 \texttt{LIBERO-Goal}, with CSS in parentheses for the destructive conditions and
 $\pm$ the spread across seeds where the seeds disagree.
-\input{tables/rq1_n_note} \input{tables/scene_note}}
+\rqOneNNote\ \sceneNote}
 \label{tab:rq1_causal}
 \end{table*}
 
-\begin{table}[t]
-\centering
-\small
-\input{tables/rq1_causal_full}
-\caption{Every RQ1 cell with its episode count and 95\% Wilson confidence interval,
-pooled over seeds 7 and 42. Read the intervals, not the point estimates: where $n$
-is small the \texttt{wrong\_object} interval spans tens of percentage points, so we
-treat that condition as ``near-total collapse'' rather than as a precise rate shared
-across architectures. Every $n$ in this table is generated from the result files
-rather than transcribed.}
-\label{tab:rq1_causal_full}
-\end{table}
 
 The destructive conditions behave as expected: \texttt{blank} and \texttt{nonsense}
 collapse success, establishing that the instruction is causally load-bearing.
@@ -508,40 +418,29 @@ model size nor baseline competence.
 The two semantic-swap conditions are the ones that have been over-read, and we take
 them in turn.
 
-\paragraph{What the scene-fixed audit lets us claim.} Our own check
-(Section~\ref{sec:scenefixed}) is what decides which rows appear at all. A model
-whose grid fails the check is left blank rather than printed with a footnote: its
-graded contrasts are confounded by differing initial scenes, and we would rather
-show a table with a hole in it than a number a reader can quote. This is not
-hypothetical. Every number reported here for OpenVLA-7B is from its \emph{second}
-grid: the first failed the check on $20$ of $80$ comparable episodes, was withheld
-from an earlier draft of this table, and was re-run from scratch. All three grids
-now pass at $200$ comparable episodes with zero mismatches, which is the state the
-table reports.
-
-The distinction worth drawing is between a floor and a gradient. A scene confound can
-inflate or deflate a partial difference, but it cannot manufacture a floor:
-\texttt{wrong\_task} sits at exactly $0\%$ for every model and every episode, and no
-redistribution of initial scenes turns a uniform zero into a $78$--$98\%$ baseline.
-The CSS$\,\approx\!1$ result is therefore the robust part, while the intermediate
-rates are the fragile part, and we lean only on the former.
+\paragraph{What the scene-fixed audit lets us claim.} A model whose grid fails the
+check (Section~\ref{sec:scenefixed}) is left blank rather than printed with a
+footnote. This is not hypothetical: every number reported here for OpenVLA-7B is from
+its \emph{second} grid, the first having failed on $20$ of $80$ comparable episodes.
+All three grids now pass at $200$ comparable episodes with zero mismatches. A scene
+confound can inflate or deflate a partial difference but cannot manufacture a floor,
+and \texttt{wrong\_task} sits at exactly $0\%$ for every model and episode, so the
+CSS$\,\approx\!1$ result is the robust part and the intermediate rates the fragile
+one. We lean only on the former.
 
 \paragraph{Object swaps measure compliance, not collapse.}
-Read naively, \texttt{wrong\_object} triggers a near-total collapse in TSR. But
-TSR here scores the policy against the \emph{original} task, so a policy that
-correctly follows the altered instruction is recorded as a failure. The condition
-also mixes three cases that warrant different treatment: the perturbed string may
-name another real task, describe a novel but coherent goal, or be degenerate
-(``put the bowl in the bowl'', ``put the plate on the plate''), where failure
-carries no information about grounding at all.
-
-The first case is decisive. For one task the object swap yields, verbatim, the
-instruction of another task in the suite. Every model we can currently score performs
-\emph{that} task and never the original: SmolVLA $17/20$ episodes, OpenVLA $18/20$
-and OpenVLA-OFT $20/20$, with $0$ executions of the original task by any model. This is precise
-instruction-following, scored as total failure. We therefore report OAR against
-the \emph{named} task alongside TSR, and caution that headline ``collapse''
-numbers under object substitution should not be read as loss of grounding.
+Read naively, \texttt{wrong\_object} triggers a near-total collapse in TSR. But TSR
+scores the policy against the \emph{original} task, so a policy that correctly follows
+the altered instruction is recorded as a failure. The condition also mixes cases: the
+perturbed string may name another real task, describe a novel but coherent goal, or be
+degenerate (``put the bowl in the bowl''), where failure says nothing about grounding.
+The first is decisive. For one task the object swap yields, verbatim, another task's
+instruction, and every model performs \emph{that} task and never the original: SmolVLA
+$17/20$, OpenVLA $18/20$ and OpenVLA-OFT $20/20$, with $0$ executions of the original
+by any model. This is precise instruction-following, scored as total failure. We
+therefore report OAR against the \emph{named} task alongside TSR, and caution that
+headline ``collapse'' numbers under object substitution should not be read as loss of
+grounding.
 
 \paragraph{Verb swaps mostly do not test verbs.}
 Seven of the ten verb substitutions preserve the noun set and therefore the task
@@ -550,10 +449,10 @@ policy and says nothing about verb grounding. Splitting the condition into the t
 genuine antonym pairs and the seven near-synonyms separates the informative cases
 from the rest (Table~\ref{tab:rq2_wordclass}).
 
-\begin{table}[h]
+\begin{table}[tb]
 \centering
 \small
-\input{tables/rq2_wordclass}
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq2_wordclass}}
 \caption{Drop in TSR under verb substitution, split by whether the substitution
 changes the task. Only the antonym column tests verb grounding; the near-synonym
 column is the control. $p$ is an exact McNemar test over initial-state-matched pairs
@@ -561,7 +460,7 @@ column is the control. $p$ is an exact McNemar test over initial-state-matched p
 \label{tab:rq2_wordclass}
 \end{table}
 
-\begin{figure}[h]
+\begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{fig_verbsplit.png}
 \caption{The suite-wide \texttt{wrong\_action} probe against the two halves it
@@ -584,31 +483,28 @@ no edit at all ($p=0.52$). OpenVLA reads the verb, decisively, and the suite-wid
 probe hides it by averaging one real effect against seven non-events.
 
 SmolVLA behaves the same way, less starkly: $21.7$ points on antonyms ($p=0.002$)
-against $10.7$ on near-synonyms ($p=0.02$). OpenVLA-OFT is the exception. It loses
-$5.0$ points on antonyms and $2.1$ on near-synonyms and \emph{neither} is
-distinguishable from zero ($p=0.45$, $p=0.51$); of its $60$ antonym pairs, $5$
-flipped to failure and $2$ flipped back. Told to ``turn off the stove'' it turns the
-stove on, completing the \emph{original} task in $55$ of $60$ episodes. So the
-verb-insensitivity the literature attributes to VLAs in general is, on this suite,
-a property of one of the three models we tested---and the probe that is usually
-used to establish it could not have detected it in the other two.
+against $10.7$ on near-synonyms ($p=0.02$). OpenVLA-OFT is the exception, losing
+$5.0$ points on antonyms and $2.1$ on near-synonyms with \emph{neither}
+distinguishable from zero ($p=0.45$, $p=0.51$); told to ``turn off the stove'' it
+turns the stove on, completing the \emph{original} task in $55$ of $60$ episodes. The
+verb-insensitivity the literature attributes to VLAs in general is, on this suite, a
+property of one of the three models we tested---and the probe usually used to
+establish it could not have detected it in the other two.
 
-One distinction deserves care, because the two 7B models make it visible.
+The two 7B models also make a distinction visible that deserves care.
 \emph{Removing} the verb is free for both---OpenVLA gains $4.0$ points, OpenVLA-OFT
 loses $2.0$, neither detectable (Table~\ref{tab:rq_ablation})---while
-\emph{contradicting} it costs OpenVLA $31.7$. Redundant is not the same as ignored.
-A word can carry no task information, so that deleting it changes nothing, and still
-be read closely enough that asserting its opposite derails the policy. Only
-comparing removal against substitution separates those two states, which is the
-methodological point of this section.
+\emph{contradicting} it costs OpenVLA $31.7$. Redundant is not the same as ignored: a
+word can carry no task information, so that deleting it changes nothing, and still be
+read closely enough that asserting its opposite derails the policy. Only comparing
+removal against substitution separates those two states.
 
 This split remains the most underpowered comparison in the paper: the suite affords
-only three antonym pairs, so $n$ grows with episodes but never with tasks. We also
-note a correction it forced. An earlier draft, built when each cell held two
-episodes, put OpenVLA-OFT's antonym gap at exactly zero on $n=12$ and called the
-model unmoved. At $n=60$ the estimate is $5.0$ points, which looked like a real
-weakening until it was tested: the interval $[-13.3, +3.3]$ covers both numbers.
-The lesson runs against the point estimates, not for them.
+only three antonym pairs, so $n$ grows with episodes but never with tasks. An earlier
+draft, built when each cell held two episodes, put OpenVLA-OFT's antonym gap at
+exactly zero on $n=12$; at $n=60$ the estimate is $5.0$ points, and the interval
+$[-13.3, +3.3]$ covers both. The lesson runs against the point estimates, not for
+them.
 
 \subsection{Paraphrase Robustness}
 \label{sec:rq2}
@@ -619,10 +515,10 @@ expression, and both at once---and score the results with PRIDE
 \citep{kim2026liberopara}, which weights each paraphrase's success by how far it
 departs from the original (Table~\ref{tab:rq2_para}).
 
-\begin{table}[h]
+\begin{table}[tb]
 \centering
 \small
-\input{tables/rq2_para}
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq2_para}}
 \caption{Paraphrase robustness. \textbf{scenes} is the number of distinct initial
 states the $n$ episodes actually cover; where it is far below $n$, the episodes are
 repeated draws on the same scene and $n$ overstates the evidence.}
@@ -631,158 +527,82 @@ repeated draws on the same scene and $n$ overstates the evidence.}
 
 The spread across models is large and orders with scale: SmolVLA degrades severely
 ($4.72\%$ overall TSR, PRIDE $2.7$), OpenVLA sits in between ($44.22\%$, PRIDE
-$33.3$), and OpenVLA-OFT holds $74.22\%$ (PRIDE $65.8$). All three
-order the axes the same way: object paraphrases hurt least, compositional most, which
-is what one expects if the noun phrase is what the policy is keying on. We do not
-attribute OpenVLA-OFT's robustness to FiLM: the checkpoint we evaluate is the plain
-OFT release (\texttt{use\_film=false} in our config) and no FiLM-trained LIBERO-Goal
-checkpoint is public, so that comparison is simply untested.
+$33.3$), and OpenVLA-OFT holds $74.22\%$ (PRIDE $65.8$). All three order the axes the same way---object paraphrases hurt least, compositional
+most---as expected if the noun phrase is what the policy keys on. We do not attribute
+OpenVLA-OFT's robustness to FiLM: the checkpoint we evaluate is the plain OFT release
+(\texttt{use\_film=false}), so that comparison is untested.
 
-Two measurement caveats bound how these numbers should be read, both consequences
-of Section~\ref{sec:scenefixed}. First, $\Delta$TSR compares a paraphrase pool
-against the \texttt{original} pool, and the two were produced by different processes,
-so whether they share initial scenes has to be checked rather than assumed. It varies
-by model: OpenVLA-OFT's paraphrase pool covers $15$ scenes per task and contains all
-$10$ of the scenes in its baseline, so the scene-matched delta is computable on the
-whole baseline; SmolVLA's covers only $2$ scenes per task, both of which are in its
-baseline, so its delta is scene-matched but rests on a fifth of the available scenes.
-Restricting the baseline to the matched subset shifts each delta by roughly ten
-percentage points, which is the size of the effects such studies typically report.
-Crucially the \emph{ordering} across axes (object $<$ action $<$ compositional) is
-identical under either baseline, so we treat the ordering as the result and the
-magnitudes as provisional; both ship in the released CSV
-(\texttt{delta\_TSR\_pp} and \texttt{delta\_TSR\_pp\_scene\_matched}). Second, episode
-counts overstate the independent variation behind these estimates: SmolVLA's $2963$
-compositional paraphrase episodes span only those two distinct initial scenes per
-task, because the paraphrase runs predate our initial-state cycling fix. We therefore
-report the number of distinct scenes alongside $n$, and avoid confidence intervals
-computed as though episodes were independent draws.
+Two measurement caveats bound how these numbers should be read, both consequences of
+Section~\ref{sec:scenefixed}. First, $\Delta$TSR compares a paraphrase pool against
+the \texttt{original} pool, and the two were produced by different processes, so
+scene overlap has to be checked rather than assumed; restricting the baseline to the
+matched subset shifts each delta by roughly ten percentage points. The \emph{ordering}
+across axes (object $<$ action $<$ compositional) is identical under either baseline,
+so we treat the ordering as the result and the magnitudes as provisional, and ship
+both in the released CSV. Second, episode counts overstate the independent variation
+behind these estimates: SmolVLA's $2963$ compositional paraphrase episodes span only
+two distinct initial scenes per task, because the paraphrase runs predate our
+initial-state cycling fix. We therefore report distinct scenes alongside $n$, and
+avoid confidence intervals computed as though episodes were independent draws.
 
 \subsection{When the Trajectories Part}
 \label{sec:rq3}
-Success rates say whether a rollout ended in the right place, not when it stopped
-following the original plan. Because our design gives the perturbed and canonical
-rollouts the same $S_0$, we can compare their end-effector traces step by step and
-ask when they separate. We define $t_{\text{div}}$ as the first step at which the
-two traces differ by more than $5$\,cm (Table~\ref{tab:rq3_divergence}).
+Because perturbed and canonical rollouts share $S_0$, their end-effector traces are
+comparable step by step. Defining $t_{\text{div}}$ as the first step at which they
+differ by more than $5$\,cm, the kinematics match the causal results: with no usable
+instruction (\texttt{blank}, \texttt{nonsense}) the policy departs within the first
+step or two and never begins the right motion, whereas under \texttt{wrong\_action}
+it begins the right motion and holds it for six to eleven steps before diverging---as
+expected when the noun set has already determined where to go and only the manner of
+acting is in question. We report this as a qualitative ordering rather than a precise
+timing, since pair counts per cell are small and $t_{\text{div}}$ depends on the
+$5$\,cm threshold. Appendix~\ref{app:kinematics} gives the curves and per-cell values.
 
-\begin{table}[h]
-\centering
-\small
-\input{tables/rq3_divergence}
-\caption{Kinematic divergence timestep $t_{\text{div}}$ and end-effector
-displacement $e_{10}$ at a fixed ten-step horizon. We quote $e$ at ten steps rather
-than at the end of the rollout because pairs are truncated to the shorter of the two
-episodes and the median pair runs only $10$--$12$ steps: every pair counted in
-\textbf{pairs} reaches step ten, so one $n$ backs both columns, whereas an
-end-of-rollout figure would average the few longest---and so disproportionately
-failing---episodes.}
-\label{tab:rq3_divergence}
-\end{table}
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{rq3_divergence.png}
-\caption{End-effector displacement $e(t)$ between the canonical rollout and each
-perturbed rollout from the same $S_0$, for the three conditions discussed here.
-The destructive conditions leave the canonical path at once; \texttt{wrong\_action}
-follows it and then peels away. Dots mark $t_{\text{div}}$. Each curve stops at the
-last step reached by at least half its pairs, so no part of it is an average over a
-handful of unusually long episodes.}
-\label{fig:rq3_divergence}
-\end{figure}
-
-Figure~\ref{fig:rq3_divergence} shows the shape of this.
-The pattern matches the causal results. With no usable instruction
-(\texttt{blank}, \texttt{nonsense}) the policy departs from the canonical trajectory
-within the first step or two: it never begins the right motion. Under
-\texttt{wrong\_action} it does begin the right motion and holds it for six to eleven
-steps before diverging, depending on the model, which is what one expects when the noun set has already
-determined where to go and only the manner of acting is in question. We report this
-as a qualitative ordering rather than a precise timing: the pair counts per cell are
-small, and $t_{\text{div}}$ depends on the $5$\,cm threshold.
-
-
-% REMOVED 2026-08-01: the qualitative_grid.png figure was partly SYNTHETIC. Its
-% generator matches a video path per condition and silently falls back to drawing
-% coloured rectangles when none exists; no rollout video has ever been rendered for
-% wrong_object or para_compositional, so those two rows were invented artwork, and
-% the caption told the reader the wrong_object row showed the policy going to the
-% object it was named. Restore only from real frames for every row --- see
-% core/analyze/make_qualitative_grid.py, whose fallback is now fatal.
-
-\section{Discussion}
-Three things are worth separating in what we found.
+\section{Discussion and Conclusion}
+We presented a scene-fixed causal and paraphrase evaluation of three
+Vision-Language-Action models spanning $16\times$ in scale. Three things are worth
+separating in what we found.
 
 \paragraph{Language is load-bearing, and scale does not change that.} Destroying the
 instruction destroys success for all three architectures, across a $16\times$ range
-and across discretized, continuous and flow-matching action heads. Nothing suggests
-that a bigger backbone learns to do without the instruction. This is the one headline
-that came through the re-analysis untouched.
+and across discretized, continuous and flow-matching action heads. Nothing suggests a
+bigger backbone learns to do without the instruction. This is the one headline that
+came through the re-analysis untouched.
 
 \paragraph{The asymmetry we set out to explain was mostly ours to begin with.} We
-began this project intending to give a mechanistic account of why VLAs bind nouns
-more tightly than verbs. The account we found is that on this suite there is little
-to explain: the verb carries no task information once the nouns are known, so
-ignoring it is correct; seven of ten verb probes cannot detect verb-blindness even in
-principle; and most of the object-swap ``collapse'' is a policy doing exactly what it
-was told, scored against a task it was not asked to do. The numbers themselves are
+began intending to give a mechanistic account of why VLAs bind nouns more tightly
+than verbs, and found that on this suite there is little to explain: the verb carries
+no task information once the nouns are known; seven of ten verb probes cannot detect
+verb-blindness even in principle; and most of the object-swap ``collapse'' is a policy
+doing what it was told, scored against a task it was not asked to do. The numbers are
 not in dispute---our TSRs reproduce the pattern others report---only what may be
-concluded from them. What survives is narrower: OpenVLA-OFT ignores even contrastive
-antonyms. We prefer the narrow claim the design supports to the broad one it does not.
-
-\paragraph{Extra observation streams and residual shortcutting.} OpenVLA-OFT is the
-only model here with a wrist camera and proprioception, and also the only one that
-retains any measurable success when the instruction is unusable
-(Table~\ref{tab:rq1_causal}: $\oftBlank\%$ under \texttt{blank}, against exactly zero
-for the single-camera SmolVLA). It is
-tempting to read this as richer non-linguistic input enabling a visual shortcut, and
-we think that is the most plausible reading---but with one model in that
-configuration we cannot separate the observation streams from the action head or the
-fine-tuning recipe, and we do not claim to. It is not attributable to FiLM, which
-this checkpoint does not use.
-
-\section{Conclusion}
-We presented a scene-fixed causal and paraphrase evaluation of three
-Vision-Language-Action models spanning $16\times$ in scale. Language is causally
-necessary and scale-invariant. The asymmetric noun~$\gg$~verb grounding gap that
-such evaluations are usually taken to demonstrate does not, we argue, follow from
-them: on \texttt{LIBERO-Goal} the verb is informationally redundant given the
-nouns, most verb-substitution probes leave task identity intact, and most
-object-substitution ``failures'' are the policy complying with the instruction it
-received. The claim that survives is narrower and better supported. On the only
+concluded from them. What survives is narrower and better supported: on the only
 three tasks where a verb swap changes the goal, OpenVLA-7B loses $31.7$ points
 ($p<10^{-5}$) and SmolVLA $21.7$ ($p=0.002$), while OpenVLA-OFT shows no detectable
-response ($p=0.45$): verb-insensitivity is a property of one of these models, not of
+response ($p=0.45$). Verb-insensitivity is a property of one of these models, not of
 the class, and the suite-wide probe conventionally used to establish it reports a
-mild $-12.0$ points for the model it most clearly fails to describe. We prefer that
-claim to the broader one.
+mild $-12.0$ points for the model it least describes.
 
-The general lesson is that instruction-perturbation studies inherit the information
-structure of their benchmark, and that structure has to be measured before the
-behavioural results can be read as evidence about grounding.
+\paragraph{Extra observation streams and residual shortcutting.} OpenVLA-OFT is the
+only model here with a wrist camera and proprioception, and the only one retaining
+measurable success when the instruction is unusable ($\oftBlank\%$ under
+\texttt{blank}, against exactly zero for the single-camera SmolVLA). Richer
+non-linguistic input enabling a visual shortcut is the most plausible reading, but
+with one model in that configuration we cannot separate the observation streams from
+the action head or the fine-tuning recipe, and do not claim to. It is not
+attributable to FiLM, which this checkpoint does not use.
 
-This has a direct bearing on the mitigations now being proposed. Several recent
-methods amplify the language signal at inference or flatten the loss landscape during
-finetuning, and report large gains on instruction-following metrics
-\citep{zhan2026stable,zhang2026flatness}. Residual Affordance Steering
-\citep{zhan2026stable} is, up to normalisation, the contrastive operator
-$\pi(a\mid o,l) \propto \exp[s(a\mid o,\emptyset) + \gamma\,\Delta_{\text{sem}}]$ with
-$\Delta_{\text{sem}} = s(a\mid o,l) - s(a\mid o,\emptyset)$ that we had ourselves
-sketched as future work, and it evidently helps. Our results do not dispute those
-gains; they question what the gains are measured against. If a benchmark's verbs are
-redundant given its nouns, then a method that increases verb sensitivity is being
-scored on a probe that cannot distinguish better grounding from a policy pushed away
-from the information-theoretically optimal one. We would want to see such
-improvements demonstrated on a set of instructions whose word classes are known to be
-contrastive.
-
-That points to what we think the field actually needs: suites built with
+\paragraph{What follows for the field.} Instruction-perturbation studies inherit the
+information structure of their benchmark, and that structure has to be measured before
+behavioural results can be read as evidence about grounding. This bears directly on
+the mitigations now being proposed \citep{zhan2026stable,zhang2026flatness}. If a
+benchmark's verbs are redundant given its nouns, a method that increases verb
+sensitivity is scored on a probe that cannot distinguish better grounding from a
+policy pushed away from the optimal one---so we do not dispute the reported gains, we
+question what they are measured against. What the field needs is suites built with
 verb-contrastive minimal pairs, of which \texttt{LIBERO-Goal} affords exactly three.
-Building them is cheap compared with training another policy, and until they exist,
-the honest move is to publish the information content of the instruction set
-alongside the success rates---as we do here---so that readers can see which
-comparisons carry evidence and which are structurally incapable of it.
+Until they exist, the honest move is to publish the instruction set's information
+content alongside the success rates.
 
 \section*{Limitations}
 Our study is deliberately narrow to keep the causal claim clean, and this bounds
@@ -841,5 +661,99 @@ were how an error survived several drafts of this work.
 
 \bibliographystyle{acl_natbib}
 \bibliography{references}
+
+\appendix
+\section{Full Per-Cell Results}
+\label{app:full}
+Table~\ref{tab:rq1_causal_full} gives every RQ1 cell with its episode count and
+95\% Wilson interval, and Table~\ref{tab:rq3_divergence} every kinematic-divergence
+cell. Both are generated from the result files rather than transcribed.
+
+\begin{table*}[t]
+\centering
+\small
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq1_causal_full}}
+\caption{Every RQ1 cell with its episode count and 95\% Wilson confidence interval,
+pooled over seeds 7 and 42. Read the intervals, not the point estimates: where $n$
+is small the \texttt{wrong\_object} interval spans tens of percentage points, so we
+treat that condition as ``near-total collapse'' rather than as a precise rate shared
+across architectures. Every $n$ in this table is generated from the result files
+rather than transcribed.}
+\label{tab:rq1_causal_full}
+\end{table*}
+
+\begin{table*}[tb]
+\centering
+\small
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq3_divergence}}
+\caption{Kinematic divergence timestep $t_{\text{div}}$ and end-effector
+displacement $e_{10}$ at a fixed ten-step horizon. We quote $e$ at ten steps rather
+than at the end of the rollout because pairs are truncated to the shorter of the two
+episodes and the median pair runs only $10$--$12$ steps: every pair counted in
+\textbf{pairs} reaches step ten, so one $n$ backs both columns, whereas an
+end-of-rollout figure would average the few longest---and so disproportionately
+failing---episodes.}
+\label{tab:rq3_divergence}
+\end{table*}
+
+\section{How the Scene-Fixed Invariant Breaks}
+\label{app:scenefixed}
+The LIBERO environment is seeded once at construction, and each \texttt{reset}
+advances that generator, which perturbs object poses even though the stored initial
+state pins \texttt{qpos} and \texttt{qvel}. A condition therefore inherits whatever
+generator position its process has reached. In our data the clearest case is a single
+condition split across a job boundary: episode~9 sits on a different scene from
+episodes~0--8 of the same condition. The remedy we adopt is to treat the task as the
+atomic unit of evaluation, so every condition for a task is produced by one process or
+regenerated wholesale, and to make the invariant check a hard failure in aggregation.
+
+\section{PRIDE}
+\label{app:pride}
+PRIDE \citep{kim2026liberopara} weights each paraphrase's success by how far it
+departs from the original instruction:
+$\text{PD}_i = 1-(\alpha \text{SK}_i + (1-\alpha) \text{ST}_i)$ and
+$\text{PRIDE} = 100 \sum_i s_i \text{PD}_i / \sum_i \text{PD}_i$, where $s_i$ is
+success and $\text{SK}, \text{ST}$ are keyword and structural similarities.
+
+\section{Kinematic Divergence}
+\label{app:kinematics}
+Success rates say whether a rollout ended in the right place, not when it stopped
+following the original plan. Because our design gives the perturbed and canonical
+rollouts the same $S_0$, we can compare their end-effector traces step by step and
+ask when they separate. We define $t_{\text{div}}$ as the first step at which the
+two traces differ by more than $5$\,cm (Table~\ref{tab:rq3_divergence},
+Appendix~\ref{app:full}).
+
+
+\begin{figure}[tb]
+\centering
+\includegraphics[width=\linewidth]{rq3_divergence.png}
+\caption{End-effector displacement $e(t)$ between the canonical rollout and each
+perturbed rollout from the same $S_0$, for the three conditions discussed here.
+The destructive conditions leave the canonical path at once; \texttt{wrong\_action}
+follows it and then peels away. Dots mark $t_{\text{div}}$. Each curve stops at the
+last step reached by at least half its pairs, so no part of it is an average over a
+handful of unusually long episodes.}
+\label{fig:rq3_divergence}
+\end{figure}
+
+Figure~\ref{fig:rq3_divergence} shows the shape of this.
+The pattern matches the causal results. With no usable instruction
+(\texttt{blank}, \texttt{nonsense}) the policy departs from the canonical trajectory
+within the first step or two: it never begins the right motion. Under
+\texttt{wrong\_action} it does begin the right motion and holds it for six to eleven
+steps before diverging, depending on the model, which is what one expects when the noun set has already
+determined where to go and only the manner of acting is in question. We report this
+as a qualitative ordering rather than a precise timing: the pair counts per cell are
+small, and $t_{\text{div}}$ depends on the $5$\,cm threshold.
+
+
+% REMOVED 2026-08-01: the qualitative_grid.png figure was partly SYNTHETIC. Its
+% generator matches a video path per condition and silently falls back to drawing
+% coloured rectangles when none exists; no rollout video has ever been rendered for
+% wrong_object or para_compositional, so those two rows were invented artwork, and
+% the caption told the reader the wrong_object row showed the policy going to the
+% object it was named. Restore only from real frames for every row --- see
+% core/analyze/make_qualitative_grid.py, whose fallback is now fatal.
 
 \end{document}

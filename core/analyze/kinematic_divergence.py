@@ -156,7 +156,7 @@ def main():
               "openvla_oft": "OpenVLA-OFT (7.5B)"}
     present = [m for m in models if m in all_summary]
 
-    fig, axes = plt.subplots(len(present), 1, figsize=(3.34, 3.7),
+    fig, axes = plt.subplots(len(present), 1, figsize=(3.34, 2.95),
                              sharex=True, sharey=True)
     if len(present) == 1:
         axes = [axes]

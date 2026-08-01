@@ -177,7 +177,7 @@ def scene_note() -> None:
                  "than printed with a caveat: the grid is being regenerated and the "
                  "tables fill in automatically once the check passes. A $\\dagger$ "
                  "model's grid is incomplete rather than broken.")
-    write("scene_note.tex", body + "\n")
+    write_note("scene_note.tex", "sceneNote", body)
 COND_ORDER = ["original", "blank", "nonsense", "wrong_action", "wrong_object",
               "wrong_task", "repeated"]
 COND_PRETTY = {"original": "Baseline", "blank": "Blank", "nonsense": "Nonsense",
@@ -220,6 +220,20 @@ def fnum(s, default=None):
 
 def pct(x, nd=1):
     return "--" if x is None else f"{100 * x:.{nd}f}\\%"
+
+
+def write_note(name: str, macro: str, body: str) -> None:
+    """A caption note, emitted as a \\newcommand rather than as loose text.
+
+    These three files used to hold bare sentences that paper_acl.tex pulled in with
+    \\input INSIDE a \\caption. That does not compile: caption re-scans its argument
+    (\\caption@ydblarg), the file's trailing newline becomes a \\par, and LaTeX
+    stops with "Argument of \\caption@ydblarg has an extra }". check_tex.py is a
+    linter and never caught it because it does not run TeX. Defining a macro and
+    expanding it in the caption is the standard fix -- the files are now \\input in
+    the PREAMBLE, where a paragraph break is harmless.
+    """
+    write(name, f"\\newcommand{{\\{macro}}}{{{body.rstrip()}}}\n")
 
 
 def write(name: str, body: str) -> None:
@@ -310,9 +324,9 @@ def rq1_tables(rows: list[dict]) -> None:
         shown = "/".join(str(n) for n in sorted(ns)) if ns else r"\textemdash"
         parts.append(rf"\texttt{{{c.replace('_', chr(92) + '_')}}} $n={shown}$")
     seeds = sorted({s for r in rows for s in r["seeds"].split(";")})
-    write("rq1_n_note.tex",
-          "Episode counts differ by condition and model, so there is no single $N$: " +
-          ", ".join(parts) + rf". Seeds {', '.join(seeds)}." + "\n")
+    write_note("rq1_n_note.tex", "rqOneNNote",
+               "Episode counts differ by condition and model, so there is no single $N$: " +
+               ", ".join(parts) + rf". Seeds {', '.join(seeds)}.")
 
 
 def rq2_table(rows: list[dict]) -> None:
@@ -334,9 +348,11 @@ def rq2_table(rows: list[dict]) -> None:
         if i:
             lines.append(r"\midrule")
         if suppressed(m):
-            lines.append(f"{model_label(m)} & {PENDING_ROW} & {PENDING} & {PENDING} & "
-                         f"{PENDING} & {PENDING} & {PENDING} \\\\")
+            lines.append(f"\\multicolumn{{5}}{{l}}{{\\emph{{{model_label(m)}}}}} \\\\")
+            lines.append(f"{PENDING_ROW} & {PENDING} & {PENDING} & {PENDING} & "
+                         f"{PENDING} \\\\")
             continue
+        lines.append(f"\\multicolumn{{5}}{{l}}{{\\emph{{{model_label(m)}}}}} \\\\")
         for r in mr:
             scenes = fnum(r.get("n_scenes"))
             lines.append(
@@ -451,14 +467,17 @@ def ablation_table(rows: list[dict]) -> None:
     if not rows:
         return
     order = ["original", "verb_dropped", "nouns_masked", "blank"]
-    pretty = {"original": r"\texttt{original} (reference)",
+    pretty = {"original": r"\texttt{original}",
               "verb_dropped": r"\texttt{verb\_dropped}",
               "nouns_masked": r"\texttt{nouns\_masked}",
               "blank": r"\texttt{blank}"}
-    lines = [r"\begin{tabular}{llrrccr}", r"\toprule",
-             r"\textbf{Model} & \textbf{Condition} & \textbf{bits} & "
-             r"\textbf{$n$} & \textbf{TSR} & \textbf{$\Delta$ [95\% CI]} & "
-             r"\textbf{$p$} \\",
+    # Single ACL column, so: no repeated Model column (a grouping row instead) and
+    # no n column (every cell is n=200, which the caption states once). As a
+    # seven-column table* this reserved a full-width float band and left the page
+    # around it two-thirds empty.
+    lines = [r"\setlength{\tabcolsep}{4pt}", r"\begin{tabular}{lrclr}", r"\toprule",
+             r"\textbf{Condition} & \textbf{bits} & \textbf{TSR} & "
+             r"\textbf{$\Delta$ [95\% CI]} & \textbf{$p$} \\",
              r"\midrule"]
     any_row = False
     for i, m in enumerate(MODEL_ORDER):
@@ -470,9 +489,11 @@ def ablation_table(rows: list[dict]) -> None:
             lines.append(r"\midrule")
         any_row = True
         if suppressed(m):
-            lines.append(f"{model_label(m)} & {PENDING_ROW} & {PENDING} & {PENDING} & "
-                         f"{PENDING} & {PENDING} & {PENDING} \\\\")
+            lines.append(f"\\multicolumn{{5}}{{l}}{{\\emph{{{model_label(m)}}}}} \\\\")
+            lines.append(f"{PENDING_ROW} & {PENDING} & {PENDING} & {PENDING} & "
+                         f"{PENDING} \\\\")
             continue
+        lines.append(f"\\multicolumn{{5}}{{l}}{{\\emph{{{model_label(m)}}}}} \\\\")
         for cond in order:
             r = next((x for x in rows if x["model"] == m and x["condition"] == cond), None)
             if r is None:
@@ -493,8 +514,8 @@ def ablation_table(rows: list[dict]) -> None:
                 dcell = f"${-d:+.1f}${ci}"
                 pcell = _pfmt(pv)
             lines.append(
-                f"{model_label(m)} & {pretty[cond]} & {r['bits_removed']} & "
-                f"{int(fnum(r['n'], 0))} & {pct(fnum(r['TSR']), 1)} & {dcell} & {pcell} \\\\")
+                f"\\quad {pretty[cond]} & {r['bits_removed']} & "
+                f"{pct(fnum(r['TSR']), 1)} & {dcell} & {pcell} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     if any_row:
         write("rq_ablation.tex", "\n".join(lines) + "\n")
@@ -505,10 +526,10 @@ def ablation_table(rows: list[dict]) -> None:
                       x["condition"] == "nouns_masked"), None)
             if r and not suppressed(m):
                 cov.append(f"{PRETTY[m]} on {int(fnum(r['n_tasks'], 0))} of 10 tasks")
-        write("rq_ablation_note.tex",
-              ("Coverage: " + "; ".join(cov) + ". " if cov else "") +
-              "The ablation conditions are generated in the same process as "
-              "\\texttt{original}, so the $\\Delta$ column is a within-scene contrast.\n")
+        write_note("rq_ablation_note.tex", "rqAblationNote",
+                   ("Coverage: " + "; ".join(cov) + ". " if cov else "") +
+                   "The ablation conditions are generated in the same process as "
+                   "\\texttt{original}, so the $\\Delta$ column is a within-scene contrast.")
 
 
 def main() -> None:
