@@ -13,10 +13,10 @@ openvla,libero_goal,wrong_object,0.0370,0.0232,62.55,,54,7;42
 openvla,libero_goal,wrong_action,0.5250,0.0167,13.75,,80,7;42
 openvla,libero_goal,wrong_task,0.0000,0.0000,66.25,,80,7;42
 openvla,libero_goal,repeated,0.6333,0.0000,2.92,,60,7
-openvla_oft,libero_goal,original,0.9750,0.0150,0.00,,200,7;42
-openvla_oft,libero_goal,blank,0.1302,0.0315,84.48,0.8665,192,7;42
-openvla_oft,libero_goal,nonsense,0.1458,0.0165,82.92,0.8504,192,7;42
-openvla_oft,libero_goal,wrong_object,0.1212,0.0074,85.38,,132,7;42
-openvla_oft,libero_goal,wrong_action,0.9511,0.0054,2.39,,184,7;42
-openvla_oft,libero_goal,wrong_task,0.0000,0.0000,97.50,,182,7;42
-openvla_oft,libero_goal,repeated,0.9670,0.0216,0.80,,182,7;42
+openvla_oft,libero_goal,original,0.9784,0.0107,0.00,,185,7;42
+openvla_oft,libero_goal,blank,0.1389,0.0278,83.95,0.8580,180,7;42
+openvla_oft,libero_goal,nonsense,0.1556,0.0111,82.28,0.8410,180,7;42
+openvla_oft,libero_goal,wrong_object,0.1333,0.0000,84.50,,120,7;42
+openvla_oft,libero_goal,wrong_action,0.9500,0.0056,2.84,,180,7;42
+openvla_oft,libero_goal,wrong_task,0.0000,0.0000,97.84,,180,7;42
+openvla_oft,libero_goal,repeated,0.9667,0.0222,1.17,,180,7;42
