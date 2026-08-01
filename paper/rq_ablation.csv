@@ -1,11 +1,11 @@
 model,condition,n,n_tasks,tasks,TSR,n_matched_baseline,TSR_matched_baseline,delta_pp_matched,bits_removed
 smolvla,original,200,10,0 1 2 3 4 5 6 7 8 9,0.7850,200,0.7850,0.00,0.00
 smolvla,blank,200,10,0 1 2 3 4 5 6 7 8 9,0.0000,200,0.7850,78.50,3.32
-openvla,original,80,7,0 1 2 3 4 5 6,0.6500,80,0.6500,0.00,0.00
-openvla,blank,80,7,0 1 2 3 4 5 6,0.0000,80,0.6500,65.00,3.32
-openvla,verb_dropped,60,6,0 1 2 3 4 5,0.8167,60,0.6500,-16.67,0.00
-openvla,nouns_masked,60,6,0 1 2 3 4 5,0.0833,60,0.6500,56.67,3.32
-openvla_oft,original,192,10,0 1 2 3 4 5 6 7 8 9,0.9740,192,0.9740,0.00,0.00
-openvla_oft,blank,190,10,0 1 2 3 4 5 6 7 8 9,0.1316,190,0.9737,84.21,3.32
-openvla_oft,verb_dropped,190,10,0 1 2 3 4 5 6 7 8 9,0.9526,190,0.9737,2.11,0.00
-openvla_oft,nouns_masked,190,10,0 1 2 3 4 5 6 7 8 9,0.2526,190,0.9737,72.11,3.32
+openvla,original,130,8,0 1 2 3 4 5 6 7,0.6846,130,0.6846,0.00,0.00
+openvla,blank,130,8,0 1 2 3 4 5 6 7,0.0000,130,0.6846,68.46,3.32
+openvla,verb_dropped,110,8,0 1 2 3 4 5 6 7,0.8091,110,0.6909,-11.82,0.00
+openvla,nouns_masked,110,8,0 1 2 3 4 5 6 7,0.1000,110,0.6909,59.09,3.32
+openvla_oft,original,200,10,0 1 2 3 4 5 6 7 8 9,0.9750,200,0.9750,0.00,0.00
+openvla_oft,blank,200,10,0 1 2 3 4 5 6 7 8 9,0.1250,200,0.9750,85.00,3.32
+openvla_oft,verb_dropped,200,10,0 1 2 3 4 5 6 7 8 9,0.9550,200,0.9750,2.00,0.00
+openvla_oft,nouns_masked,200,10,0 1 2 3 4 5 6 7 8 9,0.2400,200,0.9750,73.50,3.32

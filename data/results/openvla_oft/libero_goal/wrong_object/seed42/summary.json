@@ -6,9 +6,9 @@
   "checkpoint": "moojink/openvla-7b-oft-finetuned-libero-goal",
   "checkpoint_hash": "c2d0f9fbbd82674683b397ff923168a12f6a307b",
   "n_episodes": 10,
-  "n_total_episodes": 60,
+  "n_total_episodes": 70,
   "n_success": 8,
-  "tsr": 0.13333333333333333,
+  "tsr": 0.11428571428571428,
   "per_task": {
     "1": {
       "n": 10,
@@ -33,6 +33,10 @@
     "8": {
       "n": 10,
       "success": 8
+    },
+    "9": {
+      "n": 10,
+      "success": 0
     }
   },
   "framework": "openvla_oft",
