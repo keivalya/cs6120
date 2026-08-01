@@ -51,9 +51,12 @@ import csv
 import json
 import math
 import pathlib
+import sys
 import re
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "core" / "analyze"))
+import paired_stats  # noqa: E402
 
 MODELS = ("smolvla", "openvla", "openvla_oft")
 # open->close, open->close, turn on->turn off: the verb is contrastive AND the
@@ -142,10 +145,29 @@ def main():
             if not sub or not ob:
                 continue
             t, o = tsr(sub), tsr(ob)
-            print(f"  {m:<13}{name:<11}{len(sub):>5}{t:>8.3f}{o:>10.3f}{(o-t)*100:>10.1f}")
+            # Paired, like the ablation: wrong_action shares its initial state with
+            # `original` episode for episode. The antonym column is the paper's most
+            # contested claim and its smallest cell, so it needs the test more than
+            # anything else here.
+            okey = {(r["task_id"], r["episode"], r.get("seed")): int(r["success"])
+                    for r in ob}
+            pairs = [(okey[k], int(r["success"]))
+                     for r, k in ((r, (r["task_id"], r["episode"], r.get("seed")))
+                                  for r in sub) if k in okey]
+            ps = paired_stats.summarise(pairs) if pairs else None
+            extra = "" if ps is None else (
+                f" pairs={ps['n_pairs']} flips={ps['b_baseline_only']}/"
+                f"{ps['c_perturbed_only']} ci=[{-ps['delta_ci_hi']:.1f},"
+                f"{-ps['delta_ci_lo']:.1f}] p={ps['mcnemar_p']:.3g}")
+            print(f"  {m:<13}{name:<11}{len(sub):>5}{t:>8.3f}{o:>10.3f}"
+                  f"{(o-t)*100:>10.1f}{extra}")
             rows.append({"section": "wrong_action_split", "model": m, "subset": name,
                          "n": len(sub), "value": round(t, 4),
-                         "note": f"orig={o:.4f} delta_pp={(o-t)*100:.1f}"})
+                         "note": f"orig={o:.4f} delta_pp={(o-t)*100:.1f}{extra}",
+                         "delta_pp": f"{(o-t)*100:.1f}",
+                         "ci_lo": "" if ps is None else f"{-ps['delta_ci_hi']:.1f}",
+                         "ci_hi": "" if ps is None else f"{-ps['delta_ci_lo']:.1f}",
+                         "mcnemar_p": "" if ps is None else f"{ps['mcnemar_p']:.3g}"})
 
     # ---- 3. wrong_object: does the model do the task the new nouns name? ------
     by_text = {v.strip().lower(): k for k, v in truth.items()}
@@ -191,7 +213,9 @@ def main():
 
     out = REPO_ROOT / "paper" / "instruction_information.csv"
     with out.open("w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=["section", "model", "subset", "n", "value", "note"])
+        w = csv.DictWriter(fh, fieldnames=["section", "model", "subset", "n", "value",
+                                           "delta_pp", "ci_lo", "ci_hi", "mcnemar_p", "note"],
+                           extrasaction="ignore", restval="")
         w.writeheader()
         w.writerows(rows)
     print(f"\nwrote {out} ({len(rows)} rows)")

@@ -23,9 +23,12 @@ import argparse
 import csv
 import json
 from collections import defaultdict
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "core" / "analyze"))
+import paired_stats  # noqa: E402
 MODELS = ["smolvla", "openvla", "openvla_oft"]
 ABLATIONS = ["verb_dropped", "nouns_masked"]
 # Reference points: `original` is the ceiling, `blank` the floor. nouns_masked keeps
@@ -79,6 +82,14 @@ def main() -> int:
                        ((r["task_id"], r["episode"], r["_seed"]) for r in recs)
                        if k in orig_key]
             base_tsr = sum(matched) / len(matched) if matched else None
+            # The pairing is the whole point of the scene-fixed design, so test it
+            # as paired data: McNemar on the episodes that FLIPPED, plus a
+            # bootstrap over pairs. An unpaired interval here would discard the
+            # matching and widen for no reason.
+            pairs = [(orig_key[k], int(r["success"]))
+                     for r, k in ((r, (r["task_id"], r["episode"], r["_seed"]))
+                                  for r in recs) if k in orig_key]
+            ps = paired_stats.summarise(pairs)
             out_rows.append({
                 "model": model,
                 "condition": cond,
@@ -91,6 +102,12 @@ def main() -> int:
                 "delta_pp_matched": "" if base_tsr is None else f"{100 * (base_tsr - tsr):.2f}",
                 "bits_removed": {"verb_dropped": "0.00", "nouns_masked": "3.32",
                                  "blank": "3.32", "original": "0.00"}[cond],
+                "n_pairs": ps["n_pairs"],
+                "flips_to_failure": ps["b_baseline_only"],
+                "flips_to_success": ps["c_perturbed_only"],
+                "delta_ci_lo": f"{ps['delta_ci_lo']:.2f}",
+                "delta_ci_hi": f"{ps['delta_ci_hi']:.2f}",
+                "mcnemar_p": f"{ps['mcnemar_p']:.3g}",
             })
 
     out = REPO_ROOT / "paper" / "rq_ablation.csv"

@@ -69,10 +69,14 @@ the original.
 A word-class \emph{removal} test confirms the account directly: deleting the verb
 outright costs OpenVLA-OFT $\oftVerbDrop$ points against a scene-matched baseline,
 while masking the nouns costs it $\oftNounMask$---two edits of similar surface
-magnitude separated by the task information they destroy. Isolating the cases that do
-carry a contrast---three tasks with true antonym verb pairs---leaves a smaller but
-sound finding: OpenVLA-OFT is largely, though not wholly, verb-insensitive, executing
-``turn on'' when instructed to ``turn off'' in $55$ of $60$ antonym episodes. We release the scene-fixed protocol, an automated
+magnitude separated by the task information they destroy. Because every perturbed
+rollout starts from its baseline's exact initial state, these are matched pairs and
+we test them as such: verb deletion is indistinguishable from no edit at all
+(McNemar $p=0.34$), while noun masking flips $148$ of $200$ pairs. Isolating the
+cases that do carry a contrast---three tasks with true antonym verb pairs---leaves a
+smaller but sound finding: we detect no effect of the verb on OpenVLA-OFT even there
+($p=0.45$), which executes ``turn on'' when instructed to ``turn off'' in $55$ of
+$60$ episodes, while SmolVLA is clearly sensitive to the same swap ($p=0.002$). We release the scene-fixed protocol, an automated
 invariant check that fails loudly, and the word-class probes, and argue that
 instruction-level information content must be reported before grounding claims can be
 drawn from perturbation studies---including before crediting a mitigation with having
@@ -155,9 +159,10 @@ interpreting the behavioural results, and release the tooling to do so.
     task's instruction, every model we can score executes that task and never the
     original.
     Verb-swap ``tolerance'' is mostly measured on substitutions that leave task
-    identity intact. What survives is narrower: on the three genuine antonym pairs,
-    OpenVLA-OFT still completes the original task in $92\%$ of episodes, against
-    $96\%$ on near-synonyms that change nothing (Section~\ref{sec:rq1}).
+    identity intact. What survives is narrower: even on the three genuine antonym
+    pairs we can detect no effect of the verb on OpenVLA-OFT ($-5.0$ pp,
+    $p=0.45$), while SmolVLA is clearly sensitive to one ($-21.7$ pp, $p=0.002$)
+    (Section~\ref{sec:rq1}).
     \item \textbf{Scene-Fixed Protocol and an Automated Invariant Check}: We
     present the diagnostic paradigm holding initial simulator states constant
     ($S_0 = \text{const}$) across 3 VLA architectures, and---because we found the
@@ -406,8 +411,15 @@ the original instruction, averaged over the ten tasks.}
 
 The prediction holds, and with an unusually clean separation
 (Table~\ref{tab:rq_ablation}, Figure~\ref{fig:removal}). Deleting the verb entirely leaves OpenVLA-OFT's success
-rate all but unchanged on the same initial scenes---a cost of $\oftVerbDrop$
-points---while masking the nouns costs it $\oftNounMask$. The two edits are comparable in
+rate statistically unchanged on the same initial scenes---a point estimate of
+$\oftVerbDrop$ points with a $95\%$ interval of $[-5.0, +1.0]$ that contains zero,
+and a McNemar $p$ of $0.34$. Of $200$ matched pairs only $10$ changed outcome at
+all, $7$ one way and $3$ the other, which is what a coin looks like. Masking the
+nouns costs $\oftNounMask$ points, flips $148$ pairs, and never once flips a
+failure into a success. Because every perturbed episode starts from the same
+simulator state as its baseline, these are matched pairs and we test them as
+such; the discordant counts are the evidence, and the concordant majority
+correctly drops out. The two edits are comparable in
 surface magnitude---each removes a small number of tokens from a short
 instruction---and they differ by two orders of magnitude in effect. What separates them
 is not how much text was deleted but how much task information it carried.
@@ -417,8 +429,8 @@ Two details are worth noting. First, \texttt{nouns\_masked} remains clearly \emp
 instruction retains the verb and the syntactic frame, so the residual gap is a
 reasonable estimate of what a policy can extract from instruction \emph{structure}
 once reference is gone---which is more than nothing and much less than the nouns
-provide. Second, this asymmetry is nearly invisible to the standard probe: substituting
-the verb costs OpenVLA-OFT at most $5.0$ points, and only on the three tasks where the
+provide. Second, this asymmetry is invisible to the standard probe: substituting the
+verb moves OpenVLA-OFT by no detectable amount, even on the three tasks where the
 substitution is contrastive at all (Table~\ref{tab:rq2_wordclass}), so a study
 running only substitution would conclude that this model ignores verbs, and a study
 running only removal would agree---but neither would establish that ignoring them is
@@ -548,21 +560,23 @@ pooled over seeds.}
 \label{tab:rq2_wordclass}
 \end{table}
 
-Both models that pass the check are more sensitive to a contrastive verb than to an
-uninformative one, which is the signature of a policy that reads the verb at all, and
-they differ by roughly a factor of four in how much. SmolVLA loses $21.7$ points on
-antonyms against $10.7$ on near-synonyms. OpenVLA-OFT loses $5.0$ against $2.1$: told
-to ``turn off the stove'' it turns the stove on, completing the \emph{original} task
-in $55$ of $60$ antonym episodes. We take that as verb-insensitivity in the practical
-sense---a contradicting verb changes what the policy does in one episode in twelve
----while noting it is not the total insensitivity a smaller sample suggested.
+The two models separate cleanly, and the separation is in whether the effect is
+detectable at all rather than in its size. SmolVLA loses $21.7$ points on antonyms
+($p=0.002$) and $10.7$ on near-synonyms ($p=0.02$): it reads the verb, and it reads
+a contrastive one twice as hard. OpenVLA-OFT loses $5.0$ points on antonyms and
+$2.1$ on near-synonyms, and \emph{neither} is distinguishable from zero
+($p=0.45$ and $p=0.51$). Of its $60$ antonym pairs, $5$ flipped to failure and $2$
+flipped the other way; told to ``turn off the stove'' it turns the stove on,
+completing the \emph{original} task in $55$ of $60$ episodes. On this suite we can
+detect no effect of the verb on OpenVLA-OFT whatsoever.
 
-An earlier draft of this table, built when each cell held two episodes rather than
-ten, put OpenVLA-OFT's antonym gap at exactly zero on $n=12$ and we described the
-model as unmoved. At $n=60$ the gap is $5.0$ points. The direction of the finding is
-unchanged and its strength is not, which is the ordinary behaviour of a difference
-estimated from a dozen episodes; we flag it because the earlier number was the more
-quotable one.
+This is also a correction. An earlier draft of this table, built when each cell held
+two episodes rather than ten, put OpenVLA-OFT's antonym gap at exactly zero on
+$n=12$ and described the model as unmoved. At $n=60$ the point estimate is $5.0$
+points, which looked like a real weakening of the claim until it was tested: the
+interval is $[-13.3, +3.3]$ and covers both the old estimate and the new one. The
+lesson we draw is against the point estimates, not for them---a difference read off
+a dozen episodes was never worth quoting, in either direction.
 
 This split remains the most underpowered comparison in the paper: the suite affords
 only three antonym pairs, so $n$ grows with episodes but never with tasks. Where a
@@ -699,9 +713,10 @@ such evaluations are usually taken to demonstrate does not, we argue, follow fro
 them: on \texttt{LIBERO-Goal} the verb is informationally redundant given the
 nouns, most verb-substitution probes leave task identity intact, and most
 object-substitution ``failures'' are the policy complying with the instruction it
-received. The claim that survives is narrower and better supported---OpenVLA-OFT
-mostly ignores contrastive antonyms, obeying the noun set in $92\%$ of those
-episodes---and we prefer it to the broader one.
+received. The claim that survives is narrower and better supported---on the only
+three tasks where a verb swap changes the goal, OpenVLA-OFT shows no detectable
+response to it ($p=0.45$) while SmolVLA does ($p=0.002$)---and we prefer it to the
+broader one.
 
 The general lesson is that instruction-perturbation studies inherit the information
 structure of their benchmark, and that structure has to be measured before the

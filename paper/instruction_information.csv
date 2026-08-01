@@ -1,16 +1,16 @@
-section,model,subset,n,value,note
-information,,,10,0.0,H(task|nouns) bits
-information,,,10,1.551,H(task|verbs) bits
-wrong_action_split,smolvla,antonym,60,0.5167,orig=0.7333 delta_pp=21.7
-wrong_action_split,smolvla,near-syn,140,0.7,orig=0.8071 delta_pp=10.7
-wrong_action_split,openvla,antonym,40,0.3,orig=0.7143 delta_pp=41.4
-wrong_action_split,openvla,near-syn,90,0.7333,orig=0.7000 delta_pp=-3.3
-wrong_action_split,openvla_oft,antonym,60,0.9167,orig=0.9667 delta_pp=5.0
-wrong_action_split,openvla_oft,near-syn,140,0.9571,orig=0.9786 delta_pp=2.1
-wrong_object_compliance,smolvla,task4->task2,20,0.85,did_original=0
-wrong_object_compliance,openvla,task4->task2,10,0.8,did_original=0
-wrong_object_compliance,openvla_oft,task4->task2,20,1.0,did_original=0
-word_class_ablation,openvla,verb_dropped,120,0.7917,orig=0.7050
-word_class_ablation,openvla,nouns_masked,120,0.0917,orig=0.7050
-word_class_ablation,openvla_oft,verb_dropped,200,0.955,orig=0.9750
-word_class_ablation,openvla_oft,nouns_masked,200,0.24,orig=0.9750
+section,model,subset,n,value,delta_pp,ci_lo,ci_hi,mcnemar_p,note
+information,,,10,0.0,,,,,H(task|nouns) bits
+information,,,10,1.551,,,,,H(task|verbs) bits
+wrong_action_split,smolvla,antonym,60,0.5167,21.7,-35.0,-10.0,0.00235,"orig=0.7333 delta_pp=21.7 pairs=60 flips=15/2 ci=[-35.0,-10.0] p=0.00235"
+wrong_action_split,smolvla,near-syn,140,0.7,10.7,-19.3,-2.1,0.0201,"orig=0.8071 delta_pp=10.7 pairs=140 flips=26/11 ci=[-19.3,-2.1] p=0.0201"
+wrong_action_split,openvla,antonym,60,0.35,31.7,-43.3,-20.0,3.81e-06,"orig=0.6667 delta_pp=31.7 pairs=60 flips=19/0 ci=[-43.3,-20.0] p=3.81e-06"
+wrong_action_split,openvla,near-syn,100,0.73,-0.5,-10.0,10.0,1,"orig=0.7250 delta_pp=-0.5 pairs=100 flips=14/14 ci=[-10.0,10.0] p=1"
+wrong_action_split,openvla_oft,antonym,60,0.9167,5.0,-13.3,3.3,0.453,"orig=0.9667 delta_pp=5.0 pairs=60 flips=5/2 ci=[-13.3,3.3] p=0.453"
+wrong_action_split,openvla_oft,near-syn,140,0.9571,2.1,-6.4,2.1,0.508,"orig=0.9786 delta_pp=2.1 pairs=140 flips=6/3 ci=[-6.4,2.1] p=0.508"
+wrong_object_compliance,smolvla,task4->task2,20,0.85,,,,,did_original=0
+wrong_object_compliance,openvla,task4->task2,13,0.8462,,,,,did_original=0
+wrong_object_compliance,openvla_oft,task4->task2,20,1.0,,,,,did_original=0
+word_class_ablation,openvla,verb_dropped,156,0.7628,,,,,orig=0.7056
+word_class_ablation,openvla,nouns_masked,160,0.075,,,,,orig=0.7056
+word_class_ablation,openvla_oft,verb_dropped,200,0.955,,,,,orig=0.9750
+word_class_ablation,openvla_oft,nouns_masked,200,0.24,,,,,orig=0.9750

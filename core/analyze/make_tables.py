@@ -384,7 +384,7 @@ def wordclass_table(rows: list[dict]) -> None:
              r"\textbf{Model} & \multicolumn{2}{c}{\textbf{antonym}} & "
              r"\multicolumn{2}{c}{\textbf{near-synonym}} \\",
              r"\cmidrule(lr){2-3} \cmidrule(lr){4-5}",
-             r" & $\Delta$TSR & $n$ & $\Delta$TSR & $n$ \\", r"\midrule"]
+             r" & $\Delta$TSR & $p$ & $\Delta$TSR & $p$ \\", r"\midrule"]
     for m in MODEL_ORDER:
         if suppressed(m):
             lines.append(f"{model_label(m)} & " + " & ".join([PENDING] * 4) + r" \\")
@@ -395,21 +395,40 @@ def wordclass_table(rows: list[dict]) -> None:
             if r is None:
                 cells += ["--", "--"]
                 continue
-            # note field carries "orig=<rate> delta_pp=<pp>"; delta is a drop.
-            delta = None
-            for tok in (r.get("note") or "").split():
-                if tok.startswith("delta_pp="):
-                    delta = fnum(tok.split("=", 1)[1])
+            # Explicit columns now, rather than scraping the note string.
+            delta = fnum(r.get("delta_pp"))
+            if delta is None:  # older CSVs kept it only in the note
+                for tok in (r.get("note") or "").split():
+                    if tok.startswith("delta_pp="):
+                        delta = fnum(tok.split("=", 1)[1])
             n = int(fnum(r["n"], 0))
+            # The p-value replaces n here: n is fixed by the suite (three antonym
+            # tasks, seven near-synonyms) and says nothing a reader needs, whereas
+            # whether the gap is distinguishable from zero is the entire question.
+            # OpenVLA-OFT's 5.0 pp antonym gap has p=0.45 on 60 pairs; printing it
+            # bare invited exactly the over-reading an earlier draft committed.
+            pcell = _pfmt(fnum(r.get("mcnemar_p")))
             if delta is None:
-                cells += ["--", str(n)]
+                cells += ["--", "--"]
             elif abs(delta) < 0.05:  # avoid rendering a signed "-0.0"
-                cells += [r"\phantom{$-$}$0.0$ pp", str(n)]
+                cells += [r"\phantom{$-$}$0.0$ pp", pcell]
             else:
-                cells += [f"$-{delta:.1f}$ pp", str(n)]
+                cells += [f"$-{delta:.1f}$ pp", pcell]
         lines.append(f"{model_label(m)} & " + " & ".join(cells) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     write("rq2_wordclass.tex", "\n".join(lines) + "\n")
+
+
+def _pfmt(pv: float | None) -> str:
+    """A p-value the way a table should carry one: never "0.000", never 12 digits."""
+    if pv is None:
+        return "--"
+    if pv < 1e-10:
+        return r"$<\!10^{-10}$"
+    if pv < 0.01:
+        exp = int(f"{pv:e}".split("e")[1])
+        return rf"$10^{{{exp}}}$"
+    return f"${pv:.2f}$"
 
 
 def ablation_table(rows: list[dict]) -> None:
@@ -427,9 +446,10 @@ def ablation_table(rows: list[dict]) -> None:
               "verb_dropped": r"\texttt{verb\_dropped}",
               "nouns_masked": r"\texttt{nouns\_masked}",
               "blank": r"\texttt{blank}"}
-    lines = [r"\begin{tabular}{llrrcc}", r"\toprule",
-             r"\textbf{Model} & \textbf{Condition} & \textbf{bits removed} & "
-             r"\textbf{$n$} & \textbf{TSR} & \textbf{$\Delta$ vs.\ matched} \\",
+    lines = [r"\begin{tabular}{llrrccr}", r"\toprule",
+             r"\textbf{Model} & \textbf{Condition} & \textbf{bits} & "
+             r"\textbf{$n$} & \textbf{TSR} & \textbf{$\Delta$ [95\% CI]} & "
+             r"\textbf{$p$} \\",
              r"\midrule"]
     any_row = False
     for i, m in enumerate(MODEL_ORDER):
@@ -442,18 +462,30 @@ def ablation_table(rows: list[dict]) -> None:
         any_row = True
         if suppressed(m):
             lines.append(f"{model_label(m)} & {PENDING_ROW} & {PENDING} & {PENDING} & "
-                         f"{PENDING} & {PENDING} \\\\")
+                         f"{PENDING} & {PENDING} & {PENDING} \\\\")
             continue
         for cond in order:
             r = next((x for x in rows if x["model"] == m and x["condition"] == cond), None)
             if r is None:
                 continue
             d = fnum(r.get("delta_pp_matched"))
-            dcell = "--" if d is None else (
-                r"\phantom{$-$}$0.0$" if abs(d) < 0.05 else f"${-d:+.1f}$")
+            # Paired CI and McNemar, from make_ablation_csv.py. The design matches
+            # every perturbed episode to its baseline on initial state, so the
+            # interval is over PAIRS; reporting a bare delta throws that away and
+            # leaves the decisive experiment with no uncertainty at all.
+            lo, hi = fnum(r.get("delta_ci_lo")), fnum(r.get("delta_ci_hi"))
+            pv = fnum(r.get("mcnemar_p"))
+            if d is None:
+                dcell, pcell = "--", "--"
+            elif cond == "original":
+                dcell, pcell = r"\phantom{$-$}$0.0$", "--"
+            else:
+                ci = "" if lo is None else f" {{\\scriptsize $[{-hi:+.1f}, {-lo:+.1f}]$}}"
+                dcell = f"${-d:+.1f}${ci}"
+                pcell = _pfmt(pv)
             lines.append(
                 f"{model_label(m)} & {pretty[cond]} & {r['bits_removed']} & "
-                f"{int(fnum(r['n'], 0))} & {pct(fnum(r['TSR']), 1)} & {dcell} \\\\")
+                f"{int(fnum(r['n'], 0))} & {pct(fnum(r['TSR']), 1)} & {dcell} & {pcell} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     if any_row:
         write("rq_ablation.tex", "\n".join(lines) + "\n")
