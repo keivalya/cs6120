@@ -73,10 +73,12 @@ magnitude separated by the task information they destroy. Because every perturbe
 rollout starts from its baseline's exact initial state, these are matched pairs and
 we test them as such: verb deletion is indistinguishable from no edit at all
 (McNemar $p=0.34$), while noun masking flips $148$ of $200$ pairs. Isolating the
-cases that do carry a contrast---three tasks with true antonym verb pairs---leaves a
-smaller but sound finding: we detect no effect of the verb on OpenVLA-OFT even there
-($p=0.45$), which executes ``turn on'' when instructed to ``turn off'' in $55$ of
-$60$ episodes, while SmolVLA is clearly sensitive to the same swap ($p=0.002$). We release the scene-fixed protocol, an automated
+cases that do carry a contrast---three tasks with true antonym verb pairs---reverses
+the usual reading: OpenVLA-7B loses $31.7$ points there ($p<10^{-5}$) while the seven
+uninformative substitutions move it not at all ($p=0.52$), so the standard probe hides
+a decisive verb effect by averaging it against non-events. Verb-insensitivity survives
+for exactly one of our three models, OpenVLA-OFT, which is unmoved even by an antonym
+($p=0.45$). We release the scene-fixed protocol, an automated
 invariant check that fails loudly, and the word-class probes, and argue that
 instruction-level information content must be reported before grounding claims can be
 drawn from perturbation studies---including before crediting a mitigation with having
@@ -156,13 +158,13 @@ interpreting the behavioural results, and release the tooling to do so.
     \item \textbf{Re-analysis of the ``Asymmetric Grounding Gap''}: We show both
     halves of the reported asymmetry dissolve under this analysis. Object-swap
     ``collapse'' is largely \emph{compliance}: when the swap yields another real
-    task's instruction, every model we can score executes that task and never the
-    original.
+    task's instruction, all three models execute that task and never the original
+    ($17/20$, $18/20$ and $20/20$ episodes).
     Verb-swap ``tolerance'' is mostly measured on substitutions that leave task
-    identity intact. What survives is narrower: even on the three genuine antonym
-    pairs we can detect no effect of the verb on OpenVLA-OFT ($-5.0$ pp,
-    $p=0.45$), while SmolVLA is clearly sensitive to one ($-21.7$ pp, $p=0.002$)
-    (Section~\ref{sec:rq1}).
+    identity intact. Splitting them reverses the conclusion for two of three
+    models: OpenVLA-7B loses $31.7$ pp to a contrastive verb ($p<10^{-5}$) and
+    nothing at all to an uninformative one ($p=0.52$). Only OpenVLA-OFT is
+    genuinely unmoved ($-5.0$ pp, $p=0.45$) (Section~\ref{sec:rq1}).
     \item \textbf{Scene-Fixed Protocol and an Automated Invariant Check}: We
     present the diagnostic paradigm holding initial simulator states constant
     ($S_0 = \text{const}$) across 3 VLA architectures, and---because we found the
@@ -492,15 +494,6 @@ rather than transcribed.}
 \label{tab:rq1_causal_full}
 \end{table}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{rq1_scale.png}
-\caption{Baseline TSR against Causal Sensitivity Score for each model. CSS sits near
-$1$ across a $16\times$ parameter range, so sensitivity to losing the instruction
-does not track scale or baseline competence.}
-\label{fig:rq1_scale}
-\end{figure}
-
 The destructive conditions behave as expected: \texttt{blank} and \texttt{nonsense}
 collapse success, establishing that the instruction is causally load-bearing.
 SmolVLA falls to exactly zero under both ($\text{CSS}=1.00$); OpenVLA-OFT retains a
@@ -508,16 +501,22 @@ small residue, $\oftBlank\%$ and $\oftNonsense\%$ against a $\oftBaseline\%$ bas
 ($\text{CSS}=\oftCssBlank$ and $\oftCssNonsense$), which we return to in the
 Discussion. Nothing here
 is a graded contrast, so the conclusion does not rest on the exact residue.
-Figure~\ref{fig:rq1_scale} shows this is flat in scale.
+The effect is flat in scale: CSS is $1.00$, $1.00$ and $\oftCssBlank$ across a
+$16\times$ parameter range, so sensitivity to losing the instruction tracks neither
+model size nor baseline competence.
 The two semantic-swap conditions are the ones that have been over-read, and we take
 them in turn.
 
 \paragraph{What the scene-fixed audit lets us claim.} Our own check
 (Section~\ref{sec:scenefixed}) is what decides which rows appear at all. A model
-whose grid fails the check is left blank here rather than printed with a footnote:
-its graded contrasts are confounded by differing initial scenes, and we would rather
-show a table with a hole in it than a number a reader can quote. The models that do
-pass are reported in full, and the per-model verdicts are given beneath the table.
+whose grid fails the check is left blank rather than printed with a footnote: its
+graded contrasts are confounded by differing initial scenes, and we would rather
+show a table with a hole in it than a number a reader can quote. This is not
+hypothetical. Every number reported here for OpenVLA-7B is from its \emph{second}
+grid: the first failed the check on $20$ of $80$ comparable episodes, was withheld
+from an earlier draft of this table, and was re-run from scratch. All three grids
+now pass at $200$ comparable episodes with zero mismatches, which is the state the
+table reports.
 
 The distinction worth drawing is between a floor and a gradient. A scene confound can
 inflate or deflate a partial difference, but it cannot manufacture a floor:
@@ -537,8 +536,8 @@ carries no information about grounding at all.
 
 The first case is decisive. For one task the object swap yields, verbatim, the
 instruction of another task in the suite. Every model we can currently score performs
-\emph{that} task and never the original: SmolVLA $17/20$ episodes and OpenVLA-OFT
-$20/20$, with $0$ executions of the original task in either case. This is precise
+\emph{that} task and never the original: SmolVLA $17/20$ episodes, OpenVLA $18/20$
+and OpenVLA-OFT $20/20$, with $0$ executions of the original task by any model. This is precise
 instruction-following, scored as total failure. We therefore report OAR against
 the \emph{named} task alongside TSR, and caution that headline ``collapse''
 numbers under object substitution should not be read as loss of grounding.
@@ -555,33 +554,60 @@ from the rest (Table~\ref{tab:rq2_wordclass}).
 \small
 \input{tables/rq2_wordclass}
 \caption{Drop in TSR under verb substitution, split by whether the substitution
-changes the task. Only the antonym column tests verb grounding. $n$ is episodes,
-pooled over seeds.}
+changes the task. Only the antonym column tests verb grounding; the near-synonym
+column is the control. $p$ is an exact McNemar test over initial-state-matched pairs
+($n=60$ antonym, $n=140$ near-synonym, pooled over seeds).}
 \label{tab:rq2_wordclass}
 \end{table}
 
-The two models separate cleanly, and the separation is in whether the effect is
-detectable at all rather than in its size. SmolVLA loses $21.7$ points on antonyms
-($p=0.002$) and $10.7$ on near-synonyms ($p=0.02$): it reads the verb, and it reads
-a contrastive one twice as hard. OpenVLA-OFT loses $5.0$ points on antonyms and
-$2.1$ on near-synonyms, and \emph{neither} is distinguishable from zero
-($p=0.45$ and $p=0.51$). Of its $60$ antonym pairs, $5$ flipped to failure and $2$
-flipped the other way; told to ``turn off the stove'' it turns the stove on,
-completing the \emph{original} task in $55$ of $60$ episodes. On this suite we can
-detect no effect of the verb on OpenVLA-OFT whatsoever.
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{fig_verbsplit.png}
+\caption{The suite-wide \texttt{wrong\_action} probe against the two halves it
+averages. The pooled bar is the $n$-weighted mean of the other two ($n=200$;
+$60$ antonym episodes from the three tasks whose verb swap changes the goal,
+$140$ near-synonym episodes from the seven where it does not), so for OpenVLA a
+$-31.7$ point effect and a null are reported as a mild $-12.0$. Whiskers are
+$95\%$ intervals over initial-state-matched pairs.}
+\label{fig:verbsplit}
+\end{figure}
 
-This is also a correction. An earlier draft of this table, built when each cell held
-two episodes rather than ten, put OpenVLA-OFT's antonym gap at exactly zero on
-$n=12$ and described the model as unmoved. At $n=60$ the point estimate is $5.0$
-points, which looked like a real weakening of the claim until it was tested: the
-interval is $[-13.3, +3.3]$ and covers both the old estimate and the new one. The
-lesson we draw is against the point estimates, not for them---a difference read off
-a dozen episodes was never worth quoting, in either direction.
+The split changes the conclusion, and OpenVLA-7B shows why in the sharpest form
+(Figure~\ref{fig:verbsplit}).
+Read whole, its \texttt{wrong\_action} condition costs $12$ points---a mild effect,
+the kind routinely reported as evidence that verbs are near-optional. Split, that
+average dissolves into two opposite findings: the three antonym substitutions cost
+it $31.7$ points ($p<10^{-5}$, $19$ of $60$ pairs flipped to failure and none the
+other way), while the seven near-synonyms cost $3.6$ and are indistinguishable from
+no edit at all ($p=0.52$). OpenVLA reads the verb, decisively, and the suite-wide
+probe hides it by averaging one real effect against seven non-events.
+
+SmolVLA behaves the same way, less starkly: $21.7$ points on antonyms ($p=0.002$)
+against $10.7$ on near-synonyms ($p=0.02$). OpenVLA-OFT is the exception. It loses
+$5.0$ points on antonyms and $2.1$ on near-synonyms and \emph{neither} is
+distinguishable from zero ($p=0.45$, $p=0.51$); of its $60$ antonym pairs, $5$
+flipped to failure and $2$ flipped back. Told to ``turn off the stove'' it turns the
+stove on, completing the \emph{original} task in $55$ of $60$ episodes. So the
+verb-insensitivity the literature attributes to VLAs in general is, on this suite,
+a property of one of the three models we tested---and the probe that is usually
+used to establish it could not have detected it in the other two.
+
+One distinction deserves care, because the two 7B models make it visible.
+\emph{Removing} the verb is free for both---OpenVLA gains $4.0$ points, OpenVLA-OFT
+loses $2.0$, neither detectable (Table~\ref{tab:rq_ablation})---while
+\emph{contradicting} it costs OpenVLA $31.7$. Redundant is not the same as ignored.
+A word can carry no task information, so that deleting it changes nothing, and still
+be read closely enough that asserting its opposite derails the policy. Only
+comparing removal against substitution separates those two states, which is the
+methodological point of this section.
 
 This split remains the most underpowered comparison in the paper: the suite affords
-only three antonym pairs, so $n$ grows with episodes but never with tasks. Where a
-model's grid has not passed the scene-fixed check its row is blank here too, on the
-same reasoning as Table~\ref{tab:rq1_causal}.
+only three antonym pairs, so $n$ grows with episodes but never with tasks. We also
+note a correction it forced. An earlier draft, built when each cell held two
+episodes, put OpenVLA-OFT's antonym gap at exactly zero on $n=12$ and called the
+model unmoved. At $n=60$ the estimate is $5.0$ points, which looked like a real
+weakening until it was tested: the interval $[-13.3, +3.3]$ covers both numbers.
+The lesson runs against the point estimates, not for them.
 
 \subsection{Paraphrase Robustness}
 \label{sec:rq2}
@@ -602,8 +628,9 @@ repeated draws on the same scene and $n$ overstates the evidence.}
 \label{tab:rq2_para}
 \end{table}
 
-The spread across models is large. SmolVLA degrades severely---$4.72\%$ overall TSR,
-PRIDE $2.7$---while OpenVLA-OFT holds $74.22\%$ (PRIDE $65.8$), and both models
+The spread across models is large and orders with scale: SmolVLA degrades severely
+($4.72\%$ overall TSR, PRIDE $2.7$), OpenVLA sits in between ($44.22\%$, PRIDE
+$33.3$), and OpenVLA-OFT holds $74.22\%$ (PRIDE $65.8$). All three
 order the axes the same way: object paraphrases hurt least, compositional most, which
 is what one expects if the noun phrase is what the policy is keying on. We do not
 attribute OpenVLA-OFT's robustness to FiLM: the checkpoint we evaluate is the plain
@@ -642,7 +669,13 @@ two traces differ by more than $5$\,cm (Table~\ref{tab:rq3_divergence}).
 \centering
 \small
 \input{tables/rq3_divergence}
-\caption{Kinematic Divergence Timesteps ($t_{\text{div}}$) and EEF Error $e(T)$.}
+\caption{Kinematic divergence timestep $t_{\text{div}}$ and end-effector
+displacement $e_{10}$ at a fixed ten-step horizon. We quote $e$ at ten steps rather
+than at the end of the rollout because pairs are truncated to the shorter of the two
+episodes and the median pair runs only $10$--$12$ steps: every pair counted in
+\textbf{pairs} reaches step ten, so one $n$ backs both columns, whereas an
+end-of-rollout figure would average the few longest---and so disproportionately
+failing---episodes.}
 \label{tab:rq3_divergence}
 \end{table}
 
@@ -650,8 +683,11 @@ two traces differ by more than $5$\,cm (Table~\ref{tab:rq3_divergence}).
 \centering
 \includegraphics[width=\linewidth]{rq3_divergence.png}
 \caption{End-effector displacement $e(t)$ between the canonical rollout and each
-perturbed rollout from the same $S_0$. The destructive conditions leave the canonical
-path at once; \texttt{wrong\_action} follows it and then peels away.}
+perturbed rollout from the same $S_0$, for the three conditions discussed here.
+The destructive conditions leave the canonical path at once; \texttt{wrong\_action}
+follows it and then peels away. Dots mark $t_{\text{div}}$. Each curve stops at the
+last step reached by at least half its pairs, so no part of it is an average over a
+handful of unusually long episodes.}
 \label{fig:rq3_divergence}
 \end{figure}
 
@@ -765,13 +801,13 @@ verbs on a suite where verbs are contrastive, and our three antonym pairs are to
 few to settle that. The uniform prior is itself an assumption: a policy trained on a
 skewed task distribution faces a different effective entropy than the one we compute
 from the task definitions.
-(v) \textbf{Coverage of the removal test}: the exact task coverage of
-Table~\ref{tab:rq_ablation} is stated in its caption and generated from the result
-files, because that grid was still filling when this draft was prepared. The effect
-sizes there are large relative to the cell sizes, but the test is currently run on
-OpenVLA-OFT only; extending it to the two slower models is a matter of compute, not
-method, and we regard cross-model replication as the obvious next step rather than a
-settled result. (vi) \textbf{No mechanistic account}: we deliberately make no
+(v) \textbf{Coverage of the removal test}: the removal conditions were run on both
+7B models and replicate ($n=200$ each; verb deletion undetectable at $p=0.36$ and
+$p=0.34$, noun masking at $p<10^{-10}$ for both). They were not run on SmolVLA,
+whose $\sim\!161$\,s per episode made two extra conditions cost roughly $18$ GPU-hours
+we chose to spend on the causal grid instead; that omission is a budget decision, not
+a methodological one, and SmolVLA's \texttt{blank} condition is consistent with the
+same account. (vi) \textbf{No mechanistic account}: we deliberately make no
 attention-level claim. An earlier draft reported a layer-wise noun-vs-verb
 cross-attention ratio; we found the underlying extraction had compared one model
 against a relabelled copy of another and had fed the OpenVLA-family models a blank

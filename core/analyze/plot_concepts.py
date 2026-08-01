@@ -10,6 +10,9 @@ a success-rate bar chart, which cannot show that. These two can:
                        the partition over the ten tasks that produces it
   fig_removal.png      the removal test: damage tracks bits destroyed, not how
                        much text was edited
+  fig_verbsplit.png    the suite-wide verb probe against its own two halves: the
+                       pooled number is the average of a decisive effect and
+                       seven non-events, which is how the effect stays hidden
 
 Both read the generated CSVs rather than any typed-in number, and both apply the
 SAME scene-fixed gate as make_tables.py — paper/qualitative_grid.png and the RQ3
@@ -42,6 +45,11 @@ import instruction_information as ii  # noqa: E402  (verb_set/noun_set live ther
 # are the documented all-pairs-safe subset in both modes; we use two of them.
 BLUE, ORANGE = "#2a78d6", "#eb6834"
 INK, INK_2, MUTED = "#0b0b0b", "#52514e", "#b8b7b0"
+# Neutral, for a bar that is an AGGREGATE of the other two rather than a third
+# category. It is deliberately outside the categorical ramp: giving the pooled
+# probe its own hue would imply it is a peer measurement, which is the reading
+# the figure exists to argue against.
+GREY = "#8a8983"
 
 plt.rcParams.update({
     "font.family": "DejaVu Sans", "font.size": 7.2,
@@ -222,6 +230,140 @@ def fig_removal() -> None:
     print(f"wrote {out}  (model={model})")
 
 
+MODEL_LABEL = {"smolvla": "SmolVLA\n0.45B",
+               "openvla": "OpenVLA\n7B",
+               "openvla_oft": "OpenVLA-OFT\n7.5B"}
+MODEL_ORDER = ["smolvla", "openvla", "openvla_oft"]
+
+
+def _p_label(p: float) -> str:
+    """Match the prose: an exact p where it is readable, a bound where it is not."""
+    import math
+    if p < 0.001:
+        return f"$p<10^{{{math.ceil(math.log10(p)):d}}}$"
+    if p < 0.01:
+        return f"$p={p:.3f}$"
+    return f"$p={p:.2f}$"
+
+
+def fig_verbsplit() -> None:
+    """Why the standard verb probe reports nothing on a suite where verbs matter.
+
+    The pooled `wrong_action` number is an n-weighted average of the three antonym
+    tasks (which change the goal) and the seven near-synonym tasks (which do not).
+    Plotting all three side by side is the whole argument of Section 4.6: the
+    aggregate sits between two findings of opposite sign, so a study that reports
+    only the aggregate cannot see either.
+    """
+    split = [r for r in read_csv("instruction_information.csv")
+             if r["section"] == "wrong_action_split" and scene_fixed_ok(r["model"])]
+    if not split:
+        raise SystemExit("no wrong_action_split rows pass the scene-fixed gate")
+
+    by_model: dict[str, dict[str, dict]] = collections.defaultdict(dict)
+    for r in split:
+        by_model[r["model"]][r["subset"]] = r
+    models = [m for m in MODEL_ORDER if {"antonym", "near-syn"} <= set(by_model.get(m, {}))]
+    if not models:
+        raise SystemExit("no model has both halves of the verb split")
+
+    # The pooled bar is DERIVED here (n-weighted over the two halves) rather than
+    # read from rq1_causal.csv, so the three bars are guaranteed to be the same
+    # arithmetic. It is then checked against the table's own number: if the figure
+    # and Table 3 ever disagree about wrong_action, this raises instead of shipping
+    # a plot that contradicts the text.
+    causal = {r["model"]: r for r in read_csv("rq1_causal.csv")
+              if r["condition"] == "wrong_action"}
+
+    rows: list[tuple] = []          # (y, value, ci, color, hollow, label, p)
+    yticks: list[tuple[float, str]] = []
+    group_mid: dict[str, float] = {}
+    y = 0.0
+    for m in models:
+        ant, syn = by_model[m]["antonym"], by_model[m]["near-syn"]
+        n_a, n_s = int(ant["n"]), int(syn["n"])
+        pooled = -(n_a * float(ant["delta_pp"]) + n_s * float(syn["delta_pp"])) / (n_a + n_s)
+        if m in causal:
+            expect = -float(causal[m]["delta_TSR_pp"])
+            if abs(pooled - expect) > 0.15:
+                raise SystemExit(
+                    f"{m}: pooled split {pooled:.2f} pp disagrees with rq1_causal.csv "
+                    f"{expect:.2f} pp — the figure and the table are not the same data")
+
+        # n is a property of the subset, not of the model (3 antonym tasks and 7
+        # near-synonym tasks, 20 episodes each), so it goes in the caption once
+        # rather than onto nine tick labels -- that width is better spent on bars.
+        entries = [
+            ("suite-wide probe", pooled, None, GREY, False, None),
+            ("antonym", -float(ant["delta_pp"]),
+             (float(ant["ci_lo"]), float(ant["ci_hi"])), ORANGE,
+             float(ant["mcnemar_p"]) >= 0.05, float(ant["mcnemar_p"])),
+            ("near-synonym", -float(syn["delta_pp"]),
+             (float(syn["ci_lo"]), float(syn["ci_hi"])), BLUE,
+             float(syn["mcnemar_p"]) >= 0.05, float(syn["mcnemar_p"])),
+        ]
+        for label, val, ci, color, hollow, p in entries:
+            rows.append((y, val, ci, color, hollow, p))
+            yticks.append((y, label))
+            y += 1.0
+        group_mid[m] = y - 2.0
+        y += 0.85  # the gap that makes the three models read as three groups
+
+    # Text columns sit right of the zero line. The whisker cap on a short bar
+    # reaches a few pp past it, so the delta column starts clear of the widest of
+    # them rather than immediately at zero.
+    X_DELTA, X_P = 8.0, 22.0
+
+    fig, ax = plt.subplots(figsize=(3.34, 3.15))
+    for yy, val, ci, color, hollow, p in rows:
+        ax.barh(yy, val, height=0.62, zorder=3,
+                facecolor="white" if hollow else color,
+                edgecolor=color, linewidth=0.9 if hollow else 0)
+        if ci is not None:
+            ax.errorbar(val, yy, xerr=[[val - ci[0]], [ci[1] - val]], fmt="none",
+                        ecolor=INK_2, elinewidth=0.8, capsize=1.8, capthick=0.8, zorder=4)
+        ax.text(X_DELTA, yy, f"{val:+.1f}", va="center", ha="left",
+                fontsize=6.8, fontweight="bold", color=INK, zorder=4)
+        if p is not None:
+            ax.text(X_P, yy, _p_label(p), va="center", ha="left",
+                    fontsize=6.4, color=INK_2 if p < 0.05 else MUTED, zorder=4)
+
+    ax.set_yticks([t[0] for t in yticks], [t[1] for t in yticks], fontsize=6.6)
+    ax.invert_yaxis()
+    ax.set_xlim(-50, 45)
+    ax.set_ylim(rows[-1][0] + 0.85, -1.5)
+    ax.axvline(0, color=INK_2, lw=0.7, zorder=2)
+    ax.set_xticks([-40, -30, -20, -10, 0])
+    ax.set_xlabel("change in task success rate (pp)", fontsize=7)
+    ax.xaxis.grid(True, color=MUTED, lw=0.4, alpha=0.5, zorder=0)
+    ax.set_axisbelow(True)
+    ax.spines["left"].set_visible(False)
+    ax.tick_params(axis="y", length=0)
+
+    for m, mid in group_mid.items():
+        ax.text(-0.40, mid, MODEL_LABEL[m], transform=ax.get_yaxis_transform(),
+                ha="center", va="center", fontsize=7, fontweight="bold",
+                color=INK, linespacing=1.35)
+
+    ax.text(X_DELTA, -1.25, "$\\Delta$TSR", fontsize=6.4, color=INK_2,
+            ha="left", va="center")
+    ax.text(X_P, -1.25, "McNemar", fontsize=6.4, color=INK_2, ha="left", va="center")
+    ax.set_title("the suite-wide verb probe averages a real\neffect against seven non-events",
+                 fontsize=7.6, fontweight="bold", color=INK, loc="left", pad=5)
+    # Identity is carried by the tick labels, so the only thing left to explain is
+    # the hollow fill -- which is the significance encoding, not a fourth series.
+    # It goes UNDER the axis: above it, it collided with the two-line title.
+    ax.text(0.0, -0.175, "hollow = not distinguishable from no edit ($p\\geq0.05$)",
+            transform=ax.transAxes, fontsize=6.2, color=INK_2, style="italic",
+            ha="left", va="top")
+
+    out = PAPER / "fig_verbsplit.png"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"wrote {out}  ({len(models)} models)")
+
+
 if __name__ == "__main__":
     fig_information()
     fig_removal()
+    fig_verbsplit()

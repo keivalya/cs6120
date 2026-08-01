@@ -1,54 +1,54 @@
 {
   "model": "openvla",
   "suite": "libero_goal",
-  "condition": "wrong_task",
+  "condition": "verb_dropped",
   "seed": 42,
   "checkpoint": "openvla/openvla-7b-finetuned-libero-goal",
   "checkpoint_hash": null,
   "n_episodes": 10,
   "n_total_episodes": 100,
-  "n_success": 0,
-  "tsr": 0.0,
+  "n_success": 70,
+  "tsr": 0.7,
   "per_task": {
     "0": {
       "n": 10,
-      "success": 0
+      "success": 5
     },
     "1": {
       "n": 10,
-      "success": 0
+      "success": 10
     },
     "2": {
       "n": 10,
-      "success": 0
+      "success": 8
     },
     "3": {
       "n": 10,
-      "success": 0
+      "success": 2
     },
     "4": {
       "n": 10,
-      "success": 0
+      "success": 8
     },
     "5": {
       "n": 10,
-      "success": 0
+      "success": 8
     },
     "6": {
       "n": 10,
-      "success": 0
+      "success": 6
     },
     "7": {
       "n": 10,
-      "success": 0
+      "success": 8
     },
     "8": {
       "n": 10,
-      "success": 0
+      "success": 9
     },
     "9": {
       "n": 10,
-      "success": 0
+      "success": 6
     }
   },
   "framework": "openvla",

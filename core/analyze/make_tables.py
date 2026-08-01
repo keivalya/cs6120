@@ -352,7 +352,7 @@ def rq3_table(rows: list[dict]) -> None:
         return
     lines = [r"\begin{tabular}{llrcc}", r"\toprule",
              r"\textbf{Model} & \textbf{Condition} & \textbf{pairs} & "
-             r"\textbf{$t_{\text{div}}$ (samples)} & \textbf{$e(T)$ [m]} \\", r"\midrule"]
+             r"\textbf{$t_{\text{div}}$ (samples)} & \textbf{$e_{10}$ [m]} \\", r"\midrule"]
     for m in MODEL_ORDER:
         mr = [x for x in rows if x["model"] == m]
         if mr and suppressed(m):
@@ -361,9 +361,17 @@ def rq3_table(rows: list[dict]) -> None:
             continue
         for r in mr:
             cond = r["condition"].replace("_", chr(92) + "_")
+            # e10 is quoted at a fixed 10-step horizon that every counted pair
+            # reaches, so the `pairs` column on this row is the n behind BOTH
+            # numbers. Guard it rather than trust it: the previous column was the
+            # tail of the mean curve, which n did not back.
+            n_pairs, n_e10 = int(fnum(r["n_pairs"], 0)), int(fnum(r["n_at_e10"], 0))
+            if n_e10 != n_pairs:
+                raise SystemExit(f"rq3 {m}/{r['condition']}: e10 rests on {n_e10} "
+                                 f"pairs but the table would print {n_pairs}")
             lines.append(
-                f"{model_label(m)} & \\texttt{{{cond}}} & {int(fnum(r['n_pairs'], 0))} & "
-                f"{fnum(r['mean_tdiv_step'], 0):.2f} & {fnum(r['final_error_m'], 0):.4f} \\\\")
+                f"{model_label(m)} & \\texttt{{{cond}}} & {n_pairs} & "
+                f"{fnum(r['mean_tdiv_step'], 0):.2f} & {fnum(r['e10_m'], 0):.4f} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     write("rq3_divergence.tex", "\n".join(lines) + "\n")
 
