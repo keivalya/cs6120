@@ -1,0 +1,56 @@
+{
+  "model": "smolvla",
+  "suite": "libero_goal",
+  "condition": "original",
+  "seed": 7,
+  "checkpoint": "HuggingFaceVLA/smolvla_libero",
+  "checkpoint_hash": "6721902bc4d61e50a3bfdb11dfb4cb626f05d102",
+  "n_episodes": 10,
+  "n_total_episodes": 100,
+  "n_success": 81,
+  "tsr": 0.81,
+  "per_task": {
+    "0": {
+      "n": 10,
+      "success": 8
+    },
+    "1": {
+      "n": 10,
+      "success": 10
+    },
+    "2": {
+      "n": 10,
+      "success": 10
+    },
+    "3": {
+      "n": 10,
+      "success": 4
+    },
+    "4": {
+      "n": 10,
+      "success": 10
+    },
+    "5": {
+      "n": 10,
+      "success": 8
+    },
+    "6": {
+      "n": 10,
+      "success": 3
+    },
+    "7": {
+      "n": 10,
+      "success": 10
+    },
+    "8": {
+      "n": 10,
+      "success": 10
+    },
+    "9": {
+      "n": 10,
+      "success": 8
+    }
+  },
+  "framework": "lerobot",
+  "runner": "eval_task.py"
+}

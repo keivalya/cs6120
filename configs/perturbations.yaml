@@ -1,5 +1,5 @@
 # configs/perturbations.yaml
-# Causal-probe (RQ1) definitions consumed by perturb/make_instructions.py (§5).
+# Causal-probe (RQ1) definitions consumed by core/perturb/make_instructions.py (§5).
 # Scene is NEVER touched — only the instruction string changes (§5, §12).
 #
 # O = object noun, A = action verb, derived from LIBERO bddl / task metadata,
@@ -53,8 +53,8 @@ conditions:
     template: "{I} {I}"
 
 # Provenance: every generated string + how it was derived is written to
-# perturb/generated/<suite>.jsonl (§5) for audit/reproducibility.
-provenance_out: "perturb/generated/{suite}.jsonl"
+# data/instructions/<suite>.jsonl (§5) for audit/reproducibility.
+provenance_out: "data/instructions/{suite}.jsonl"
 
 # Assertion required by §5/§12: for the same (task, seed), the env reset-state
 # hash MUST be identical across ALL conditions. run_one.py enforces this.

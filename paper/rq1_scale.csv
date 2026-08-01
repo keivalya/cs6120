@@ -1,0 +1,4 @@
+model,params_B,TSR_original,CSS_blank,CSS_nonsense,OAR_wrong_task,n_per_condition,seeds
+smolvla,0.45,0.7850,1.0000,1.0000,0.0000,200,7;42
+openvla,7.0,0.6625,1.0000,1.0000,0.0000,80,7;42
+openvla_oft,7.5,0.9750,0.8718,0.8564,0.0000,200,7;42

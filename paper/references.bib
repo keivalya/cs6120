@@ -1,0 +1,157 @@
+% Author lists, venues and entry types verified against arXiv / ACL Anthology /
+% the upstream repos on 2026-07-31. The previous version of this file had every
+% externally-checkable author list wrong (e.g. LIBERO-Para's five authors were all
+% misspelled, LIBERO-Plus's six of seven), and used @inproceedings entries with a
+% `journal` field, which BibTeX silently drops -- producing citations with no venue.
+% Do not edit an entry from memory; copy it from the source.
+
+@inproceedings{kim2025openvla,
+  title     = {OpenVLA: An Open-Source Vision-Language-Action Model},
+  author    = {Kim, Moo Jin and Pertsch, Karl and Karamcheti, Siddharth and
+               Xiao, Ted and Balakrishna, Ashwin and Nair, Suraj and
+               Rafailov, Rafael and Foster, Ethan and Lam, Grace and
+               Sanketi, Pannag and Vuong, Quan and Kollar, Thomas and
+               Burchfiel, Benjamin and Tedrake, Russ and Sadigh, Dorsa and
+               Levine, Sergey and Liang, Percy and Finn, Chelsea},
+  booktitle = {Proceedings of the 8th Conference on Robot Learning (CoRL)},
+  year      = {2024},
+  note      = {arXiv:2406.09246}
+}
+
+% The third model we evaluate. This was missing entirely from the bibliography
+% while the paper reported results for it. Note OFT = "Optimized Fine-Tuning"
+% (parallel decoding + action chunking + continuous actions + L1 regression), NOT
+% "Orthogonal Fine-Tuning", which is an unrelated method.
+@article{kim2025oft,
+  title   = {Fine-Tuning Vision-Language-Action Models: Optimizing Speed and Success},
+  author  = {Kim, Moo Jin and Finn, Chelsea and Liang, Percy},
+  journal = {arXiv preprint arXiv:2502.19645},
+  year    = {2025}
+}
+
+@article{shukor2025smolvla,
+  title   = {SmolVLA: A Vision-Language-Action Model for Affordable and Efficient Robotics},
+  author  = {Shukor, Mustafa and Aubakirova, Dana and Capuano, Francesco and
+             Kooijmans, Peter and Palma, Stefano and Zouitine, Adil and
+             Aractingi, Michel and Pascal, Caroline and Russi, Martino and
+             Marafioti, Andres and Alibert, Simon and Cord, Matthieu and
+             Wolf, Thomas and Cadene, Remi},
+  journal = {arXiv preprint arXiv:2506.01844},
+  year    = {2025}
+}
+
+@article{brohan2022rt1,
+  title   = {RT-1: Robotics Transformer for Real-World Control at Scale},
+  author  = {Brohan, Anthony and Brown, Noah and Carbajal, Justice and
+             Chebotar, Yevgen and Dabis, Joseph and Finn, Chelsea and others},
+  journal = {arXiv preprint arXiv:2212.06817},
+  year    = {2022}
+}
+
+@article{brohan2023rt2,
+  title   = {RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control},
+  author  = {Brohan, Anthony and Brown, Noah and Carbajal, Justice and
+             Chebotar, Yevgen and Chen, Xi and Choromanski, Krzysztof and others},
+  journal = {arXiv preprint arXiv:2307.15818},
+  year    = {2023}
+}
+
+@article{driess2023palm,
+  title   = {PaLM-E: An Embodied Multimodal Language Model},
+  author  = {Driess, Danny and Xia, Fei and Sajjadi, Mehdi S. M. and
+             Lynch, Corey and Chowdhery, Aakanksha and Ichter, Brian and others},
+  journal = {arXiv preprint arXiv:2303.03378},
+  year    = {2023}
+}
+
+@article{liu2023libero,
+  title   = {LIBERO: Benchmarking Knowledge Transfer for Lifelong Robot Learning},
+  author  = {Liu, Bo and Zhu, Yifeng and Gao, Chongkai and Feng, Yihao and
+             Liu, Qiang and Zhu, Yuke and Stone, Peter},
+  journal = {arXiv preprint arXiv:2306.03310},
+  year    = {2023}
+}
+
+@article{kim2026liberopara,
+  title   = {LIBERO-Para: A Diagnostic Benchmark and Metrics for Paraphrase
+             Robustness in VLA Models},
+  author  = {Kim, Chanyoung and Kim, Minwoo and Kang, Minseok and
+             Kim, Hyunwoo and Jung, Dahuin},
+  journal = {arXiv preprint arXiv:2603.28301},
+  year    = {2026}
+}
+
+@article{fei2025liberoplus,
+  title   = {LIBERO-Plus: In-depth Robustness Analysis of Vision-Language-Action Models},
+  author  = {Fei, Senyu and Wang, Siyin and Shi, Junhao and Dai, Zihao and
+             Cai, Jikun and Qian, Pengfang and Ji, Li and He, Xinzhe and
+             Zhang, Shiduo and Fei, Zhaoye and Fu, Jinlan and Gong, Jingjing and
+             Qiu, Xipeng},
+  journal = {arXiv preprint arXiv:2510.13626},
+  year    = {2025}
+}
+
+@inproceedings{pang2025openvla,
+  title     = {Is OpenVLA Truly Robust? A Systematic Evaluation of Positional Robustness},
+  author    = {Pang, Yiran and Zhao, Yiheng and Zhou, Zhuopu and Hu, Tingkai and
+               Hou, Ranxin},
+  booktitle = {Proceedings of the 14th International Joint Conference on Natural
+               Language Processing (IJCNLP), Short Papers},
+  year      = {2025},
+  url       = {https://aclanthology.org/2025.ijcnlp-short.1/}
+}
+
+@article{zhou2025liberopro,
+  title   = {LIBERO-PRO: Towards Robust and Fair Evaluation of
+             Vision-Language-Action Models Beyond Memorization},
+  author  = {Zhou, Xueyang and Xu, Yangming and Tie, Guiyao and Chen, Yongchao and
+             Zhang, Guowen and Chu, Duanfeng and Zhou, Pan and Sun, Lichao},
+  journal = {arXiv preprint arXiv:2510.03827},
+  year    = {2025}
+}
+
+% Concurrent work whose Residual Affordance Steering is, up to normalisation, the
+% contrastive operator this paper's earlier draft proposed as future work. Cite it
+% there rather than proposing it again.
+@article{zhan2026stable,
+  title   = {Stable Language Guidance for Vision-Language-Action Models},
+  author  = {Zhan, Zhihao and Chen, Yuhao and Zhou, Jiaying and Lyu, Qinhan and
+             Liu, Hao and Wang, Keze and Lin, Liang and Wang, Guangrun},
+  journal = {arXiv preprint arXiv:2601.04052},
+  year    = {2026}
+}
+
+@article{grant2026features,
+  title   = {Not All Features Are Created Equal: A Mechanistic Study of
+             Vision-Language-Action Models},
+  author  = {Grant, Bryce and Zhao, Xijia and Wang, Peng},
+  journal = {arXiv preprint arXiv:2603.19233},
+  year    = {2026}
+}
+
+@article{zhang2026flatness,
+  title   = {Flatness Preserves Instruction Following in Vision-Language-Action Models},
+  author  = {Zhang, Haochen and Bisk, Yonatan},
+  journal = {arXiv preprint arXiv:2606.23641},
+  year    = {2026}
+}
+
+@article{chen2026radar,
+  title   = {RADAR: Benchmarking Vision-Language-Action Generalization via
+             Real-World Dynamics, Spatial-Physical Intelligence, and Autonomous
+             Evaluation},
+  author  = {Chen, Yuhao and Zhan, Zhihao and Lin, Xiaoxin and Song, Zijian and
+             Liu, Hao and Lyu, Qinhan and Zu, Yubo and Chen, Xiao and
+             Liu, Zhiyuan and Pu, Tao and Chen, Tianshui and Wang, Keze and
+             Lin, Liang and Wang, Guangrun},
+  journal = {arXiv preprint arXiv:2602.10980},
+  year    = {2026}
+}
+
+@article{hou2026langgap,
+  title   = {LangGap: Diagnosing and Closing the Language Gap in
+             Vision-Language-Action Models},
+  author  = {Hou, Yuchen and Zhao, Lin},
+  journal = {arXiv preprint arXiv:2603.00592},
+  year    = {2026}
+}

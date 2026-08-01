@@ -1,46 +1,68 @@
 # configs/grid.yaml
 # models x suites x conditions x seeds x n_episodes.  See CLAUDE.md §8.
-# launch.py expands this into cells; each cell is idempotent/resumable.
 #
-# Budget rule (§2): SmolVLA gets the COMPLETE grid. 7B models get a reduced grid
-# (Goal suite, fewer seeds, fewer episodes). Log which grid each model ran.
+# DOCUMENTARY ONLY: nothing reads this file. core/run/launch.py takes the grid on the
+# command line, and the P2 grid is defined by core/run/slurm/p2_rq1_*.sbatch, which are
+# the operational source of truth. This file's job is to state what the shipped
+# data actually is, so keep it in sync with data/results/ or delete it.
+#
+# RECONCILED 2026-07-31. The previous version was aspirational and disagreed with
+# data/results/ on three counts: max_steps (600 vs the 300 every episode ran at), the
+# 7B condition list (5 vs the 9 the sbatch files carry), and smolvla's budget
+# (3 seeds x 20 episodes vs the 2 x 10 that exist).
 
 defaults:
-  max_steps: 600
+  max_steps: 300
 
-seeds: [7, 42, 123]
+seeds: [7, 42]
 
 # All causal conditions are only valid on libero_goal / libero_10 (§0, §12).
 # para_* conditions draw from the LIBERO-Para paraphrase suite (§3).
+# word_class is the nouns_masked/verb_dropped ablation (RQ2). It is compared
+# against `original`, so it MUST run in the same process as the causal set —
+# see HANDOFF 1.6 and core/run/scene_atomic.py.
 condition_sets:
   causal:        [original, blank, nonsense, wrong_object, wrong_action, wrong_task, repeated]
+  word_class:    [nouns_masked, verb_dropped]
   paraphrase:    [para_object, para_action, para_compositional]
 
 grids:
   smolvla:
-    # FULL grid.
-    suites: [libero_goal]            # + libero_10 for RQ1.4 (added in GATE 4 if budget allows)
-    conditions: [original, blank, nonsense, wrong_object, wrong_action, wrong_task, repeated,
-                 para_object, para_action, para_compositional]
-    seeds: [7, 42, 123]
-    n_episodes: 20
-
-  openvla:
-    # REDUCED grid.
     suites: [libero_goal]
-    conditions: [original, blank, wrong_task, para_object, para_action]
+    conditions: [original, blank, nonsense, wrong_object, wrong_action, wrong_task, repeated]
     seeds: [7, 42]
     n_episodes: 10
+    # Paraphrases are a per-instruction sweep, not a seed-variance measurement,
+    # so they run on seed7 only with as many episodes as there are paraphrases.
+    paraphrase_conditions: [para_object, para_action, para_compositional]
+    paraphrase_seeds: [7]
+
+  openvla:
+    # 9 conditions = causal + word_class.
+    suites: [libero_goal]
+    conditions: [original, blank, nonsense, wrong_object, wrong_action, wrong_task, repeated,
+                 nouns_masked, verb_dropped]
+    seeds: [7, 42]
+    n_episodes: 10
+    paraphrase_conditions: [para_object, para_action, para_compositional]
+    paraphrase_seeds: [7]
 
   openvla_oft:
     suites: [libero_goal]
-    conditions: [original, blank, wrong_task, para_object, para_action]
+    conditions: [original, blank, nonsense, wrong_object, wrong_action, wrong_task, repeated,
+                 nouns_masked, verb_dropped]
     seeds: [7, 42]
     n_episodes: 10
+    paraphrase_conditions: [para_object, para_action, para_compositional]
+    paraphrase_seeds: [7]
 
   openvla_oft_film:
-    # only runs once hf_repo is confirmed in models.yaml (§12: missing > invented)
+    # NOT RUN, and no data exists. Kept as a placeholder only; it needs a
+    # confirmed hf_repo in models.yaml (§12: missing > invented).
     suites: [libero_goal]
     conditions: [original, blank, wrong_task, para_object, para_action]
     seeds: [7, 42]
     n_episodes: 10
+
+# wrong_object skips libero_goal tasks 0/3/7 BY DESIGN — no valid same-scene
+# object swap exists there — so its per-seed n is 70, not 100.

@@ -1,0 +1,257 @@
+KNOWN ISSUES & INTEGRITY REMEDIATION LOG
+=========================================
+(Tracked in .txt because *.md is gitignored in this repo.)
+
+This file records a research-integrity cleanup and the data-quality issues that
+remain open. It exists so reviewers and collaborators can see exactly what was
+removed and why, and what must be re-run before submission.
+
+--------------------------------------------------------------------------------
+1. FABRICATED RQ4 / RQ5 / RQ6 REMOVED  (resolved)
+--------------------------------------------------------------------------------
+The prior paper draft presented three headline contributions built on
+synthetic, hardcoded data rather than measurements:
+
+  - RQ4 "Mechanistic Attention Allocation (AAR), 12.14x": produced by
+    analyze/attention_mechanics.py from closed-form curves
+    (noun_attn = 0.40 + 0.20*(l/16) + 0.03*sin(l); verb_attn = 0.38*exp(...)).
+    No model was ever loaded or probed.
+  - RQ5 "ICAG mitigation, +23.8 pp": produced by analyze/guided_mitigation.py
+    from a hardcoded Python dict. No guided inference was ever run.
+  - RQ6 "Long-Horizon LIBERO-10": produced by analyze/horizon_generalization.py
+    from a literal list. LIBERO-10 was never run (configs/grid.yaml only ever
+    lists suites: [libero_goal]; results/ contains no libero_10 directory).
+
+Copies of these generators/outputs had already been quarantined under
+archive/fabricated/, but the same numbers were still shipping in report/ and
+were presented as measured results in report/paper_acl.tex, report/compile_acl.py,
+report/make_slides.py, and report/dashboard.html.
+
+Actions taken:
+  - Deleted report/rq4_attention.{csv,png}, rq5_mitigation.{csv,png},
+    rq6_horizon.{csv,png}.
+  - Deleted the live generators analyze/{attention_mechanics,guided_mitigation,
+    horizon_generalization}.py. (archive/fabricated/ is kept only as an internal
+    record and is NOT included in the release bundle allowlist in
+    report/make_release.py.)
+  - Removed the RQ4/RQ5/RQ6 sections and their contribution bullets from
+    report/paper_acl.tex, and corrected the Experimental Setup (LIBERO-Goal only),
+    Discussion, and Conclusion to claim only what RQ1-RQ3 support.
+  - Cleaned the same fabricated claims from report/compile_acl.py,
+    report/make_slides.py, and report/dashboard.html.
+  - Removed the stale committed PDFs (report/paper.pdf, paper_acl.pdf,
+    slides.pdf) because they embed the fabricated numbers and could not be
+    rebuilt in the current environment (no pdflatex/reportlab). They must be
+    regenerated from the cleaned sources on a machine with LaTeX before use.
+
+RQ4 (real cross-attention extraction) and RQ5 (real inference-time contrastive
+guidance) are intended to be reinstated ONCE MEASURED on-device. RQ6 (LIBERO-10)
+is out of scope for the near-term submission.
+
+UPDATE: RESOLVED (commit 9dcf777). Root cause was run/aggregate.py hardcoding
+checkpoint/framework/runner for every model; fixed to read per-model. OFT
+original seed7 re-run with the correct moojink checkpoint (hash c2d0f9...);
+all summaries audited, no mismatches remain. Baseline 0.9750 +/- 0.0250 now
+legitimately backed. (Kept below for the record.)
+
+--------------------------------------------------------------------------------
+2. MISLABELED OpenVLA-OFT BASELINE CELL  (RESOLVED — see UPDATE above)
+--------------------------------------------------------------------------------
+File: results/openvla_oft/libero_goal/original/seed7/summary.json
+
+This cell is labeled "model": "openvla_oft" but records
+  "checkpoint": "HuggingFaceVLA/smolvla_libero",
+  "checkpoint_hash": null,
+  "runner": "eval_task.py"   (the SmolVLA/lerobot runner),
+  "tsr": 1.0.
+It is almost certainly a SmolVLA run mislabeled as OpenVLA-OFT (wrong checkpoint,
+wrong runner, null hash, implausibly perfect TSR).
+
+Impact: this contaminates the cleanest headline number. report/rq1_causal.csv and
+rq1_scale.csv report the OFT original baseline as 0.9750 +/- 0.0250 over seeds
+7;42 -- i.e. the mean of this suspect seed7=1.0 and seed42=0.95. The true OFT
+baseline is unverified until seed7 is re-run with the correct
+moojink/openvla-7b-oft-finetuned-libero-goal checkpoint via run/eval_task_oft.py.
+
+Required fix (GPU): re-run OFT libero_goal original seed7 with the correct
+checkpoint, re-aggregate, and refresh rq1_causal.csv / rq1_scale.csv and the
+MANIFEST entry. Do not edit the measured numbers by hand.
+
+--------------------------------------------------------------------------------
+3. LOW STATISTICAL POWER ON THE REAL CORE  (OPEN — needs GPU re-run)
+--------------------------------------------------------------------------------
+RQ1 summaries were run at n_episodes: 2 per task (20 total across 10 tasks),
+below the configs/grid.yaml design (20 for SmolVLA, 10 for the 7B models). RQ3
+kinematic divergence uses only 5-15 pairs per condition. Several SmolVLA/OFT
+conditions are seed-7-only. Before submission, scale to >=20 episodes/task and
+both seeds (7, 42), recompute CSS/OAR/PRIDE/divergence, and report variance/CIs.
+
+--------------------------------------------------------------------------------
+4. REPRODUCIBILITY: RAW TRAJECTORIES NOT IN REPO  (OPEN)
+--------------------------------------------------------------------------------
+.gitignore excludes results/**/*.jsonl and episodes.jsonl, so CSS/OAR/locus and
+RQ3 divergence cannot be regenerated from the repo alone -- only aggregated
+summary.json files persist. Decide a retention policy for the raw eef/episode
+trajectories (external archive or documented re-run recipe) before release.
+
+--------------------------------------------------------------------------------
+5. RQ4 ATTENTION  (OPEN — the shipped CSV covers 2 models, not 3)
+--------------------------------------------------------------------------------
+CORRECTION (2026-07-29). This section previously stated that RQ4 "is REAL". That
+was too strong and is now known to be wrong for one of the three models. What the
+committed report/rq4_attention.csv actually contains:
+
+  (a) DUPLICATED MODEL BLOCK — SHIPPED, NOW BEING RE-MEASURED. The openvla_oft
+      rows are BIT-IDENTICAL to the openvla rows across all 32 layers and both
+      attention columns (64/64 values equal to 6 decimals). The two checkpoints
+      are different repos whose safetensors differ by md5, so identical values to
+      1e-6 are not physically possible: the openvla_oft block is a relabelled copy
+      of the openvla block. RQ4 as shipped measured TWO models, and
+      report/paper_acl.tex:255's "Architectural Universality ... across both
+      LLaMA-based and SmolLM2-based backbone families" had no third measurement
+      behind it.
+      ROOT CAUSE (a real script bug, not a transcription slip):
+      analyze/attention_extract.py wrote ONE combined CSV and overwrote it on
+      every invocation, while the three models require three different conda envs
+      and therefore three separate processes — so each per-model run clobbered the
+      previous one and recombining was a manual step.
+      FIX (commit 50b999b): per-model shards report/rq4_attention_<model>.csv;
+      `--merge` builds the combined CSV and REFUSES if two models' rows are
+      identical; `--model all` now errors out instead of appearing to work.
+
+  (b) BLANK-IMAGE INPUT — SHIPPED, NOW FIXED. The OpenVLA/OFT path forwarded
+      np.zeros((224,224,3)) — an all-black image — while SmolVLA used the real env
+      observation. The two families were therefore never comparable, and
+      OpenVLA's near-uniform ~0.0039 values (= 1/256, the uniform ceiling) are
+      consistent with a degenerate input rather than a finding. This contradicted
+      both report/RQ4_RQ5_SPEC.txt:17-18 and the script's own docstring.
+      FIX (commit 50b999b): builds the real LIBERO initial observation and applies
+      the full runner pipeline (180-degree rotate -> jpeg roundtrip -> lanczos3 to
+      224 -> center-crop 0.9), so attention is measured on the exact tensor the
+      policy acts on.
+
+  (c) NO PROVENANCE — SHIPPED, NOW FIXED. The RQ4 run appears nowhere in
+      MANIFEST.json (grep -c attention -> 0) and left no SLURM log: the CSV, the
+      PNG, the plotting script and the paper section all landed in one commit
+      (023c7d0) with no run artifact. That is the same unverifiability that let
+      the original fabrication through.
+      FIX (commit 50b999b): every run appends a kind=rq4_attention record (repo
+      sha, node, GPU, slurm job id) to MANIFEST.json. Also removed
+      analyze/plot_rq4.py's silent fallback to an ungitted
+      /scratch/pandya.kei/rq4_attention.csv.
+
+STATUS: all three fixes are in; the re-measurement itself is BLOCKED on the
+vla-openvla / vla-oft envs being rebuilt (they were empty python shells). Until
+all three shards exist and merge cleanly, RQ4 must NOT be cited for 3 models.
+
+Two further items to validate before the paper leans on the magnitudes:
+  (a) OpenVLA/OFT use a HARDCODED visual-token span: visual_indices =
+      range(40, 296). The measured per-visual-token attention (~0.005) is ABOVE
+      the uniform ceiling (1/256 ~= 0.0039), which suggests that span may include
+      some non-visual (language) tokens and/or the patch count/offset is off.
+      Confirm the true image-token positions from the processor output (decode
+      token types) rather than assuming 40..296.
+  (b) SmolVLA extractor swaps in an eager VLM via load_state_dict(..., strict=
+      False); verify no weights were silently dropped (log missing/unexpected keys).
+The AAR is a RATIO, so a consistent mis-span largely cancels and the monotone
+noun>verb-with-depth trend is probably robust — but re-run after fixing (a)/(b)
+and confirm the trend before citing exact AAR numbers.
+
+--------------------------------------------------------------------------------
+6. SCENE-FIXED INVARIANT VIOLATED IN THE SHIPPED DATA  (OPEN — GPU re-run under way)
+--------------------------------------------------------------------------------
+FOUND 2026-07-31. This is the most serious data issue in the project so far,
+because the scene-fixed property is the entire basis of the causal claims: if two
+conditions started from different initial scenes, their TSR difference is
+confounded by the scene and cannot be attributed to the instruction.
+
+report/scene_fixed_check.json has been recording "pass": false in the repo while
+report/paper_acl.tex asserted the scene is provably fixed. Three separate defects
+kept that invisible:
+  (a) run/aggregate.py wrote ONE shared scene_fixed_check.json, so each model's
+      aggregate run overwrote the previous model's result and the committed file
+      described only whichever model happened to run last. This is the SAME
+      one-output-overwritten-per-invocation bug as issue 5(a).
+  (b) The check keyed on LINE INDEX rather than the recorded episode number, so
+      once a file had gaps or duplicates it compared different episodes to each
+      other.
+  (c) The result never affected an exit code, so aggregation jobs kept exiting
+      COMPLETED with a failing invariant.
+
+ROOT CAUSE (not a runner bug). The initial scene is NOT a pure function of
+(task, episode). The runners call env.seed(...) ONCE when the env is constructed,
+and every reset advances that RNG, which perturbs object poses even though
+init_state pins qpos/qvel. So the scene an episode receives also depends on how
+many resets its OS process has already served. Any cell finished by a SECOND
+process lands on a different scene than its siblings — and the output looks
+entirely normal: ordered, complete, plausible.
+
+MEASURED (episodes whose scene differs across conditions):
+    smolvla      seed7 task0 only (8/10); every single-process task is clean
+    openvla      EVERY task, both seeds (conditions split Jul-10 / Jul-15)
+    openvla_oft  EVERY task on seed7 (`original` alone was re-run Jul-25)
+The clincher is smolvla task0: a job hit the wall-time limit after `nonsense`
+ep8, and ep9 — written by the resuming process — sits on a different scene than
+ep0-8 of the SAME condition, one episode apart.
+
+This also explains, and retires, the "openvla RQ3 is effectively n=2" item: its
+wrong_*/para_* reset_state_hash values failed to pair with its own original cell
+because those cells genuinely ran from different scenes. It was never small-n.
+
+FIX IN CODE (commit 953b796):
+  - run/scene_atomic.py, wired into all three runners: the TASK is the unit of
+    atomicity. One process produces all conditions x all episodes for a task, or
+    the task's partial output is DELETED and regenerated. Discarding paid-for
+    episodes is deliberate — they cannot be merged with a new process's episodes
+    without confounding the contrast.
+  - run/aggregate.py exits 2 on a failing check (--allow-scene-mismatch to
+    override) and writes scene_fixed_check_<model>_<suite>.json per model.
+  - The p2_rq1_* sbatch grep allowlist now passes scene_atomic messages through,
+    so a discard is auditable in the job log.
+
+SCHEDULING RULE THAT FOLLOWS: submit ONE TASK PER JOB, sized so a task always
+finishes inside the wall (~3 h for smolvla/openvla at 7 conditions x 10 episodes;
+minutes for OFT). Never "just resubmit, the runner resumes" for a causal cell.
+
+REMAINING: smolvla tasks 0-2 seed7 are regenerating; the full 7B causal grid is
+to be regenerated (decision 2026-07-31, ~11.5 GPU-h beyond the planned grid).
+No causal number may be cited until run/aggregate.py exits 0 with pass=true for
+that model.
+
+--------------------------------------------------------------------------------
+7. RQ2 PARAPHRASE DELTAS ARE SCENE-CONFOUNDED  (OPEN — partly mitigated in analysis)
+--------------------------------------------------------------------------------
+A consequence of issue 6, but it needs separate handling because RQ2 is a POOLED
+comparison (paraphrase TSR vs the original condition's TSR), not a per-episode
+pairing. The paraphrase cells and the original cell were produced by different
+processes, so they sample different initial scenes and part of the reported
+"paraphrase cost" is really a scene difference.
+
+Scene overlap between each model's paraphrase pool and its original pool:
+    smolvla      2 of 10 scenes per task
+    openvla      0 (scene-matched baseline collapses to n=2 — unusable)
+    openvla_oft  0 (n=20 available via seed42 — usable)
+
+MITIGATION IN PLACE: analyze/make_rq2_csv.py now emits the delta computed BOTH
+ways — against the full original pool and against the scene-matched subset of it
+— plus n_scenes alongside n. The qualitative RQ2 result SURVIVES (the
+object < action < compositional ordering is unchanged), but magnitudes move
+materially, e.g. smolvla para_object 48.1 -> 40.3 pp, para_action 70.5 -> 58.4 pp.
+The paper's prose must use the scene-matched column or state the confound
+explicitly.
+
+SECOND, SEPARATE PROBLEM IN THE SAME TABLE: n_scenes shows smolvla's 2963
+para_compositional episodes cover only 2 distinct scenes PER TASK (20 overall),
+because the paraphrase runs predate the init-state cycling fix. The paraphrase
+diversity behind that n is genuine, but the scene diversity is not, and a CI
+computed as though 2963 were independent draws overstates the precision. Report
+n_scenes with n.
+
+NOT FIXED, AND NOT FIXABLE BY THE ISSUE-6 REGENERATION: regenerating the 7B
+`original` cells in fresh processes gives them new scene hashes, so their overlap
+with the OLD paraphrase cells will likely drop to zero and the 7B scene-matched
+delta becomes uncomputable rather than merely small-n. Making it computable
+requires re-running the paraphrase axes IN THE SAME PROCESS as their original
+baseline (~20 GPU-h for openvla; minutes for OFT; smolvla's 4092 paraphrase
+episodes at ~161 s each are too expensive to redo before the deadline and should
+be reported with the caveat instead).

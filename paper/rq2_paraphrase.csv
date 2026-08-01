@@ -1,0 +1,13 @@
+model,axis,n,n_scenes,TSR_original,TSR,delta_TSR_pp,n_original_scene_matched,TSR_original_scene_matched,delta_TSR_pp_scene_matched,PRIDE,SK_score,ST_score
+smolvla,para_object,259,20,0.785,0.2973,48.77,40,0.7,40.27,28.7,25.0,34.6
+smolvla,para_action,870,20,0.785,0.0724,71.26,32,0.6562,58.38,4.8,10.8,2.6
+smolvla,para_compositional,2963,20,0.785,0.0179,76.71,40,0.7,68.21,1.5,2.1,1.0
+smolvla,ALL,4092,24,0.785,0.0472,73.78,40,0.7,65.28,2.7,3.7,1.9
+openvla,para_object,150,150,0.7029,0.48,22.29,0,,,36.3,30.0,46.9
+openvla,para_action,150,150,0.7029,0.6067,9.62,0,,,51.8,47.4,53.2
+openvla,para_compositional,150,150,0.7029,0.24,46.29,0,,,20.2,15.4,24.7
+openvla,ALL,450,150,0.7029,0.4422,26.07,0,,,33.3,25.0,39.5
+openvla_oft,para_object,150,150,0.975,0.78,19.5,200,0.975,19.5,72.5,58.7,95.9
+openvla_oft,para_action,150,150,0.975,0.9067,6.83,200,0.975,6.83,86.3,87.5,85.9
+openvla_oft,para_compositional,150,150,0.975,0.54,43.5,200,0.975,43.5,50.3,41.3,58.6
+openvla_oft,ALL,450,150,0.975,0.7422,23.28,200,0.975,23.28,65.8,54.2,74.6
