@@ -98,19 +98,32 @@ rc=0
 for SEED in $SEEDS; do
   for TID in $TASKS; do
     echo "### oft seed=$SEED task=$TID ###" | tee -a "$LOG"
-    env $OVENV "$OFT" run/eval_task_oft.py --model openvla_oft --suite libero_goal \
-        --task_id "$TID" --conditions "$CONDITIONS" \
-        --seed "$SEED" --n_episodes "$N_EPISODES" 2>&1 \
-      | grep -aE "ready|success=|DONE|skip|Error|Traceback|abort|scene_atomic" | grep -avE "%\|" | tee -a "$LOG"
-    # PIPESTATUS[0] is the RUNNER's status, not tee's. Without this a runner that
-    # SIGABRTs (job 8853239 core-dumped right after "env ready") still let the
-    # script fall through to its final echo and exit 0, so SLURM recorded
-    # COMPLETED for a task that produced nothing. Same silent-success class as the
-    # p2-agg jobs that "COMPLETED" against an empty env.
-    st=${PIPESTATUS[0]}
+    # The exit-134 abort inside mjr_readPixels is PROBABILISTIC, not a property of
+    # the node or the cell: OFT seed7/task5 aborted at episode 2 under job 8874110
+    # on d4052 while job 8873631 ran the same cell to completion on the same node
+    # in the same hour, and task0 aborted on d4055 having run clean on d4052 hours
+    # earlier. So retry the cell in a FRESH process instead of losing the whole
+    # job to one abort. This is safe: scene_atomic discards a partial cell on
+    # contact, so an attempt either lands all conditions from one process or
+    # leaves nothing behind. Retrying is also cheap — these aborts hit within
+    # ~2 minutes, against ~1 h for a full cell.
+    for attempt in 1 2 3; do
+      env $OVENV "$OFT" run/eval_task_oft.py --model openvla_oft --suite libero_goal \
+          --task_id "$TID" --conditions "$CONDITIONS" \
+          --seed "$SEED" --n_episodes "$N_EPISODES" 2>&1 \
+        | grep -aE "ready|success=|DONE|skip|Error|Traceback|abort|scene_atomic" | grep -avE "%\|" | tee -a "$LOG"
+      # PIPESTATUS[0] is the RUNNER's status, not tee's. Without this a runner that
+      # SIGABRTs (job 8853239 core-dumped right after "env ready") still let the
+      # script fall through to its final echo and exit 0, so SLURM recorded
+      # COMPLETED for a task that produced nothing. Same silent-success class as the
+      # p2-agg jobs that "COMPLETED" against an empty env.
+      st=${PIPESTATUS[0]}
+      [ "$st" -eq 0 ] && break
+      echo "!!! attempt $attempt FAILED (exit $st) seed=$SEED task=$TID" | tee -a "$LOG"
+    done
     if [ "$st" -ne 0 ]; then
       rc=1
-      echo "!!! RUNNER FAILED (exit $st) seed=$SEED task=$TID — cell left INCOMPLETE" | tee -a "$LOG"
+      echo "!!! RUNNER FAILED (exit $st) seed=$SEED task=$TID after 3 attempts — cell left INCOMPLETE" | tee -a "$LOG"
     fi
   done
 done
