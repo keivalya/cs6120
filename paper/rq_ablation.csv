@@ -1,11 +1,11 @@
-model,condition,n,n_tasks,tasks,TSR,n_matched_baseline,TSR_matched_baseline,delta_pp_matched,bits_removed
-smolvla,original,200,10,0 1 2 3 4 5 6 7 8 9,0.7850,200,0.7850,0.00,0.00
-smolvla,blank,200,10,0 1 2 3 4 5 6 7 8 9,0.0000,200,0.7850,78.50,3.32
-openvla,original,139,8,0 1 2 3 4 5 6 7,0.7050,139,0.7050,0.00,0.00
-openvla,blank,130,8,0 1 2 3 4 5 6 7,0.0000,130,0.6846,68.46,3.32
-openvla,verb_dropped,120,8,0 1 2 3 4 5 6 7,0.7917,120,0.6833,-10.83,0.00
-openvla,nouns_masked,120,8,0 1 2 3 4 5 6 7,0.0917,120,0.6833,59.17,3.32
-openvla_oft,original,200,10,0 1 2 3 4 5 6 7 8 9,0.9750,200,0.9750,0.00,0.00
-openvla_oft,blank,200,10,0 1 2 3 4 5 6 7 8 9,0.1250,200,0.9750,85.00,3.32
-openvla_oft,verb_dropped,200,10,0 1 2 3 4 5 6 7 8 9,0.9550,200,0.9750,2.00,0.00
-openvla_oft,nouns_masked,200,10,0 1 2 3 4 5 6 7 8 9,0.2400,200,0.9750,73.50,3.32
+model,condition,n,n_tasks,tasks,TSR,n_matched_baseline,TSR_matched_baseline,delta_pp_matched,bits_removed,n_pairs,flips_to_failure,flips_to_success,delta_ci_lo,delta_ci_hi,mcnemar_p
+smolvla,original,200,10,0 1 2 3 4 5 6 7 8 9,0.7850,200,0.7850,0.00,0.00,200,0,0,0.00,0.00,1
+smolvla,blank,200,10,0 1 2 3 4 5 6 7 8 9,0.0000,200,0.7850,78.50,3.32,200,157,0,72.50,84.00,1.09e-47
+openvla,original,180,10,0 1 2 3 4 5 6 7 8 9,0.7056,180,0.7056,0.00,0.00,180,0,0,0.00,0.00,1
+openvla,blank,180,10,0 1 2 3 4 5 6 7 8 9,0.0000,180,0.7056,70.56,3.32,180,127,0,63.89,77.22,1.18e-38
+openvla,verb_dropped,156,9,0 1 2 3 4 5 6 7 8,0.7628,156,0.6987,-6.41,0.00,156,18,28,-14.74,1.92,0.184
+openvla,nouns_masked,160,9,0 1 2 3 4 5 6 7 8,0.0750,160,0.7063,63.13,3.32,160,103,2,55.62,71.25,2.74e-28
+openvla_oft,original,200,10,0 1 2 3 4 5 6 7 8 9,0.9750,200,0.9750,0.00,0.00,200,0,0,0.00,0.00,1
+openvla_oft,blank,200,10,0 1 2 3 4 5 6 7 8 9,0.1250,200,0.9750,85.00,3.32,200,170,0,80.00,89.50,1.34e-51
+openvla_oft,verb_dropped,200,10,0 1 2 3 4 5 6 7 8 9,0.9550,200,0.9750,2.00,0.00,200,7,3,-1.00,5.00,0.344
+openvla_oft,nouns_masked,200,10,0 1 2 3 4 5 6 7 8 9,0.2400,200,0.9750,73.50,3.32,200,148,1,67.50,79.50,4.2e-43
