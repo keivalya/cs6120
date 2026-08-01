@@ -82,6 +82,16 @@ LOG=$SCRATCH/p2_rq1_openvla_${SLURM_JOB_ID:-manual}.log
 # CONDITIONS echoed: it is overridable and decides how big the grid actually is.
 echo "=== P2 OpenVLA RQ1 | seeds=[$SEEDS] tasks=[$TASKS] n_ep=$N_EPISODES conds=[$CONDITIONS] | $(hostname|cut -d. -f1) $(date) ===" | tee "$LOG"
 
+# WHICH PHYSICAL GPU DID WE GET? The exit-134 abort inside the NVIDIA EGL driver
+# tracks neither the node nor the cell: job 8874169 ran 72 min on d4055 while
+# 8874223 aborted on d4055 three times in the same window, and the three
+# in-allocation retries of a failed cell have gone 0-for-9, every one dying at
+# episode 2. A wedged GPU, kept for the life of the allocation, fits that; a flaky
+# node does not. Log the device identity so the correlation can be checked instead
+# of argued about.
+echo "[gpu] SLURM_JOB_GPUS=${SLURM_JOB_GPUS:-?} CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-?} MUJOCO_EGL_DEVICE_ID=${MUJOCO_EGL_DEVICE_ID:-?}" | tee -a "$LOG"
+nvidia-smi --query-gpu=index,uuid,pci.bus_id,name --format=csv,noheader | sed 's/^/[gpu] /' | tee -a "$LOG"
+
 # Gate on THIS env, not on smolvla: core/run/preflight.py loads SmolVLA, so it could
 # neither validate this stack nor fail for a reason relevant to it.
 env $OVENV $OV core/run/preflight_libero.py >> "$LOG" 2>&1 || {
@@ -98,7 +108,10 @@ for SEED in $SEEDS; do
     # the node or the cell — see the long comment in p2_rq1_oft.sbatch. Retry the
     # cell in a FRESH process; scene_atomic discards any partial, so an attempt
     # either lands all conditions from one process or leaves nothing behind.
-    for attempt in 1 2 3; do
+    # 2, not 3: in-allocation retries have gone 0-for-9 (jobs 8874223, 8874224),
+    # consistent with a GPU that stays wedged for the life of the allocation. A
+    # third process on the same device buys nothing; the cell needs a NEW job.
+    for attempt in 1 2; do
       env $OVENV "$OV" core/run/eval_task_openvla.py --model openvla --suite libero_goal \
           --task_id "$TID" --conditions "$CONDITIONS" \
           --seed "$SEED" --n_episodes "$N_EPISODES" 2>&1 \
@@ -114,7 +127,7 @@ for SEED in $SEEDS; do
     done
     if [ "$st" -ne 0 ]; then
       rc=1
-      echo "!!! RUNNER FAILED (exit $st) seed=$SEED task=$TID after 3 attempts — cell left INCOMPLETE" | tee -a "$LOG"
+      echo "!!! RUNNER FAILED (exit $st) seed=$SEED task=$TID after 2 attempts — cell left INCOMPLETE, RESUBMIT it (new allocation, new GPU)" | tee -a "$LOG"
     fi
   done
 done

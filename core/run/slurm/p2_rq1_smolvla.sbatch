@@ -68,6 +68,16 @@ LOG=$SCRATCH/p2_rq1_smolvla_${SLURM_JOB_ID:-manual}.log
 # CONDITIONS echoed: it is overridable and decides how big the grid actually is.
 echo "=== P2 SmolVLA RQ1 | seeds=[$SEEDS] tasks=[$TASKS] n_ep=$N_EPISODES conds=[$CONDITIONS] | $(hostname|cut -d. -f1) $(date) ===" | tee "$LOG"
 
+# WHICH PHYSICAL GPU DID WE GET? The exit-134 abort inside the NVIDIA EGL driver
+# tracks neither the node nor the cell: job 8874169 ran 72 min on d4055 while
+# 8874223 aborted on d4055 three times in the same window, and the three
+# in-allocation retries of a failed cell have gone 0-for-9, every one dying at
+# episode 2. A wedged GPU, kept for the life of the allocation, fits that; a flaky
+# node does not. Log the device identity so the correlation can be checked instead
+# of argued about.
+echo "[gpu] SLURM_JOB_GPUS=${SLURM_JOB_GPUS:-?} CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-?} MUJOCO_EGL_DEVICE_ID=${MUJOCO_EGL_DEVICE_ID:-?}" | tee -a "$LOG"
+nvidia-smi --query-gpu=index,uuid,pci.bus_id,name --format=csv,noheader | sed 's/^/[gpu] /' | tee -a "$LOG"
+
 # Preflight ONCE (heavy CUDA+EGL must survive or the render channel is degraded).
 $SM core/run/preflight.py >> "$LOG" 2>&1 || {
   echo "PREFLIGHT FAILED on $(hostname|cut -d. -f1) — real error below (do NOT assume a bad node):" | tee -a "$LOG"
