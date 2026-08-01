@@ -89,7 +89,15 @@ def main():
                     break
         
         if frames is None:
-            frames = generate_synthetic_rollout_strip(cond_title, num_frames=num_cols)
+            # NEVER draw a placeholder here. This fallback silently put two rows of
+            # invented rectangles into paper/qualitative_grid.png and the paper's
+            # caption then described what the wrong_object row "showed". No rollout
+            # video has ever been rendered for wrong_object or para_compositional.
+            raise SystemExit(
+                f"no rollout video for condition '{cond_key}' under {video_dir}.\n"
+                "Render one with core/run/generate_videos.py before building this "
+                "figure. A synthetic stand-in is not an acceptable substitute."
+            )
 
         for col_idx, frame in enumerate(frames):
             ax = axes[row_idx, col_idx]

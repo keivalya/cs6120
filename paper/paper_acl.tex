@@ -626,18 +626,13 @@ as a qualitative ordering rather than a precise timing: the pair counts per cell
 small, and $t_{\text{div}}$ depends on the $5$\,cm threshold.
 
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{qualitative_grid.png}
-\caption{Rollout snapshots for one task across conditions, all from the same initial
-state. The \texttt{wrong\_object} row is the compliance case discussed above: the
-policy goes to the object it was named, which the success predicate scores as a
-failure.}
-\label{fig:qualitative}
-\end{figure}
-
-Figure~\ref{fig:qualitative} shows one task across all conditions from a shared
-initial state, including the compliance case.
+% REMOVED 2026-08-01: the qualitative_grid.png figure was partly SYNTHETIC. Its
+% generator matches a video path per condition and silently falls back to drawing
+% coloured rectangles when none exists; no rollout video has ever been rendered for
+% wrong_object or para_compositional, so those two rows were invented artwork, and
+% the caption told the reader the wrong_object row showed the policy going to the
+% object it was named. Restore only from real frames for every row --- see
+% core/analyze/make_qualitative_grid.py, whose fallback is now fatal.
 
 \section{Discussion}
 Three things are worth separating in what we found.
