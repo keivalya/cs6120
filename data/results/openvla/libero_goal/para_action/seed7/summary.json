@@ -1,0 +1,56 @@
+{
+  "model": "openvla",
+  "suite": "libero_goal",
+  "condition": "para_action",
+  "seed": 7,
+  "checkpoint": "openvla/openvla-7b-finetuned-libero-goal",
+  "checkpoint_hash": null,
+  "n_episodes": 15,
+  "n_total_episodes": 150,
+  "n_success": 91,
+  "tsr": 0.6066666666666667,
+  "per_task": {
+    "0": {
+      "n": 15,
+      "success": 6
+    },
+    "1": {
+      "n": 15,
+      "success": 13
+    },
+    "2": {
+      "n": 15,
+      "success": 11
+    },
+    "3": {
+      "n": 15,
+      "success": 5
+    },
+    "4": {
+      "n": 15,
+      "success": 14
+    },
+    "5": {
+      "n": 15,
+      "success": 9
+    },
+    "6": {
+      "n": 15,
+      "success": 4
+    },
+    "7": {
+      "n": 15,
+      "success": 13
+    },
+    "8": {
+      "n": 15,
+      "success": 11
+    },
+    "9": {
+      "n": 15,
+      "success": 5
+    }
+  },
+  "framework": "openvla",
+  "runner": "eval_task_openvla.py"
+}

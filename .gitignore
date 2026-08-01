@@ -1,25 +1,34 @@
-# heavy clones (their own repos) and generated artifacts
-LIBERO-Para/
-results/**/*.jsonl
-report/figures/*.png
+# Vendored upstream checkouts. Each carries its own .git, so committing one
+# produces a broken gitlink (mode 160000) with no .gitmodules — an empty dir on
+# clone. They are pinned in docs/MANIFEST.json instead.
+vendor/
+# Compatibility symlinks into the new layout, kept only while the P2 grid drains
+# (jobs submitted before the 2026-07-31 reorg invoke run/ and results/ by name).
+/run
+/results
+# (the four vendored clones also keep root symlinks for the same reason)
+
+# Raw rollout data: large, regenerable, and the summary.json beside it is what
+# the paper reads.
+data/results/**/*.jsonl
+data/results/**/episodes.jsonl
+*.jsonl.bak
+
+# Generated artifacts
+paper/figures/*.png
 *.lock.txt
 hf_home/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
-lerobot/
-envs/build_*.log
-envs/smoke_eval.log
-envs/gate2_runone.log
-results/**/episodes.jsonl
-envs/gate3_run.log
-envs/gate3_debug.log
-envs/repro*.log
-openvla/
-envs/ov_*.log
-envs/openvla_*.log
 
-openvla-oft/
+# Logs and scratch output — everything under logs/ is a job or build transcript
+logs/
+*.log
+*.out
+scratch_*.txt
+temp_*.txt
+archive/releases/
 
 # exclude all markdown files as requested
 *.md
@@ -27,17 +36,7 @@ openvla-oft/
 
 # exclude Claude / agent files
 .claude/
-
-# exclude logs, out files, and scratch text files
-*.log
-*.out
-scratch_*.txt
-temp_*.txt
-paper_submission.zip
-
-# Deliberately untracked (see the P2 push discussion 2026-07-31):
-# src/libero is a nested checkout with its own .git — committing it produces a
-# broken gitlink (mode 160000) with no .gitmodules, i.e. an empty dir on clone.
-src/libero/
-scratch/
-*.jsonl.bak
+/LIBERO-Para
+/openvla
+/openvla-oft
+/lerobot

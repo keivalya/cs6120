@@ -1,0 +1,52 @@
+{
+  "model": "openvla_oft",
+  "suite": "libero_goal",
+  "condition": "blank",
+  "seed": 42,
+  "checkpoint": "moojink/openvla-7b-oft-finetuned-libero-goal",
+  "checkpoint_hash": "c2d0f9fbbd82674683b397ff923168a12f6a307b",
+  "n_episodes": 10,
+  "n_total_episodes": 90,
+  "n_success": 10,
+  "tsr": 0.1111111111111111,
+  "per_task": {
+    "0": {
+      "n": 10,
+      "success": 0
+    },
+    "1": {
+      "n": 10,
+      "success": 3
+    },
+    "2": {
+      "n": 10,
+      "success": 0
+    },
+    "3": {
+      "n": 10,
+      "success": 0
+    },
+    "4": {
+      "n": 10,
+      "success": 0
+    },
+    "5": {
+      "n": 10,
+      "success": 0
+    },
+    "6": {
+      "n": 10,
+      "success": 1
+    },
+    "7": {
+      "n": 10,
+      "success": 6
+    },
+    "8": {
+      "n": 10,
+      "success": 0
+    }
+  },
+  "framework": "openvla_oft",
+  "runner": "eval_task_oft.py"
+}
