@@ -70,24 +70,37 @@ squeue -w "$(hostname|cut -d. -f1)" -h -o "%i %u %b" | wc -l
 echo "--- memory ---"
 free -g | head -2
 echo
-# NODE vs TASK IS CONFOUNDED in every run so far: OFT tasks 0-4,6-9 have only ever
-# run on d4052 (all fine) and task5 has only ever run on d4055 (aborted). Submit
-# BOTH of these to separate the two hypotheses:
-#   DBG_TASK=5 sbatch -w d4052 ...   aborts => task-specific, not the node
-#   DBG_TASK=0 sbatch -w d4055 ...   aborts => node-specific, not the task
+# ANSWERED 2026-07-31 23:40 (job 8874110): TASK, NOT NODE. OFT seed7/task5 aborted
+# on d4052 — the node three "bad node" claims were measured against — at episode 2
+# of `original`, the same place it aborts on d4055 (8867194 died at episode 3).
+# faulthandler put the crash in robosuite binding_utils.py:171 read_pixels, i.e.
+# mjr_readPixels, so the remaining question is what the driver/MuJoCo is
+# complaining about there. Only gdb can say: the abort prints nothing, and the
+# core goes to systemd-coredump, which we cannot read (job 8874110).
 DBG_TASK="${DBG_TASK:-5}"
 echo "=== running OFT task$DBG_TASK seed7, RAW output, no grep ==="
 echo "raw log: $RAW"
 
 # NOTHING is filtered here. That is the entire point of this job.
-env $OFTENV "$OFT" run/eval_task_oft.py --model openvla_oft --suite libero_goal \
-    --task_id "$DBG_TASK" --conditions original,blank,nonsense --seed 7 --n_episodes 10 \
-    --results_root "$THROWAWAY" > "$RAW" 2>&1
+# Run UNDER gdb so the native stack is captured in-process; a core file never
+# survives to disk on these nodes.
+if [ "${DBG_GDB:-1}" = 1 ] && command -v gdb >/dev/null; then
+  env $OFTENV gdb -batch -q \
+      -ex "set confirm off" -ex "handle SIGABRT stop print" -ex run \
+      -ex "thread apply all bt full" -ex "info sharedlibrary" \
+      --args "$OFT" run/eval_task_oft.py --model openvla_oft --suite libero_goal \
+      --task_id "$DBG_TASK" --conditions original,blank,nonsense --seed 7 --n_episodes 10 \
+      --results_root "$THROWAWAY" > "$RAW" 2>&1
+else
+  env $OFTENV "$OFT" run/eval_task_oft.py --model openvla_oft --suite libero_goal \
+      --task_id "$DBG_TASK" --conditions original,blank,nonsense --seed 7 --n_episodes 10 \
+      --results_root "$THROWAWAY" > "$RAW" 2>&1
+fi
 rc=$?
 echo "=== runner exit code: $rc ==="
 
-echo "=== last 60 lines of the RAW log (the error, if it printed one) ==="
-tail -60 "$RAW"
+echo "=== last 150 lines of the RAW log (the error, and gdb's stack if it ran) ==="
+tail -150 "$RAW"
 
 echo
 echo "=== MuJoCo's own fatal log ==="
