@@ -43,12 +43,21 @@ STATUS (2026-07-31, evening — counted on disk, not read off sacct):
            it off-cluster from paper_submission.zip (bash
            core/run/make_submission_zip.sh) and reports errors back.
 
-  d4053 IS BAD, the same way d4054 is. Jobs 8859517/8859518 SIGABRTed (exit 134,
-  core dump, no Python traceback) on all four of their tasks a moment after
-  "env ready", while 8859514-8859516 ran identical code over tasks 0-5 to
-  completion on d4052 in the same hour. Both p2_rq1_{openvla,oft}.sbatch now
-  carry --exclude=d4053,d4054. Note the failure is silent in the .out file: the
-  `| grep | tee` pipeline drops everything the C-level abort prints.
+  EXIT 134 IS A BAD **GPU**, NOT A BAD NODE — RESOLVED 2026-08-01, after the
+  exclude list had grown to three nodes on coincidence. gdb (job 8874160) puts the
+  abort inside libnvidia-eglcore.so called from mjr_readPixels: the driver calls
+  abort() itself, which is why nothing prints and no Python traceback exists.
+  The device, not the host, is the unit of failure:
+      d4055 IDX 3 (GPU-b052d32e, PCI 5D:00.0): jobs 8874715, 8875719, 8875816
+          -> 8 aborts, 0 cells, three independent allocations, always at episode 2
+      d4055 IDX 0: job 8874169 -> 4h47m, 3 cells, zero aborts, CONCURRENTLY
+  In-allocation retries are useless (0-for-9) because the job keeps its GPU; only a
+  new allocation helps. AND THE SCHEDULER IS BIASED TOWARD THE BROKEN DEVICE: a
+  wedged GPU frees itself every ~2 minutes, so it is always the idlest resource and
+  SLURM keeps assigning it — seed7/task8 drew it three times running. When one cell
+  will not land, exclude the HOST of the bad device for that resubmission only
+  (SLURM cannot exclude a single GPU). Every job now logs index/UUID/PCI; use
+  `scontrol show job -d` for the GRES IDX. Worth reporting d4055 IDX 3 to RC.
 
   !!! THE P2b "REGENERATION" IN SECTION 4 NEVER HAPPENED — see 1.9. Jobs
   8853538/8853539 reported COMPLETED for the whole OFT grid having run ONLY the
