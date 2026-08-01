@@ -1,12 +1,16 @@
 section,model,subset,n,value,note
 information,,,10,0.0,H(task|nouns) bits
 information,,,10,1.551,H(task|verbs) bits
-wrong_action_split,smolvla,antonym,50,0.48,orig=0.7333 delta_pp=25.3
-wrong_action_split,smolvla,near-syn,120,0.7,orig=0.8071 delta_pp=10.7
-wrong_action_split,openvla,antonym,10,0.6,orig=0.7333 delta_pp=13.3
-wrong_action_split,openvla,near-syn,28,0.5,orig=0.6786 delta_pp=17.9
-wrong_action_split,openvla_oft,antonym,12,1.0,orig=1.0000 delta_pp=0.0
-wrong_action_split,openvla_oft,near-syn,28,0.9643,orig=0.9643 delta_pp=0.0
+wrong_action_split,smolvla,antonym,60,0.5167,orig=0.7333 delta_pp=21.7
+wrong_action_split,smolvla,near-syn,140,0.7,orig=0.8071 delta_pp=10.7
+wrong_action_split,openvla,antonym,20,0.05,orig=0.5333 delta_pp=48.3
+wrong_action_split,openvla,near-syn,40,0.775,orig=0.7200 delta_pp=-5.5
+wrong_action_split,openvla_oft,antonym,60,0.9167,orig=0.9667 delta_pp=5.0
+wrong_action_split,openvla_oft,near-syn,130,0.9615,orig=0.9773 delta_pp=1.6
 wrong_object_compliance,smolvla,task4->task2,20,0.85,did_original=0
-wrong_object_compliance,openvla,task4->task2,4,1.0,did_original=0
-wrong_object_compliance,openvla_oft,task4->task2,4,1.0,did_original=0
+wrong_object_compliance,openvla,task4->task2,10,0.8,did_original=0
+wrong_object_compliance,openvla_oft,task4->task2,20,1.0,did_original=0
+word_class_ablation,openvla,verb_dropped,60,0.8167,orig=0.6500
+word_class_ablation,openvla,nouns_masked,60,0.0833,orig=0.6500
+word_class_ablation,openvla_oft,verb_dropped,190,0.9526,orig=0.9740
+word_class_ablation,openvla_oft,nouns_masked,190,0.2526,orig=0.9740

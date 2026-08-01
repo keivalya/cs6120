@@ -185,11 +185,23 @@ instruction (task4 -> task2), a novel coherent goal, and DEGENERATE self-referen
 all three models do the task the new nouns NAME and never the original (smolvla
 17/20, openvla 4/4, oft 4/4) — compliance, scored by the paper as a 0% failure and
 written up as a "universal performance collapse to 7.1%".
-FALSIFIABLE TEST, now running on OFT: verb_dropped ("the bowl on the stove",
-0 bits removed) should cost ~nothing; nouns_masked ("put the thing on the thing",
-3.32 bits removed) should be catastrophic. If verb_dropped collapses, the account
-above is WRONG and the models genuinely need the verb token. Do not write up the
-reframe until this returns.
+FALSIFIABLE TEST — RETURNED 2026-08-01, THE REFRAME SURVIVES IT. On the 19 clean
+OFT cells (n=190 per condition), verb_dropped costs 2.1 pp (95.3% vs 97.4%) and
+nouns_masked costs 72.1 pp (25.3%). Predicted ~nothing and catastrophic; got
+~nothing and catastrophic, two orders of magnitude apart on edits of similar
+surface size. openvla agrees on its partial grid (n=60): verb_dropped 81.7% vs
+65.0% original, nouns_masked 8.3%. The reframe is written up (paper §4.1-4.2).
+
+BUT THE ANTONYM SPLIT MOVED, AND THE PAPER HAD THE OLD NUMBER. At 2 episodes/cell
+OFT's antonym gap was 0.0 pp on n=12 and the paper said "unmoved ... all 12
+antonym episodes". At 10 episodes/cell it is 5.0 pp on n=60 (55/60 still do the
+ORIGINAL task under a contradicting verb). Direction unchanged, strength not.
+Fixed in the abstract, contributions, §4.6, conclusion and limitations.
+CAUSE, and it is the silent-staleness class again: refresh_paper.sh called
+`instruction_information.py --suite libero_goal`, the script takes no --suite,
+argparse exited 2, and `2>&1 >/dev/null || echo note` turned that into a one-line
+"note" while the table kept its previous contents. It had been stale for weeks.
+The script now hard-fails the refresh instead.
 
 1.9  "P2b regenerated the OFT grid."  (FOUND 2026-07-31, late)
 It did not. Jobs 8853538 (seed7) and 8853539 (seed42) each ran all ten tasks,

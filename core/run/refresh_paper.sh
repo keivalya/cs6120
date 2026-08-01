@@ -42,8 +42,13 @@ $PY core/analyze/make_rq1_scale.py --suite "$SUITE" >/dev/null || echo "  FAILED
 echo "=== 3/4 RQ2 + word-class information analysis ==="
 $PY core/analyze/make_rq2_csv.py --suite "$SUITE" >/dev/null || echo "  FAILED: rq2 csv"
 $PY core/analyze/make_ablation_csv.py --suite "$SUITE" >/dev/null 2>&1 || echo "  note: ablation csv not built"
-$PY core/analyze/instruction_information.py --suite "$SUITE" >/dev/null 2>&1 \
-  || echo "  note: instruction_information.py did not run (paper/instruction_information.csv kept)"
+# NO --suite here: this script does not take one, and passing it made argparse exit
+# 2 on every run. The failure was swallowed by `2>&1 >/dev/null || echo note`, so the
+# word-class table silently kept 2-episode-era numbers for weeks — it still said
+# OpenVLA-OFT was unmoved by antonyms at n=12 when the real grid says 55/60 at n=60.
+# A generated table that quietly keeps its previous contents is worse than no table.
+$PY core/analyze/instruction_information.py \
+  || { echo "!! instruction_information.py FAILED — paper/instruction_information.csv is STALE"; exit 1; }
 
 echo "=== 4/4 tables + build check ==="
 $PY core/analyze/make_tables.py 2>&1 | grep -E "wrote|scene-fixed" | sed 's/^/  /'
