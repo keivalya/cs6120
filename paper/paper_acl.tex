@@ -337,6 +337,21 @@ H(\text{task}\mid\text{verb set}) = 1.55\ \text{bits}.
 All ten noun sets are distinct, so the nouns alone determine the task. The verbs
 do not: \texttt{put} is the verb of six of the ten tasks. Conditional on the
 nouns, the verb therefore contributes \emph{exactly zero} bits.
+Figure~\ref{fig:information} shows both the residual uncertainty and the partition
+that produces it.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_information.png}
+\caption{The instruction's information structure, computed from the ten task
+definitions with no rollouts. \textbf{(a)} Task identity carries $3.32$ bits; the
+noun set resolves all of them and the verb set leaves $1.55$ unresolved.
+\textbf{(b)} Why: the noun sets partition the suite into ten singletons, while the
+verbs collapse six of the ten tasks into a single \texttt{put} group they cannot
+tell apart. A word class can only be probed for grounding to the extent that it
+separates tasks in the first place.}
+\label{fig:information}
+\end{figure*}
 
 Two consequences follow, and both undercut the standard reading of these probes.
 First, a policy that ignores the verb entirely loses no task-relevant information
@@ -378,8 +393,19 @@ within-scene contrast. \input{tables/rq_ablation_note}}
 \label{tab:rq_ablation}
 \end{table}
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{fig_removal.png}
+\caption{The removal test on OpenVLA-OFT ($n=200$ per condition). Damage tracks the
+task information an edit destroys, not how much text it touches: deleting the verb
+changes $1.1$ words and costs $\oftVerbDrop$ points, while masking the nouns changes
+$2.4$ and costs $\oftNounMask$. ``Words changed'' is word-level edit distance from
+the original instruction, averaged over the ten tasks.}
+\label{fig:removal}
+\end{figure}
+
 The prediction holds, and with an unusually clean separation
-(Table~\ref{tab:rq_ablation}). Deleting the verb entirely leaves OpenVLA-OFT's success
+(Table~\ref{tab:rq_ablation}, Figure~\ref{fig:removal}). Deleting the verb entirely leaves OpenVLA-OFT's success
 rate all but unchanged on the same initial scenes---a cost of $\oftVerbDrop$
 points---while masking the nouns costs it $\oftNounMask$. The two edits are comparable in
 surface magnitude---each removes a small number of tokens from a short

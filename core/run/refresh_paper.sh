@@ -23,7 +23,7 @@ MODELS=${*:-"smolvla openvla openvla_oft"}
 [ -x "$PY" ] || { echo "no python at $PY (set PY=...)"; exit 1; }
 
 declare -A VERDICT
-echo "=== 1/4 aggregate + scene-fixed check ==="
+echo "=== 1/5 aggregate + scene-fixed check ==="
 for m in $MODELS; do
   out=$($PY core/run/aggregate.py --model "$m" --suite "$SUITE" 2>&1)
   rc=$?
@@ -33,13 +33,13 @@ for m in $MODELS; do
   echo "$out" | grep -E "WARNING|SCENE-FIXED CHECK FAILED" | sed 's/^/    /'
 done
 
-echo "=== 2/4 RQ1 csvs (per model, then combined) ==="
+echo "=== 2/5 RQ1 csvs (per model, then combined) ==="
 for m in $MODELS; do
   $PY core/analyze/make_rq1_csv.py --model "$m" --suite "$SUITE" >/dev/null || echo "  FAILED: $m"
 done
 $PY core/analyze/make_rq1_scale.py --suite "$SUITE" >/dev/null || echo "  FAILED: rq1_scale"
 
-echo "=== 3/4 RQ2 + word-class information analysis ==="
+echo "=== 3/5 RQ2 + word-class information analysis ==="
 $PY core/analyze/make_rq2_csv.py --suite "$SUITE" >/dev/null || echo "  FAILED: rq2 csv"
 $PY core/analyze/make_ablation_csv.py --suite "$SUITE" >/dev/null 2>&1 || echo "  note: ablation csv not built"
 # NO --suite here: this script does not take one, and passing it made argparse exit
@@ -50,7 +50,21 @@ $PY core/analyze/make_ablation_csv.py --suite "$SUITE" >/dev/null 2>&1 || echo "
 $PY core/analyze/instruction_information.py \
   || { echo "!! instruction_information.py FAILED — paper/instruction_information.csv is STALE"; exit 1; }
 
-echo "=== 4/4 tables + build check ==="
+# RQ3 AND THE FIGURES BELONG HERE. They were left out, so while the tables tracked
+# the current grid the figures sat at their 2026-07-24 build for a week and
+# rq3_divergence.csv with them — and one of those figures turned out to be partly
+# synthetic (see git 9c517ab). A refresh that regenerates only what is cheap is how
+# a paper ends up internally inconsistent.
+echo "=== 4/5 RQ3 trajectories + figures ==="
+$PY core/analyze/kinematic_divergence.py >/dev/null 2>&1 || echo "  FAILED: rq3"
+for f in plot_rq1 plot_rq2 plot_concepts; do
+  $PY core/analyze/$f.py >/dev/null 2>&1 || echo "  FAILED: $f"
+done
+# plot_rq4 and make_qualitative_grid are deliberately NOT here: RQ4 is not in the
+# paper, and the qualitative grid must not be rebuilt until real rollout videos
+# exist for every condition it claims to show.
+
+echo "=== 5/5 tables + build check ==="
 $PY core/analyze/make_tables.py 2>&1 | grep -E "wrote|scene-fixed" | sed 's/^/  /'
 python3 paper/check_tex.py || { echo "!! paper would not build -- fix the above"; exit 1; }
 

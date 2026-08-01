@@ -1,0 +1,227 @@
+#!/usr/bin/env python3
+"""core/analyze/plot_concepts.py — the two figures the argument actually needs.
+
+The paper's thesis is informational: on LIBERO-Goal the nouns carry all 3.32 bits
+of task identity and the verb carries none conditional on them, so a policy that
+ignores the verb is optimal rather than deficient. Every figure the paper had was
+a success-rate bar chart, which cannot show that. These two can:
+
+  fig_information.png  what each word class tells you about task identity, and
+                       the partition over the ten tasks that produces it
+  fig_removal.png      the removal test: damage tracks bits destroyed, not how
+                       much text was edited
+
+Both read the generated CSVs rather than any typed-in number, and both apply the
+SAME scene-fixed gate as make_tables.py — paper/qualitative_grid.png and the RQ3
+figure disagreed with the tables about which models were reportable, which is the
+kind of contradiction a reviewer finds before we do.
+
+Usage:  python core/analyze/plot_concepts.py
+"""
+from __future__ import annotations
+
+import collections
+import csv
+import json
+import sys
+from pathlib import Path
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+PAPER = REPO_ROOT / "paper"
+SUITE = "libero_goal"
+
+sys.path.insert(0, str(REPO_ROOT / "core" / "analyze"))
+import instruction_information as ii  # noqa: E402  (verb_set/noun_set live there)
+
+# dataviz reference palette, categorical slots 1-2 and the text tokens. Slots 1-3
+# are the documented all-pairs-safe subset in both modes; we use two of them.
+BLUE, ORANGE = "#2a78d6", "#eb6834"
+INK, INK_2, MUTED = "#0b0b0b", "#52514e", "#b8b7b0"
+
+plt.rcParams.update({
+    "font.family": "DejaVu Sans", "font.size": 7.2,
+    "axes.edgecolor": MUTED, "axes.labelcolor": INK_2, "text.color": INK,
+    "xtick.color": INK_2, "ytick.color": INK_2,
+    "axes.spines.top": False, "axes.spines.right": False,
+    "figure.dpi": 400, "savefig.bbox": "tight", "savefig.pad_inches": 0.02,
+})
+
+
+def scene_fixed_ok(model: str) -> bool:
+    """The gate make_tables.py applies. A model that fails it is not plotted."""
+    p = PAPER / f"scene_fixed_check_{model}_{SUITE}.json"
+    if not p.exists():
+        return False
+    return bool(json.loads(p.read_text()).get("pass"))
+
+
+def read_csv(name: str) -> list[dict]:
+    with (PAPER / name).open() as f:
+        return list(csv.DictReader(f))
+
+
+def originals() -> dict[int, str]:
+    rows = [json.loads(l) for l in (REPO_ROOT / "data" / "instructions"
+                                    / f"{SUITE}.jsonl").open() if l.strip()]
+    return {r["task_id"]: r["instruction"] for r in rows if r["condition"] == "original"}
+
+
+def token_edit_distance(a: str, b: str) -> int:
+    """Word-level Levenshtein. Plain token-position diffing overstates a deletion:
+    dropping the leading verb shifts every later word, scoring 7 changes for what
+    is one removed token."""
+    x, y = a.split(), b.split()
+    prev = list(range(len(y) + 1))
+    for i, xi in enumerate(x, 1):
+        cur = [i]
+        for j, yj in enumerate(y, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (xi != yj)))
+        prev = cur
+    return prev[-1]
+
+
+def fig_information() -> None:
+    """Panel A: residual uncertainty. Panel B: why — the induced partition."""
+    inst = originals()
+    verb_groups: dict[tuple, list[int]] = collections.defaultdict(list)
+    noun_groups: dict[tuple, list[int]] = collections.defaultdict(list)
+    for t, s in sorted(inst.items()):
+        verb_groups[tuple(sorted(ii.verb_set(s)))].append(t)
+        noun_groups[tuple(sorted(ii.noun_set(s)))].append(t)
+
+    n = len(inst)
+    import math
+    h_task = math.log2(n)
+    h_given_verbs = sum(len(g) / n * math.log2(len(g)) for g in verb_groups.values())
+    h_given_nouns = sum(len(g) / n * math.log2(len(g)) for g in noun_groups.values())
+
+    fig, (ax_a, ax_b) = plt.subplots(
+        1, 2, figsize=(6.9, 2.15), gridspec_kw={"width_ratios": [1.0, 1.35], "wspace": 0.42})
+
+    # --- Panel A: one series, so one hue and no legend box.
+    labels = ["no instruction\n$H(\\mathrm{task})$",
+              "given the verb set\n$H(\\mathrm{task}\\mid V)$",
+              "given the noun set\n$H(\\mathrm{task}\\mid N)$"]
+    vals = [h_task, h_given_verbs, h_given_nouns]
+    ypos = range(len(vals))
+    ax_a.barh(ypos, vals, height=0.52, color=BLUE, zorder=3)
+    for i, v in enumerate(vals):
+        # A zero bar has no mark to read, so the value must be written.
+        ax_a.text(v + 0.09, i, f"{v:.2f}", va="center", ha="left",
+                  fontsize=7.2, fontweight="bold", color=INK)
+    ax_a.set_yticks(list(ypos), labels, fontsize=6.8)
+    ax_a.invert_yaxis()
+    ax_a.set_xlim(0, 3.95)
+    ax_a.set_xlabel("bits of task identity still unresolved", fontsize=7)
+    ax_a.xaxis.grid(True, color=MUTED, lw=0.4, alpha=0.5, zorder=0)
+    ax_a.set_axisbelow(True)
+    ax_a.set_title("(a) what each word class resolves", fontsize=7.6,
+                   fontweight="bold", color=INK, loc="left", pad=6)
+
+    # --- Panel B: the partition that produces those numbers.
+    rows = [("by noun set", sorted(noun_groups.items(), key=lambda kv: kv[1][0]), BLUE),
+            ("by verb set", sorted(verb_groups.items(), key=lambda kv: -len(kv[1])), ORANGE)]
+    gap = 0.055  # the 2px surface gap between adjacent fills, in data units
+    for r, (row_label, groups, color) in enumerate(rows):
+        y = 1 - r
+        x = 0.0
+        for key, tasks in groups:
+            w = len(tasks)
+            ax_b.add_patch(Rectangle((x + gap / 2, y - 0.3), w - gap, 0.6,
+                                     facecolor=color, edgecolor="none", zorder=3))
+            if w > 1:  # only the collapsed group gets a direct label; the rest would collide
+                ax_b.text(x + w / 2, y, f"“{'+'.join(key)}”\n{w} of {n} tasks",
+                          ha="center", va="center", fontsize=6.6,
+                          fontweight="bold", color="white", zorder=4, linespacing=1.25)
+            x += w
+        ax_b.text(-0.25, y, row_label, ha="right", va="center", fontsize=7, color=INK_2)
+        ax_b.text(10.25, y, f"{len(groups)} group{'s' if len(groups) > 1 else ''}",
+                  ha="left", va="center", fontsize=7, fontweight="bold", color=INK)
+    ax_b.set_xlim(-3.0, 12.4)
+    ax_b.set_ylim(-0.75, 1.75)
+    ax_b.set_xticks([])
+    ax_b.set_yticks([])
+    for s in ax_b.spines.values():
+        s.set_visible(False)
+    ax_b.set_title("(b) the partition each induces over the ten tasks", fontsize=7.6,
+                   fontweight="bold", color=INK, loc="left", pad=6)
+    ax_b.text(5.0, -0.62, "each cell is one task; a wide cell is a group the word class "
+                          "cannot tell apart",
+              ha="center", va="center", fontsize=6.4, color=INK_2, style="italic")
+
+    out = PAPER / "fig_information.png"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"wrote {out}")
+
+
+def fig_removal() -> None:
+    """Damage tracks bits destroyed, not how much text changed."""
+    abl = [r for r in read_csv("rq_ablation.csv") if scene_fixed_ok(r["model"])]
+    if not abl:
+        raise SystemExit("no model passes the scene-fixed gate; nothing to plot")
+    model = "openvla_oft" if any(r["model"] == "openvla_oft" for r in abl) else abl[0]["model"]
+    rows = [r for r in abl if r["model"] == model and r["condition"] != "original"]
+    if not rows:
+        raise SystemExit(f"no ablation rows for {model}")
+
+    inst = originals()
+    per_cond = {}
+    for r in [json.loads(l) for l in (REPO_ROOT / "data" / "instructions"
+                                      / f"{SUITE}.jsonl").open() if l.strip()]:
+        per_cond.setdefault(r["condition"], {})[r["task_id"]] = r["instruction"]
+
+    def words_changed(cond: str) -> float:
+        got = per_cond.get(cond, {})
+        d = [token_edit_distance(inst[t], got[t]) for t in inst if t in got]
+        return sum(d) / len(d) if d else float("nan")
+
+    rows.sort(key=lambda r: float(r["delta_pp_matched"]))
+    conds = [r["condition"] for r in rows]
+    deltas = [-float(r["delta_pp_matched"]) for r in rows]  # as a signed drop
+    bits = [float(r["bits_removed"]) for r in rows]
+    colors = [BLUE if b == 0 else ORANGE for b in bits]
+
+    fig, ax = plt.subplots(figsize=(3.34, 2.05))
+    ypos = range(len(rows))
+    ax.barh(ypos, deltas, height=0.56, color=colors, zorder=3)
+    for i, d in enumerate(deltas):
+        # Bars run leftward from 0, so "inside the bar" is d < x < 0. Putting the
+        # label at d - 1.8 lands it on the surface, where white ink is invisible.
+        inside = d < -20
+        ax.text(d + 2.0, i, f"{d:.1f} pp", va="center", ha="left",
+                fontsize=7, fontweight="bold",
+                color="white" if inside else INK, zorder=4)
+    ax.set_yticks(list(ypos),
+                  [f"\\texttt{{{c}}}".replace("\\texttt{", "").replace("}", "")
+                   + f"\n{words_changed(c):.1f} words changed" for c in conds],
+                  fontsize=6.8)
+    ax.set_xlim(min(deltas) * 1.10, 16)  # headroom for the smallest bar's label
+    ax.axvline(0, color=INK_2, lw=0.7, zorder=2)
+    ax.set_xlabel("change in task success rate (pp)", fontsize=7)
+    ax.xaxis.grid(True, color=MUTED, lw=0.4, alpha=0.5, zorder=0)
+    ax.set_axisbelow(True)
+
+    handles = [Rectangle((0, 0), 1, 1, facecolor=BLUE),
+               Rectangle((0, 0), 1, 1, facecolor=ORANGE)]
+    ax.legend(handles, ["0.00 bits removed", "3.32 bits removed"],
+              fontsize=6.6, loc="upper left", bbox_to_anchor=(0.02, -0.30),
+              ncol=2, frameon=False, handlelength=1.1,
+              handleheight=0.85, borderpad=0.2, labelcolor=INK_2)
+    ax.set_title("removal cost tracks information, not edit size", fontsize=7.6,
+                 fontweight="bold", color=INK, loc="left", pad=6)
+
+    out = PAPER / "fig_removal.png"
+    fig.savefig(out)
+    plt.close(fig)
+    print(f"wrote {out}  (model={model})")
+
+
+if __name__ == "__main__":
+    fig_information()
+    fig_removal()
