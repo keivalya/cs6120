@@ -27,8 +27,21 @@ STATUS (2026-07-31, evening — counted on disk, not read off sacct):
            stale 2-episode cells, and seed42/task9, cut off by the wall).
            RESUBMITTED: 8867194 (seed7 t5), 8867195 (seed42 t9).
   Smokes   BOTH pass (job 8853330). The 7B envs are good.
-  RQ4      still unmeasured for 3 models (1.3). Unchanged — no `gpu` submit slot
-           was free (8/8 in use by the grid); run P2c once the grid drains.
+  RQ4      OUT OF SCOPE, decided 2026-08-01 by the project owner. A CSV exists for
+           all three models (paper/rq4_attention.csv, 10 instructions, all layers)
+           and is NOT in the paper. Its predecessor was the fabricated
+           attention_mechanics.py, nothing has verified attention_extract.py against
+           a real forward pass since, and the RQ1-RQ3 argument is complete without
+           it. If it is ever revived, audit the extraction FIRST.
+  QUAL FIG  cut (two of four rows were synthetic) and approved for restoration from
+           real rollouts: core/run/slurm/render_qualitative.sbatch renders task4 at
+           4 conditions x 3 episodes. Submit AFTER the P2 grid drains, then run
+           core/analyze/make_qualitative_grid.py, which now raises rather than
+           inventing a row.
+  PDF      NEVER COMPILED. No TeX toolchain exists on this cluster and no module
+           provides one; check_tex.py is a linter, not a compiler. The owner builds
+           it off-cluster from paper_submission.zip (bash
+           core/run/make_submission_zip.sh) and reports errors back.
 
   d4053 IS BAD, the same way d4054 is. Jobs 8859517/8859518 SIGABRTed (exit 134,
   core dump, no Python traceback) on all four of their tasks a moment after
