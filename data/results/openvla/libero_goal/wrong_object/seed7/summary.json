@@ -6,9 +6,9 @@
   "checkpoint": "openvla/openvla-7b-finetuned-libero-goal",
   "checkpoint_hash": null,
   "n_episodes": 10,
-  "n_total_episodes": 40,
-  "n_success": 1,
-  "tsr": 0.025,
+  "n_total_episodes": 70,
+  "n_success": 8,
+  "tsr": 0.11428571428571428,
   "per_task": {
     "1": {
       "n": 10,
@@ -23,6 +23,18 @@
       "success": 0
     },
     "5": {
+      "n": 10,
+      "success": 0
+    },
+    "6": {
+      "n": 10,
+      "success": 0
+    },
+    "8": {
+      "n": 10,
+      "success": 7
+    },
+    "9": {
       "n": 10,
       "success": 0
     }
