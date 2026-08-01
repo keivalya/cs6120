@@ -494,15 +494,6 @@ rather than transcribed.}
 \label{tab:rq1_causal_full}
 \end{table}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=\linewidth]{rq1_scale.png}
-\caption{Baseline TSR against Causal Sensitivity Score for each model. CSS sits near
-$1$ across a $16\times$ parameter range, so sensitivity to losing the instruction
-does not track scale or baseline competence.}
-\label{fig:rq1_scale}
-\end{figure}
-
 The destructive conditions behave as expected: \texttt{blank} and \texttt{nonsense}
 collapse success, establishing that the instruction is causally load-bearing.
 SmolVLA falls to exactly zero under both ($\text{CSS}=1.00$); OpenVLA-OFT retains a
@@ -510,7 +501,9 @@ small residue, $\oftBlank\%$ and $\oftNonsense\%$ against a $\oftBaseline\%$ bas
 ($\text{CSS}=\oftCssBlank$ and $\oftCssNonsense$), which we return to in the
 Discussion. Nothing here
 is a graded contrast, so the conclusion does not rest on the exact residue.
-Figure~\ref{fig:rq1_scale} shows this is flat in scale.
+The effect is flat in scale: CSS is $1.00$, $1.00$ and $\oftCssBlank$ across a
+$16\times$ parameter range, so sensitivity to losing the instruction tracks neither
+model size nor baseline competence.
 The two semantic-swap conditions are the ones that have been over-read, and we take
 them in turn.
 
@@ -567,7 +560,20 @@ column is the control. $p$ is an exact McNemar test over initial-state-matched p
 \label{tab:rq2_wordclass}
 \end{table}
 
-The split changes the conclusion, and OpenVLA-7B shows why in the sharpest form.
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{fig_verbsplit.png}
+\caption{The suite-wide \texttt{wrong\_action} probe against the two halves it
+averages. The pooled bar is the $n$-weighted mean of the other two ($n=200$;
+$60$ antonym episodes from the three tasks whose verb swap changes the goal,
+$140$ near-synonym episodes from the seven where it does not), so for OpenVLA a
+$-31.7$ point effect and a null are reported as a mild $-12.0$. Whiskers are
+$95\%$ intervals over initial-state-matched pairs.}
+\label{fig:verbsplit}
+\end{figure}
+
+The split changes the conclusion, and OpenVLA-7B shows why in the sharpest form
+(Figure~\ref{fig:verbsplit}).
 Read whole, its \texttt{wrong\_action} condition costs $12$ points---a mild effect,
 the kind routinely reported as evidence that verbs are near-optional. Split, that
 average dissolves into two opposite findings: the three antonym substitutions cost
@@ -663,7 +669,13 @@ two traces differ by more than $5$\,cm (Table~\ref{tab:rq3_divergence}).
 \centering
 \small
 \input{tables/rq3_divergence}
-\caption{Kinematic Divergence Timesteps ($t_{\text{div}}$) and EEF Error $e(T)$.}
+\caption{Kinematic divergence timestep $t_{\text{div}}$ and end-effector
+displacement $e_{10}$ at a fixed ten-step horizon. We quote $e$ at ten steps rather
+than at the end of the rollout because pairs are truncated to the shorter of the two
+episodes and the median pair runs only $10$--$12$ steps: every pair counted in
+\textbf{pairs} reaches step ten, so one $n$ backs both columns, whereas an
+end-of-rollout figure would average the few longest---and so disproportionately
+failing---episodes.}
 \label{tab:rq3_divergence}
 \end{table}
 
@@ -671,8 +683,11 @@ two traces differ by more than $5$\,cm (Table~\ref{tab:rq3_divergence}).
 \centering
 \includegraphics[width=\linewidth]{rq3_divergence.png}
 \caption{End-effector displacement $e(t)$ between the canonical rollout and each
-perturbed rollout from the same $S_0$. The destructive conditions leave the canonical
-path at once; \texttt{wrong\_action} follows it and then peels away.}
+perturbed rollout from the same $S_0$, for the three conditions discussed here.
+The destructive conditions leave the canonical path at once; \texttt{wrong\_action}
+follows it and then peels away. Dots mark $t_{\text{div}}$. Each curve stops at the
+last step reached by at least half its pairs, so no part of it is an average over a
+handful of unusually long episodes.}
 \label{fig:rq3_divergence}
 \end{figure}
 
