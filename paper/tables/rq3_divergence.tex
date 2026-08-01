@@ -4,24 +4,26 @@
 \toprule
 \textbf{Model} & \textbf{Condition} & \textbf{pairs} & \textbf{$t_{\text{div}}$ (samples)} & \textbf{$e(T)$ [m]} \\
 \midrule
-SmolVLA (0.45B) & \texttt{blank} & 13 & 1.00 & 0.5285 \\
-SmolVLA (0.45B) & \texttt{nonsense} & 13 & 1.85 & 0.3846 \\
-SmolVLA (0.45B) & \texttt{para\_action} & 10 & 2.00 & 0.2115 \\
-SmolVLA (0.45B) & \texttt{para\_compositional} & 13 & 1.85 & 0.2204 \\
+SmolVLA (0.45B) & \texttt{blank} & 84 & 1.00 & 0.5002 \\
+SmolVLA (0.45B) & \texttt{nonsense} & 84 & 1.87 & 0.2977 \\
+SmolVLA (0.45B) & \texttt{para\_action} & 10 & 2.00 & 0.2085 \\
+SmolVLA (0.45B) & \texttt{para\_compositional} & 13 & 1.85 & 0.2133 \\
 SmolVLA (0.45B) & \texttt{para\_object} & 13 & 4.69 & 0.1949 \\
-SmolVLA (0.45B) & \texttt{repeated} & 13 & 2.46 & 0.2981 \\
-SmolVLA (0.45B) & \texttt{wrong\_action} & 13 & 8.31 & 0.1845 \\
-SmolVLA (0.45B) & \texttt{wrong\_task} & 13 & 1.54 & 0.2383 \\
-SmolVLA (0.45B) & \texttt{wrong\_object} & 9 & 2.00 & 0.1468 \\
+SmolVLA (0.45B) & \texttt{repeated} & 84 & 2.40 & 0.2791 \\
+SmolVLA (0.45B) & \texttt{wrong\_action} & 77 & 9.31 & 0.1609 \\
+SmolVLA (0.45B) & \texttt{wrong\_task} & 84 & 1.64 & 0.3001 \\
+SmolVLA (0.45B) & \texttt{wrong\_object} & 56 & 1.96 & 0.1839 \\
 OpenVLA (7B)$^{\ddagger}$ & \textit{(grid regenerating)} & \textemdash & \textemdash & \textemdash \\
-OpenVLA-OFT (7.5B) & \texttt{blank} & 9 & 1.33 & 0.6333 \\
-OpenVLA-OFT (7.5B) & \texttt{nonsense} & 9 & 1.44 & 0.6279 \\
-OpenVLA-OFT (7.5B) & \texttt{para\_action} & 9 & 12.78 & 0.0075 \\
-OpenVLA-OFT (7.5B) & \texttt{para\_compositional} & 9 & 10.00 & 0.0207 \\
-OpenVLA-OFT (7.5B) & \texttt{para\_object} & 9 & 13.33 & 0.0157 \\
-OpenVLA-OFT (7.5B) & \texttt{repeated} & 8 & 12.75 & 0.1099 \\
-OpenVLA-OFT (7.5B) & \texttt{wrong\_action} & 9 & 11.33 & 0.0201 \\
-OpenVLA-OFT (7.5B) & \texttt{wrong\_task} & 9 & 1.56 & 0.2267 \\
-OpenVLA-OFT (7.5B) & \texttt{wrong\_object} & 5 & 2.00 & 0.5696 \\
+OpenVLA-OFT (7.5B) & \texttt{blank} & 55 & 1.58 & 0.2709 \\
+OpenVLA-OFT (7.5B) & \texttt{nonsense} & 54 & 1.65 & 0.4319 \\
+OpenVLA-OFT (7.5B) & \texttt{nouns\_masked} & 55 & 2.67 & 0.5496 \\
+OpenVLA-OFT (7.5B) & \texttt{para\_action} & 50 & 11.70 & 0.0004 \\
+OpenVLA-OFT (7.5B) & \texttt{para\_compositional} & 55 & 6.58 & 0.3340 \\
+OpenVLA-OFT (7.5B) & \texttt{para\_object} & 51 & 10.90 & 0.1540 \\
+OpenVLA-OFT (7.5B) & \texttt{repeated} & 43 & 12.02 & 0.0157 \\
+OpenVLA-OFT (7.5B) & \texttt{verb\_dropped} & 53 & 12.13 & 0.1337 \\
+OpenVLA-OFT (7.5B) & \texttt{wrong\_action} & 51 & 11.37 & 0.0870 \\
+OpenVLA-OFT (7.5B) & \texttt{wrong\_task} & 55 & 1.64 & 0.3441 \\
+OpenVLA-OFT (7.5B) & \texttt{wrong\_object} & 35 & 1.89 & 0.4233 \\
 \bottomrule
 \end{tabular}
