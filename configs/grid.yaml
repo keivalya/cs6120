@@ -1,13 +1,13 @@
 # configs/grid.yaml
 # models x suites x conditions x seeds x n_episodes.  See CLAUDE.md §8.
 #
-# DOCUMENTARY ONLY: nothing reads this file. run/launch.py takes the grid on the
-# command line, and the P2 grid is defined by run/slurm/p2_rq1_*.sbatch, which are
+# DOCUMENTARY ONLY: nothing reads this file. core/run/launch.py takes the grid on the
+# command line, and the P2 grid is defined by core/run/slurm/p2_rq1_*.sbatch, which are
 # the operational source of truth. This file's job is to state what the shipped
-# data actually is, so keep it in sync with results/ or delete it.
+# data actually is, so keep it in sync with data/results/ or delete it.
 #
 # RECONCILED 2026-07-31. The previous version was aspirational and disagreed with
-# results/ on three counts: max_steps (600 vs the 300 every episode ran at), the
+# data/results/ on three counts: max_steps (600 vs the 300 every episode ran at), the
 # 7B condition list (5 vs the 9 the sbatch files carry), and smolvla's budget
 # (3 seeds x 20 episodes vs the 2 x 10 that exist).
 
@@ -20,7 +20,7 @@ seeds: [7, 42]
 # para_* conditions draw from the LIBERO-Para paraphrase suite (§3).
 # word_class is the nouns_masked/verb_dropped ablation (RQ2). It is compared
 # against `original`, so it MUST run in the same process as the causal set —
-# see HANDOFF 1.6 and run/scene_atomic.py.
+# see HANDOFF 1.6 and core/run/scene_atomic.py.
 condition_sets:
   causal:        [original, blank, nonsense, wrong_object, wrong_action, wrong_task, repeated]
   word_class:    [nouns_masked, verb_dropped]
