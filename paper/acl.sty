@@ -35,7 +35,9 @@
 \ifacl@linenumbers
   % Add draft line numbering via the lineno package
   % https://texblog.org/2012/02/08/adding-line-numbers-to-documents/
+  \let\acl@temp@showhyphens\showhyphens
   \usepackage[switch,mathlines]{lineno}
+  \let\showhyphens\acl@temp@showhyphens
 
   % Line numbers in gray Helvetica 8pt
   \font\aclhv = phvb at 8pt

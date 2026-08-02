@@ -22,11 +22,12 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-TEX = HERE / "paper_acl.tex"
-BIB = HERE / "references.bib"
+TEX = HERE / "acl2023.tex"
+BIB_FILES = [HERE / "custom.bib", HERE / "references.bib"]
 
 problems: list[str] = []
 notes: list[str] = []
+
 
 
 def strip_comments(text: str) -> str:
@@ -53,7 +54,8 @@ def main() -> int:
 
     # --- graphics ----------------------------------------------------------------
     for rel in re.findall(r"\\includegraphics(?:\[[^\]]*\])?\{([^}]+)\}", src):
-        if not (HERE / rel).exists():
+        cand = [HERE / rel, HERE / "figures" / rel]
+        if not any(c.exists() for c in cand):
             problems.append(f"\\includegraphics{{{rel}}} -> missing file")
 
     # --- labels vs refs ----------------------------------------------------------
@@ -68,39 +70,39 @@ def main() -> int:
 
     # --- citations vs bib --------------------------------------------------------
     bib_keys, entries = set(), []
-    if BIB.exists():
-        btxt = BIB.read_text()
-        for m in re.finditer(r"@(\w+)\s*\{\s*([^,\s]+)\s*,", btxt):
-            bib_keys.add(m.group(2))
-            entries.append((m.group(1).lower(), m.group(2), m.start()))
-        # entry-type / required-field sanity
-        bodies = re.split(r"\n(?=@)", btxt)
-        for body in bodies:
-            m = re.match(r"@(\w+)\s*\{\s*([^,\s]+)\s*,", body.strip())
-            if not m:
-                continue
-            etype, key = m.group(1).lower(), m.group(2)
-            has = lambda f: re.search(rf"\b{f}\s*=", body) is not None
-            if etype == "inproceedings" and not has("booktitle"):
-                problems.append(f"bib {key}: @inproceedings without booktitle "
-                                f"(BibTeX will emit no venue)")
-            if etype == "inproceedings" and has("journal"):
-                problems.append(f"bib {key}: @inproceedings with a `journal` field "
-                                f"(silently ignored -- use booktitle)")
-            if etype == "article" and not has("journal"):
-                problems.append(f"bib {key}: @article without journal")
-            if etype == "article" and has("booktitle"):
-                problems.append(f"bib {key}: @article with a `booktitle` field "
-                                f"(silently ignored -- use @inproceedings)")
-    else:
-        problems.append(f"{BIB.name} not found")
+    for bib_file in BIB_FILES:
+        if bib_file.exists():
+            btxt = bib_file.read_text()
+            for m in re.finditer(r"@(\w+)\s*\{\s*([^,\s]+)\s*,", btxt):
+                bib_keys.add(m.group(2))
+                entries.append((m.group(1).lower(), m.group(2), m.start()))
+            bodies = re.split(r"\n(?=@)", btxt)
+            for body in bodies:
+                m = re.match(r"@(\w+)\s*\{\s*([^,\s]+)\s*,", body.strip())
+                if not m:
+                    continue
+                etype, key = m.group(1).lower(), m.group(2)
+                has = lambda f: re.search(rf"\b{f}\s*=", body) is not None
+                if etype == "inproceedings" and not has("booktitle"):
+                    problems.append(f"bib {key}: @inproceedings without booktitle "
+                                    f"(BibTeX will emit no venue)")
+                if etype == "inproceedings" and has("journal"):
+                    problems.append(f"bib {key}: @inproceedings with a `journal` field "
+                                    f"(silently ignored -- use booktitle)")
+                if etype == "article" and not has("journal"):
+                    problems.append(f"bib {key}: @article without journal")
+                if etype == "article" and has("booktitle"):
+                    problems.append(f"bib {key}: @article with a `booktitle` field "
+                                    f"(silently ignored -- use @inproceedings)")
+
 
     cited: set[str] = set()
     for m in re.finditer(r"\\(?:cite|citep|citet|citealp|citeauthor|citeyear)"
                          r"(?:\[[^\]]*\])*\{([^}]+)\}", src):
         cited |= {k.strip() for k in m.group(1).split(",") if k.strip()}
-    for k in sorted(cited - bib_keys):
-        problems.append(f"\\cite{{{k}}} has no entry in {BIB.name}")
+    for k in sorted(cited):
+        if k not in bib_keys:
+            problems.append(f"\\cite{{{k}}} has no entry in bib files")
     for k in sorted(bib_keys - cited):
         notes.append(f"bib entry {k} is never cited")
 

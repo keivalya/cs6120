@@ -11,29 +11,37 @@ import sys
 import subprocess
 from pathlib import Path
 
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, HRFlowable, Frame, PageTemplate
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 def compile_via_latex():
-    """Try pdflatex/xelatex if available."""
-    tex_path = REPO_ROOT / "report" / "paper_acl.tex"
-    try:
-        res = subprocess.run(["pdflatex", "-interaction=nonstopmode", "-output-directory", str(REPO_ROOT / "report"), str(tex_path)],
-                             capture_output=True, text=True)
-        if res.returncode == 0:
-            print("Successfully compiled paper_acl.pdf via pdflatex!")
-            return True
-    except Exception:
-        pass
+    """Try tectonic/pdflatex/xelatex if available."""
+    tex_path = REPO_ROOT / "paper" / "acl2023.tex"
+    for compiler in ["tectonic", "pdflatex", "xelatex"]:
+        try:
+            if compiler == "tectonic":
+                res = subprocess.run(["tectonic", str(tex_path)], capture_output=True, text=True)
+            else:
+                res = subprocess.run([compiler, "-interaction=nonstopmode", "-output-directory", str(REPO_ROOT / "paper"), str(tex_path)],
+                                     capture_output=True, text=True)
+            if res.returncode == 0:
+                print(f"Successfully compiled acl2023.pdf via {compiler}!")
+                return True
+        except Exception:
+            pass
     return False
 
 def build_two_column_pdf():
-    """Build official two-column formatted paper_acl.pdf using ReportLab."""
-    pdf_path = REPO_ROOT / "report" / "paper_acl.pdf"
+    """Build official two-column formatted acl2023.pdf using ReportLab."""
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, HRFlowable, Frame, PageTemplate
+    except ImportError:
+        print("[compile_acl] ReportLab not installed; skipping fallback PDF build.")
+        return
+
+    pdf_path = REPO_ROOT / "paper" / "acl2023.pdf"
     print(f"[compile_acl] Building official two-column PDF {pdf_path}...", flush=True)
 
     doc = SimpleDocTemplate(

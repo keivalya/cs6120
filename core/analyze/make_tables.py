@@ -37,6 +37,16 @@ PRETTY = {"smolvla": "SmolVLA (0.45B)", "openvla": "OpenVLA (7B)",
 MODEL_ORDER = ["smolvla", "openvla", "openvla_oft"]
 
 
+def resolve_file(name: str) -> Path:
+    p1 = REPORT / name
+    if p1.exists():
+        return p1
+    p2 = REPORT / "data" / name
+    if p2.exists():
+        return p2
+    return p1
+
+
 def scene_status(model: str, suite: str = "libero_goal") -> dict:
     """The per-model scene-fixed verdict, read from core/run/aggregate.py's output.
 
@@ -45,7 +55,7 @@ def scene_status(model: str, suite: str = "libero_goal") -> dict:
     A missing file is treated as unverified, never as a pass.
     """
     import json
-    p = REPORT / f"scene_fixed_check_{model}_{suite}.json"
+    p = resolve_file(f"scene_fixed_check_{model}_{suite}.json")
     if not p.exists():
         return {"state": "unverified", "detail": "no check on record"}
     d = json.loads(p.read_text())
@@ -203,7 +213,7 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
 
 def read_csv(name: str) -> list[dict]:
-    path = REPORT / name
+    path = resolve_file(name)
     if not path.exists():
         print(f"[make_tables] SKIP: {path} not found", file=sys.stderr)
         return []
