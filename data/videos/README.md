@@ -211,3 +211,5 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | [success_seed42_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep1.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
 | [success_seed42_ep2.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep2.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
 | [success_seed42_ep3.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep3.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
+| `videos/task8_put_the_bowl_on_the_plate/para_object/failure_ep1.mp4` | Failure | `put the soup bowl on the plate` |
+| `videos/task8_put_the_bowl_on_the_plate/para_object/success_ep1.mp4` | Success | `put the bowl on the dinner plate` |
