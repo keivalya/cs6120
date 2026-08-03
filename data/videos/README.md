@@ -68,6 +68,7 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | [failure_ep3.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_object/failure_ep3.mp4) | 🔴 **Failure** | `para_object` | `put the bowl on the stove` |
 | [failure_ep4.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_object/failure_ep4.mp4) | 🔴 **Failure** | `para_object` | `put the bowl on the stove` |
 | [failure_ep5.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_object/failure_ep5.mp4) | 🔴 **Failure** | `para_object` | `put the bowl on the stove` |
+| [success_ep1.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_object/success_ep1.mp4) | 🟢 **Success** | `para_object` | `put the bowl on the stove` |
 
 ### Task 2: `put_the_wine_bottle_on_top_of_the_cabinet`
 
@@ -85,6 +86,17 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | Video File | Outcome Status | Condition | Text Instruction |
 | :--- | :---: | :---: | :--- |
 | [failure_ep1.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/failure_ep1.mp4) | 🔴 **Failure** | `original` | `open the top drawer and put the bowl inside` |
+| [failure_ep2.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/failure_ep2.mp4) | 🔴 **Failure** | `original` | `open the top drawer and put the bowl inside` |
+| [failure_ep3.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/failure_ep3.mp4) | 🔴 **Failure** | `original` | `open the top drawer and put the bowl inside` |
+| [failure_seed42_ep1.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/failure_seed42_ep1.mp4) | 🔴 **Failure** | `original` | `open the top drawer and put the bowl inside` |
+| [failure_seed42_ep2.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/failure_seed42_ep2.mp4) | 🔴 **Failure** | `original` | `open the top drawer and put the bowl inside` |
+| [failure_seed42_ep3.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/failure_seed42_ep3.mp4) | 🔴 **Failure** | `original` | `open the top drawer and put the bowl inside` |
+| [success_ep1.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/success_ep1.mp4) | 🟢 **Success** | `original` | `open the top drawer and put the bowl inside` |
+| [success_ep2.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/success_ep2.mp4) | 🟢 **Success** | `original` | `open the top drawer and put the bowl inside` |
+| [success_ep3.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/success_ep3.mp4) | 🟢 **Success** | `original` | `open the top drawer and put the bowl inside` |
+| [success_seed42_ep1.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/success_seed42_ep1.mp4) | 🟢 **Success** | `original` | `open the top drawer and put the bowl inside` |
+| [success_seed42_ep2.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/success_seed42_ep2.mp4) | 🟢 **Success** | `original` | `open the top drawer and put the bowl inside` |
+| [success_seed42_ep3.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/success_seed42_ep3.mp4) | 🟢 **Success** | `original` | `open the top drawer and put the bowl inside` |
 
 ### Task 4: `put_the_bowl_on_top_of_the_cabinet`
 
@@ -113,6 +125,17 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | Video File | Outcome Status | Condition | Text Instruction |
 | :--- | :---: | :---: | :--- |
 | [failure_ep1.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/failure_ep1.mp4) | 🔴 **Failure** | `original` | `put the cream cheese in the bowl` |
+| [failure_ep2.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/failure_ep2.mp4) | 🔴 **Failure** | `original` | `put the cream cheese in the bowl` |
+| [failure_ep3.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/failure_ep3.mp4) | 🔴 **Failure** | `original` | `put the cream cheese in the bowl` |
+| [failure_seed42_ep1.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/failure_seed42_ep1.mp4) | 🔴 **Failure** | `original` | `put the cream cheese in the bowl` |
+| [failure_seed42_ep2.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/failure_seed42_ep2.mp4) | 🔴 **Failure** | `original` | `put the cream cheese in the bowl` |
+| [failure_seed42_ep3.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/failure_seed42_ep3.mp4) | 🔴 **Failure** | `original` | `put the cream cheese in the bowl` |
+| [success_ep1.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_ep1.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
+| [success_ep2.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_ep2.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
+| [success_ep3.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_ep3.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
+| [success_seed42_ep1.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_seed42_ep1.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
+| [success_seed42_ep2.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_seed42_ep2.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
+| [success_seed42_ep3.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_seed42_ep3.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
 
 ### Task 7: `turn_on_the_stove`
 
@@ -161,6 +184,11 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | [success_seed7_ep1.mp4](data/videos/task8_put_the_bowl_on_the_plate/original/success_seed7_ep1.mp4) | 🟢 **Success** | `original` | `put the bowl on the plate` |
 | [success_seed7_ep2.mp4](data/videos/task8_put_the_bowl_on_the_plate/original/success_seed7_ep2.mp4) | 🟢 **Success** | `original` | `put the bowl on the plate` |
 | [success_seed7_ep3.mp4](data/videos/task8_put_the_bowl_on_the_plate/original/success_seed7_ep3.mp4) | 🟢 **Success** | `original` | `put the bowl on the plate` |
+| [failure_ep1.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_action/failure_ep1.mp4) | 🔴 **Failure** | `para_action` | `put the bowl on the plate` |
+| [failure_ep2.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_action/failure_ep2.mp4) | 🔴 **Failure** | `para_action` | `put the bowl on the plate` |
+| [failure_ep3.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_action/failure_ep3.mp4) | 🔴 **Failure** | `para_action` | `put the bowl on the plate` |
+| [success_ep1.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_action/success_ep1.mp4) | 🟢 **Success** | `para_action` | `put the bowl on the plate` |
+| [success_ep2.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_action/success_ep2.mp4) | 🟢 **Success** | `para_action` | `put the bowl on the plate` |
 | [failure_ep1.mp4](data/videos/task8_put_the_bowl_on_the_plate/wrong_task/failure_ep1.mp4) | 🔴 **Failure** | `wrong_task` | `open the top drawer and put the bowl inside` |
 | [failure_ep2.mp4](data/videos/task8_put_the_bowl_on_the_plate/wrong_task/failure_ep2.mp4) | 🔴 **Failure** | `wrong_task` | `open the top drawer and put the bowl inside` |
 | [failure_ep3.mp4](data/videos/task8_put_the_bowl_on_the_plate/wrong_task/failure_ep3.mp4) | 🔴 **Failure** | `wrong_task` | `open the top drawer and put the bowl inside` |
@@ -169,4 +197,19 @@ This directory contains rollout videos generated during Vision-Language-Action (
 
 ### Task 9: `put_the_wine_bottle_on_the_rack`
 
-_No rollout videos generated yet for this task._
+| Video File | Outcome Status | Condition | Text Instruction |
+| :--- | :---: | :---: | :--- |
+| [failure_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_ep1.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
+| [failure_ep2.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_ep2.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
+| [failure_ep3.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_ep3.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
+| [failure_seed42_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_seed42_ep1.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
+| [failure_seed42_ep2.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_seed42_ep2.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
+| [failure_seed42_ep3.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_seed42_ep3.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
+| [success_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_ep1.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
+| [success_ep2.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_ep2.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
+| [success_ep3.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_ep3.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
+| [success_seed42_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep1.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
+| [success_seed42_ep2.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep2.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
+| [success_seed42_ep3.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep3.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
+| `videos/task8_put_the_bowl_on_the_plate/para_object/failure_ep1.mp4` | Failure | `put the soup bowl on the plate` |
+| `videos/task8_put_the_bowl_on_the_plate/para_object/success_ep1.mp4` | Success | `put the bowl on the dinner plate` |
