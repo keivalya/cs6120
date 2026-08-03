@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Methodology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f3ef;
+      --surface: #ffffff;
+      --ink: #1a1d1b;
+      --muted: #5c6560;
+      --line: #d8d5cc;
+      --soft: #eceae4;
+      --accent: #0f6e56;
+      --accent-soft: #e4f2ec;
+      --warn: #9a5b12;
+      --warn-soft: #f7eeda;
+      --danger: #9b2c2c;
+      --danger-soft: #f8e8e8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    button {
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    .deck { position: relative; width: 100%; height: 100%; overflow: hidden; }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 48px 64px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(32px) scale(0.985);
+      transition:
+        opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0.45s;
+      pointer-events: none;
+    }
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      pointer-events: auto;
+      z-index: 2;
+    }
+    .slide.exit-left { opacity: 0; transform: translateX(-28px) scale(0.985); }
+    .slide.exit-right { opacity: 0; transform: translateX(28px) scale(0.985); }
+
+    .slide.immersive { padding: 0 0 56px; }
+    .slide.immersive .kicker,
+    .slide.immersive h1,
+    .slide.immersive .lead { display: none; }
+
+    .kicker {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.35s 0.1s ease, transform 0.35s 0.1s ease;
+    }
+    .slide.active .kicker { opacity: 1; transform: none; }
+
+    .slide h1 {
+      font-size: clamp(28px, 3.4vw, 40px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.12;
+      margin-bottom: 8px;
+      max-width: 24ch;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.35s 0.16s ease, transform 0.35s 0.16s ease;
+    }
+    .slide.active h1 { opacity: 1; transform: none; }
+
+    .lead {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 56ch;
+      line-height: 1.45;
+      margin-bottom: 18px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.35s 0.22s ease, transform 0.35s 0.22s ease;
+    }
+    .slide.active .lead { opacity: 1; transform: none; }
+
+    .main {
+      flex: 1;
+      min-height: 0;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.4s 0.28s ease, transform 0.4s 0.28s ease;
+    }
+    .slide.active .main { opacity: 1; transform: none; }
+    .slide.immersive .main {
+      opacity: 1;
+      transform: none;
+      height: 100%;
+    }
+
+    /* Opening grid */
+    .success-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 6px;
+      height: 100%;
+      padding: 6px;
+      background: #0d0f0e;
+    }
+    .success-grid .cell {
+      position: relative;
+      overflow: hidden;
+      background: #111;
+      border-radius: 4px;
+      opacity: 0;
+      transform: scale(0.96);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .slide.active .success-grid .cell {
+      opacity: 1;
+      transform: none;
+    }
+    .success-grid video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: rotate(180deg);
+      display: block;
+    }
+
+    /* Layout helpers */
+    .split { display: grid; gap: 14px; height: 100%; min-height: 0; }
+    .split-2 { grid-template-columns: 1.2fr 0.8fr; }
+    .split-eq { grid-template-columns: 1fr 1fr; }
+    .split-video-stack { grid-template-columns: 1.25fr 0.75fr; }
+
+    .cards { display: grid; gap: 10px; align-content: start; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+    .card .k {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .card .v {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+    }
+    .card p {
+      margin-top: 6px;
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .card .ex {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: var(--soft);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--ink);
+      line-height: 1.35;
+    }
+    .card .ex strong { color: var(--accent); font-weight: 600; }
+
+    /* Models */
+    .model-list { display: grid; gap: 10px; align-content: start; }
+    .model {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 12px;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .model .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #fff;
+      border: 1px solid var(--line);
+      padding: 6px;
+    }
+    .model .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .model .name {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      line-height: 1.2;
+    }
+    .model .org {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .model .size {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    /* Video stages */
+    .stage, .clip {
+      background: #111;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      min-height: 0;
+      height: 100%;
+    }
+    .stage video, .clip video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform: rotate(180deg);
+      background: #111;
+      display: block;
+    }
+    .meta {
+      position: absolute;
+      left: 12px; right: 12px; bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      font-size: 13px;
+      z-index: 2;
+      text-shadow: 0 1px 4px rgba(0,0,0,.55);
+    }
+    .clip-label {
+      position: absolute;
+      top: 10px; left: 10px;
+      z-index: 2;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(0,0,0,.7);
+      color: #fff;
+    }
+    .badge {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      white-space: nowrap;
+    }
+    .badge.ok { background: rgba(34,160,110,.9); }
+    .badge.bad { background: rgba(180,60,60,.9); }
+
+    .side-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .side-list button {
+      text-align: left;
+      padding: 13px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      font-size: 14px;
+      font-weight: 600;
+      transition: border-color .2s, background .2s, color .2s;
+    }
+    .side-list button:hover { border-color: #b8b4a8; }
+    .side-list button.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .media-row {
+      display: grid;
+      grid-template-columns: 168px 1fr;
+      gap: 14px;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .analyze {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 14px;
+      height: 100%;
+      min-height: 0;
+    }
+    .analyze-panel { height: 100%; min-height: 0; display: none; }
+    .analyze-panel.active { display: grid; gap: 10px; }
+    .analyze-panel.with-video { grid-template-rows: 1fr auto; }
+    .analyze-panel.with-compare { grid-template-rows: 1fr auto; }
+
+    .outcome-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .outcome {
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .outcome .tag {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 3px;
+    }
+    .outcome.follow { background: var(--accent-soft); border-color: #b7d9cb; }
+    .outcome.follow .tag { color: var(--accent); }
+    .outcome.ignore { background: var(--warn-soft); border-color: #e2d0a4; }
+    .outcome.ignore .tag { color: var(--warn); }
+    .outcome.fail { background: var(--danger-soft); border-color: #e2bcbc; }
+    .outcome.fail .tag { color: var(--danger); }
+    .outcome p { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+
+    .one-liner {
+      font-size: 14px;
+      color: var(--muted);
+      padding: 2px 2px 0;
+    }
+    .one-liner strong { color: var(--ink); }
+
+    .nv-annotate {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .nv-annotate .chip {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+    .nv-annotate .chip b { display: block; font-size: 11px; font-family: "IBM Plex Mono", monospace; margin-bottom: 4px; }
+    .nv-annotate .chip.noun b { color: var(--accent); }
+    .nv-annotate .chip.verb b { color: var(--warn); }
+    .mark-noun {
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 0 4px;
+      border-radius: 4px;
+    }
+    .mark-verb {
+      background: var(--warn-soft);
+      color: var(--warn);
+      padding: 0 4px;
+      border-radius: 4px;
+    }
+
+    /* Question callouts over video */
+    .q-stack {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 12px;
+      height: 100%;
+      min-height: 0;
+    }
+    .q-points {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* Chrome */
+    .chrome {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      pointer-events: none;
+    }
+    .chrome > * { pointer-events: auto; }
+    .dots { display: flex; gap: 7px; align-items: center; }
+    .dots button {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #c5c1b6;
+      transition: transform .25s, background .25s, width .25s;
+    }
+    .dots button.active {
+      background: var(--accent);
+      width: 20px;
+      border-radius: 999px;
+    }
+    .nav-btns { display: flex; gap: 8px; }
+    .nav-btns button {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      font-size: 18px;
+      display: grid;
+      place-items: center;
+      transition: border-color .2s, color .2s, background .2s;
+    }
+    .nav-btns button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .nav-btns button:disabled { opacity: .35; cursor: default; }
+    .progress {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: var(--accent); z-index: 20;
+      transition: width .4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @media (max-width: 900px) {
+      .slide { padding: 20px 16px 60px; }
+      .success-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(5, 1fr); }
+      .split-2, .split-eq, .media-row, .analyze, .q-points, .nv-annotate, .outcome-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+
+  <div class="deck" id="deck">
+
+    <!-- 0 Stage -->
+    <section class="slide immersive active" data-i="0">
+      <div class="main">
+        <div class="success-grid" id="success-grid"></div>
+      </div>
+    </section>
+
+    <!-- 1 Question -->
+    <section class="slide" data-i="1">
+      <div class="kicker">01 · Question</div>
+      <h1>Success is not the same as understanding</h1>
+      <p class="lead">These robots look competent. The open question: are they reading the instruction, or just repeating a memorized routine in this kitchen?</p>
+      <div class="main">
+        <div class="q-stack">
+          <div class="split split-eq">
+            <div class="clip">
+              <span class="clip-label">with instruction</span>
+              <video id="vid-q-a" muted loop playsinline controls></video>
+              <div class="meta">
+                <span>turn on the stove</span>
+                <span class="badge ok">success</span>
+              </div>
+            </div>
+            <div class="clip">
+              <span class="clip-label">no instruction</span>
+              <video id="vid-q-b" muted loop playsinline controls></video>
+              <div class="meta">
+                <span>(empty)</span>
+                <span class="badge bad">fail</span>
+              </div>
+            </div>
+          </div>
+          <div class="q-points">
+            <div class="card">
+              <div class="k">What we want to know</div>
+              <div class="v">Does language cause the action?</div>
+              <p>If removing the words changes the behavior, the model was using language.</p>
+            </div>
+            <div class="card">
+              <div class="k">And then</div>
+              <div class="v">Which words actually matter?</div>
+              <p>Object names, action verbs — or is the benchmark giving the answer away?</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 Setup -->
+    <section class="slide" data-i="2">
+      <div class="kicker">02 · Setup</div>
+      <h1>Same kitchen, three models</h1>
+      <p class="lead">Ten tasks share one scene — so the image alone cannot tell the robot which goal to pursue.</p>
+      <div class="main">
+        <div class="split split-2">
+          <div class="stage">
+            <video id="vid-setup" muted loop playsinline controls></video>
+            <div class="meta">
+              <span>put the bowl on the stove</span>
+              <span class="badge ok">success</span>
+            </div>
+          </div>
+          <div class="model-list">
+            <div class="model">
+              <div class="logo" aria-hidden="true">
+                <img src="assets/logos/huggingface.svg" alt="Hugging Face" />
+              </div>
+              <div>
+                <div class="name">SmolVLA</div>
+                <div class="org">Hugging Face · LeRobot</div>
+                <div class="size">450M · flow matching</div>
+              </div>
+            </div>
+            <div class="model">
+              <div class="logo" aria-hidden="true">
+                <img src="assets/logos/openvla.png" alt="OpenVLA" />
+              </div>
+              <div>
+                <div class="name">OpenVLA</div>
+                <div class="org">Stanford · Berkeley · TRI · DeepMind</div>
+                <div class="size">7B · discrete action tokens</div>
+              </div>
+            </div>
+            <div class="model">
+              <div class="logo" aria-hidden="true">
+                <img src="assets/logos/stanford.svg" alt="Stanford University" />
+              </div>
+              <div>
+                <div class="name">OpenVLA-OFT</div>
+                <div class="org">Stanford · Optimized Fine-Tuning</div>
+                <div class="size">7.5B · continuous actions</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 Scene -->
+    <section class="slide" data-i="3">
+      <div class="kicker">03 · Scene-fixed</div>
+      <h1>Same starting scene</h1>
+      <p class="lead">Only the instruction changes. If behavior changes, language caused it.</p>
+      <div class="main">
+        <div class="split split-eq">
+          <div class="clip">
+            <span class="clip-label">original</span>
+            <video id="vid-a" muted loop playsinline controls></video>
+            <div class="meta"><span>turn on the stove</span><span class="badge ok">success</span></div>
+          </div>
+          <div class="clip">
+            <span class="clip-label">blank</span>
+            <video id="vid-b" muted loop playsinline controls></video>
+            <div class="meta"><span>(no instruction)</span><span class="badge bad">fail</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 Perturb -->
+    <section class="slide" data-i="4">
+      <div class="kicker">04 · Perturb</div>
+      <h1>Change the instruction</h1>
+      <p class="lead" id="perturb-lead">Each edit tests a different shortcut the robot might be using.</p>
+      <div class="main">
+        <div class="media-row">
+          <div class="side-list" id="cond-list"></div>
+          <div class="stage">
+            <video id="vid-pert" muted loop playsinline controls></video>
+            <div class="meta">
+              <span id="pert-instr"></span>
+              <span class="badge" id="pert-badge"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 Collect -->
+    <section class="slide" data-i="5">
+      <div class="kicker">05 · Collect</div>
+      <h1>What we record from each run</h1>
+      <p class="lead">One scene. One instruction. One rollout — then we write down what actually happened in the kitchen.</p>
+      <div class="main">
+        <div class="split split-video-stack">
+          <div class="stage">
+            <video id="vid-roll" muted loop playsinline controls></video>
+            <div class="meta">
+              <span>open the middle drawer of the cabinet</span>
+              <span class="badge ok">success</span>
+            </div>
+          </div>
+          <div class="cards">
+            <div class="card">
+              <div class="k">Example A</div>
+              <div class="v">Told the right task</div>
+              <div class="ex">Instruction: <strong>open the middle drawer</strong><br/>We check: did that drawer open?</div>
+            </div>
+            <div class="card">
+              <div class="k">Example B</div>
+              <div class="v">Told a different task</div>
+              <div class="ex">Instruction: <strong>push the plate…</strong><br/>If it still opens the drawer → it ignored the words.</div>
+            </div>
+            <div class="card">
+              <div class="k">So we log</div>
+              <div class="v">Every goal that became true</div>
+              <p>Not just “pass/fail on the original task” — which kitchen goals finished, and how the arm moved.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 Analyze -->
+    <section class="slide" data-i="6">
+      <div class="kicker">06 · Analyze</div>
+      <h1>What we measure</h1>
+      <p class="lead" id="analyze-lead">Four readouts of the same episodes.</p>
+      <div class="main">
+        <div class="analyze">
+          <div class="side-list" id="metric-list">
+            <button class="active" data-metric="tsr">Task Success Rate</button>
+            <button data-metric="css">Causal Sensitivity Score</button>
+            <button data-metric="fif">Follow / Ignore / Fail</button>
+            <button data-metric="info">Nouns vs verbs</button>
+          </div>
+
+          <div class="analyze-panel with-video active" id="panel-tsr">
+            <div class="stage">
+              <video id="vid-tsr" muted loop playsinline controls></video>
+              <div class="meta">
+                <span>put the bowl on the stove</span>
+                <span class="badge ok">success</span>
+              </div>
+            </div>
+            <p class="one-liner"><strong>Task Success Rate (TSR)</strong> — how often the robot finishes the task it was asked to do.</p>
+          </div>
+
+          <div class="analyze-panel with-compare" id="panel-css">
+            <div class="split split-eq">
+              <div class="clip">
+                <span class="clip-label">with language</span>
+                <video id="vid-css-a" muted loop playsinline controls></video>
+                <div class="meta"><span>turn on the stove</span><span class="badge ok">success</span></div>
+              </div>
+              <div class="clip">
+                <span class="clip-label">language removed</span>
+                <video id="vid-css-b" muted loop playsinline controls></video>
+                <div class="meta"><span>(no instruction)</span><span class="badge bad">fail</span></div>
+              </div>
+            </div>
+            <p class="one-liner"><strong>Causal Sensitivity Score (CSS)</strong> — if removing the instruction collapses success, language was necessary.</p>
+          </div>
+
+          <div class="analyze-panel with-video" id="panel-fif">
+            <div class="stage">
+              <video id="vid-fif" muted loop playsinline controls></video>
+              <div class="meta">
+                <span>push the plate to the front of the stove</span>
+                <span class="badge bad">misleading prompt</span>
+              </div>
+            </div>
+            <div class="outcome-row">
+              <div class="outcome follow">
+                <div class="tag">Follow</div>
+                <p>Does the new instruction</p>
+              </div>
+              <div class="outcome ignore">
+                <div class="tag">Ignore</div>
+                <p>Still does the old task</p>
+              </div>
+              <div class="outcome fail">
+                <div class="tag">Fail</div>
+                <p>Completes neither</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="analyze-panel with-compare" id="panel-info">
+            <div class="split split-eq">
+              <div class="clip">
+                <span class="clip-label">original verb</span>
+                <video id="vid-nv-a" muted loop playsinline controls></video>
+                <div class="meta">
+                  <span><span class="mark-verb">open</span> the middle drawer…</span>
+                  <span class="badge ok">success</span>
+                </div>
+              </div>
+              <div class="clip">
+                <span class="clip-label">verb swapped</span>
+                <video id="vid-nv-b" muted loop playsinline controls></video>
+                <div class="meta">
+                  <span><span class="mark-verb">close</span> the middle drawer…</span>
+                  <span class="badge bad">fail</span>
+                </div>
+              </div>
+            </div>
+            <div class="nv-annotate">
+              <div class="chip noun">
+                <b>Nouns</b>
+                Often unique — enough to name which task this is.
+              </div>
+              <div class="chip verb">
+                <b>Verbs</b>
+                Often shared — a real test needs a true opposite, like open ↔ close.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="chrome">
+    <div class="dots" id="dots"></div>
+    <div class="nav-btns">
+      <button id="prev" aria-label="Previous">‹</button>
+      <button id="next" aria-label="Next">›</button>
+    </div>
+  </div>
+
+  <script>
+    const V = "../data/videos";
+
+    const GRID_VIDEOS = [
+      `${V}/task0_open_the_middle_drawer_of_the_cabinet/original/success_ep1.mp4`,
+      `${V}/task1_put_the_bowl_on_the_stove/original/success_ep1.mp4`,
+      `${V}/task2_put_the_wine_bottle_on_top_of_the_cabinet/original/success_ep1.mp4`,
+      `${V}/task4_put_the_bowl_on_top_of_the_cabinet/original/success_ep1.mp4`,
+      `${V}/task5_push_the_plate_to_the_front_of_the_stove/original/success_ep1.mp4`,
+      `${V}/task7_turn_on_the_stove/original/success_ep1.mp4`,
+      `${V}/task8_put_the_bowl_on_the_plate/original/success_ep1.mp4`,
+      `${V}/task0_open_the_middle_drawer_of_the_cabinet/original/success_ep2.mp4`,
+      `${V}/task1_put_the_bowl_on_the_stove/original/success_ep2.mp4`
+    ];
+
+    const CONDITIONS = [
+      {
+        id: "original",
+        label: "original",
+        instr: "turn on the stove",
+        src: `${V}/task7_turn_on_the_stove/original/success_ep1.mp4`,
+        badge: "success",
+        ok: true,
+        lead: "Unchanged instruction — the baseline."
+      },
+      {
+        id: "blank",
+        label: "blank",
+        instr: "(no instruction)",
+        src: `${V}/task7_turn_on_the_stove/blank/failure_ep1.mp4`,
+        badge: "fail",
+        ok: false,
+        lead: "Empty instruction — tests whether the scene alone is enough."
+      },
+      {
+        id: "nonsense",
+        label: "nonsense",
+        instr: "juggle crimson syntax meadow atop nebula",
+        src: `${V}/task7_turn_on_the_stove/nonsense/failure_ep1.mp4`,
+        badge: "fail",
+        ok: false,
+        lead: "Meaningless text — rules out reacting to word-shaped noise."
+      },
+      {
+        id: "wrong_action",
+        label: "wrong_action",
+        instr: "close the middle drawer of the cabinet",
+        src: `${V}/task0_open_the_middle_drawer_of_the_cabinet/wrong_action/failure_ep1.mp4`,
+        badge: "fail",
+        ok: false,
+        lead: "Swap the verb — does the robot follow the new action?"
+      },
+      {
+        id: "wrong_task",
+        label: "wrong_task",
+        instr: "push the plate to the front of the stove",
+        src: `${V}/task0_open_the_middle_drawer_of_the_cabinet/wrong_task/failure_ep1.mp4`,
+        badge: "fail",
+        ok: false,
+        lead: "Give a different task’s instruction in the same kitchen."
+      }
+    ];
+
+    const METRIC_LEAD = {
+      tsr: "How often does the robot complete the asked task?",
+      css: "Remove language. If success collapses, language was necessary.",
+      fif: "Under a misleading instruction — follow, ignore, or fail?",
+      info: "Nouns often name the task; verbs need a true opposite to be a fair test."
+    };
+
+    const slides = [...document.querySelectorAll(".slide")];
+    const dots = document.getElementById("dots");
+    const progress = document.getElementById("progress");
+    const prevBtn = document.getElementById("prev");
+    const nextBtn = document.getElementById("next");
+    const condList = document.getElementById("cond-list");
+    const grid = document.getElementById("success-grid");
+
+    let i = 0;
+    let animating = false;
+    let condId = "original";
+    let metricId = "tsr";
+    let gridBuilt = false;
+
+    slides.forEach((_, n) => {
+      const b = document.createElement("button");
+      b.addEventListener("click", () => go(n));
+      dots.appendChild(b);
+    });
+
+    CONDITIONS.forEach((c) => {
+      const b = document.createElement("button");
+      b.dataset.id = c.id;
+      b.textContent = c.label;
+      b.addEventListener("click", () => setCondition(c.id));
+      condList.appendChild(b);
+    });
+
+    document.getElementById("metric-list").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-metric]");
+      if (btn) setMetric(btn.dataset.metric);
+    });
+
+    function buildGrid() {
+      if (gridBuilt) {
+        grid.querySelectorAll("video").forEach((v) => v.play().catch(() => {}));
+        return;
+      }
+      GRID_VIDEOS.forEach((src, idx) => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.style.transitionDelay = `${idx * 45}ms`;
+        const vid = document.createElement("video");
+        vid.muted = true;
+        vid.loop = true;
+        vid.playsInline = true;
+        vid.preload = "metadata";
+        vid.src = src;
+        cell.appendChild(vid);
+        grid.appendChild(cell);
+        vid.play().catch(() => {});
+      });
+      gridBuilt = true;
+    }
+
+    function play(el, src) {
+      if (!el) return;
+      if (el.dataset.src !== src) {
+        el.dataset.src = src;
+        el.src = src;
+        el.load();
+      }
+      el.play().catch(() => {});
+    }
+
+    function pauseOthers(keep) {
+      document.querySelectorAll("video").forEach((v) => {
+        if (!keep.includes(v)) v.pause();
+      });
+    }
+
+    function setCondition(id) {
+      const c = CONDITIONS.find((x) => x.id === id) || CONDITIONS[0];
+      condId = c.id;
+      condList.querySelectorAll("button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.id === c.id);
+      });
+      document.getElementById("perturb-lead").textContent = c.lead;
+      document.getElementById("pert-instr").textContent = c.instr;
+      const badge = document.getElementById("pert-badge");
+      badge.textContent = c.badge;
+      badge.className = "badge " + (c.ok ? "ok" : "bad");
+      const vid = document.getElementById("vid-pert");
+      play(vid, c.src);
+      pauseOthers([vid]);
+    }
+
+    function setMetric(id) {
+      metricId = id;
+      document.querySelectorAll("#metric-list button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.metric === id);
+      });
+      document.querySelectorAll(".analyze-panel").forEach((p) => {
+        p.classList.toggle("active", p.id === "panel-" + id);
+      });
+      document.getElementById("analyze-lead").textContent = METRIC_LEAD[id];
+      loadAnalyzeMedia();
+    }
+
+    function loadAnalyzeMedia() {
+      if (metricId === "tsr") {
+        const v = document.getElementById("vid-tsr");
+        play(v, `${V}/task1_put_the_bowl_on_the_stove/original/success_ep1.mp4`);
+        pauseOthers([v]);
+      }
+      if (metricId === "css") {
+        const a = document.getElementById("vid-css-a");
+        const b = document.getElementById("vid-css-b");
+        play(a, `${V}/task7_turn_on_the_stove/original/success_ep1.mp4`);
+        play(b, `${V}/task7_turn_on_the_stove/blank/failure_ep1.mp4`);
+        pauseOthers([a, b]);
+      }
+      if (metricId === "fif") {
+        const v = document.getElementById("vid-fif");
+        play(v, `${V}/task0_open_the_middle_drawer_of_the_cabinet/wrong_task/failure_ep1.mp4`);
+        pauseOthers([v]);
+      }
+      if (metricId === "info") {
+        const a = document.getElementById("vid-nv-a");
+        const b = document.getElementById("vid-nv-b");
+        play(a, `${V}/task0_open_the_middle_drawer_of_the_cabinet/original/success_ep1.mp4`);
+        play(b, `${V}/task0_open_the_middle_drawer_of_the_cabinet/wrong_action/failure_ep1.mp4`);
+        pauseOthers([a, b]);
+      }
+    }
+
+    function loadSlideMedia(index) {
+      if (index === 0) {
+        buildGrid();
+        pauseOthers([...grid.querySelectorAll("video")]);
+        grid.querySelectorAll("video").forEach((v) => v.play().catch(() => {}));
+      } else if (index === 1) {
+        const a = document.getElementById("vid-q-a");
+        const b = document.getElementById("vid-q-b");
+        play(a, `${V}/task7_turn_on_the_stove/original/success_ep1.mp4`);
+        play(b, `${V}/task7_turn_on_the_stove/blank/failure_ep1.mp4`);
+        pauseOthers([a, b]);
+      } else if (index === 2) {
+        const v = document.getElementById("vid-setup");
+        play(v, `${V}/task1_put_the_bowl_on_the_stove/original/success_ep1.mp4`);
+        pauseOthers([v]);
+      } else if (index === 3) {
+        const a = document.getElementById("vid-a");
+        const b = document.getElementById("vid-b");
+        play(a, `${V}/task7_turn_on_the_stove/original/success_ep1.mp4`);
+        play(b, `${V}/task7_turn_on_the_stove/blank/failure_ep1.mp4`);
+        pauseOthers([a, b]);
+      } else if (index === 4) {
+        setCondition(condId);
+      } else if (index === 5) {
+        const v = document.getElementById("vid-roll");
+        play(v, `${V}/task0_open_the_middle_drawer_of_the_cabinet/original/success_ep1.mp4`);
+        pauseOthers([v]);
+      } else if (index === 6) {
+        setMetric(metricId);
+      } else {
+        pauseOthers([]);
+      }
+    }
+
+    function go(next) {
+      if (animating || next === i || next < 0 || next >= slides.length) return;
+      animating = true;
+      const from = slides[i];
+      const to = slides[next];
+      const forward = next > i;
+
+      from.classList.remove("active");
+      from.classList.add(forward ? "exit-left" : "exit-right");
+      to.classList.remove("exit-left", "exit-right");
+      to.classList.add("active");
+
+      i = next;
+      updateChrome();
+      loadSlideMedia(i);
+
+      setTimeout(() => {
+        from.classList.remove("exit-left", "exit-right");
+        animating = false;
+      }, 450);
+    }
+
+    function updateChrome() {
+      [...dots.children].forEach((d, n) => d.classList.toggle("active", n === i));
+      progress.style.width = `${((i + 1) / slides.length) * 100}%`;
+      prevBtn.disabled = i === 0;
+      nextBtn.disabled = i === slides.length - 1;
+    }
+
+    prevBtn.addEventListener("click", () => go(i - 1));
+    nextBtn.addEventListener("click", () => go(i + 1));
+
+    window.addEventListener("keydown", (e) => {
+      if (["ArrowRight", " ", "PageDown"].includes(e.key)) { e.preventDefault(); go(i + 1); }
+      if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); go(i - 1); }
+      if (e.key === "Home") go(0);
+      if (e.key === "End") go(slides.length - 1);
+    });
+
+    let touchX = null;
+    window.addEventListener("touchstart", (e) => { touchX = e.changedTouches[0].screenX; }, { passive: true });
+    window.addEventListener("touchend", (e) => {
+      if (touchX == null) return;
+      const dx = e.changedTouches[0].screenX - touchX;
+      if (Math.abs(dx) > 50) go(i + (dx < 0 ? 1 : -1));
+      touchX = null;
+    }, { passive: true });
+
+    updateChrome();
+    buildGrid();
+  </script>
+</body>
+</html>
