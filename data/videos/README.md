@@ -63,6 +63,7 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | [failure_ep3.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_action/failure_ep3.mp4) | 🔴 **Failure** | `para_action` | `put the bowl on the stove` |
 | [failure_ep4.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_action/failure_ep4.mp4) | 🔴 **Failure** | `para_action` | `put the bowl on the stove` |
 | [failure_ep5.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_action/failure_ep5.mp4) | 🔴 **Failure** | `para_action` | `put the bowl on the stove` |
+| [success_ep1.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_action/success_ep1.mp4) | 🟢 **Success** | `para_action` | `place the bowl on the stove` |
 | [failure_ep1.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_object/failure_ep1.mp4) | 🔴 **Failure** | `para_object` | `put the bowl on the stove` |
 | [failure_ep2.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_object/failure_ep2.mp4) | 🔴 **Failure** | `para_object` | `put the bowl on the stove` |
 | [failure_ep3.mp4](data/videos/task1_put_the_bowl_on_the_stove/para_object/failure_ep3.mp4) | 🔴 **Failure** | `para_object` | `put the bowl on the stove` |
@@ -189,6 +190,9 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | [failure_ep3.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_action/failure_ep3.mp4) | 🔴 **Failure** | `para_action` | `put the bowl on the plate` |
 | [success_ep1.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_action/success_ep1.mp4) | 🟢 **Success** | `para_action` | `put the bowl on the plate` |
 | [success_ep2.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_action/success_ep2.mp4) | 🟢 **Success** | `para_action` | `put the bowl on the plate` |
+| [failure_ep1.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_object/failure_ep1.mp4) | 🔴 **Failure** | `para_object` | `put the soup bowl on the plate` |
+| [failure_ep2.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_object/failure_ep2.mp4) | 🔴 **Failure** | `para_object` | `put the mixing bowl on the plate` |
+| [success_ep1.mp4](data/videos/task8_put_the_bowl_on_the_plate/para_object/success_ep1.mp4) | 🟢 **Success** | `para_object` | `put the bowl on the dinner plate` |
 | [failure_ep1.mp4](data/videos/task8_put_the_bowl_on_the_plate/wrong_task/failure_ep1.mp4) | 🔴 **Failure** | `wrong_task` | `open the top drawer and put the bowl inside` |
 | [failure_ep2.mp4](data/videos/task8_put_the_bowl_on_the_plate/wrong_task/failure_ep2.mp4) | 🔴 **Failure** | `wrong_task` | `open the top drawer and put the bowl inside` |
 | [failure_ep3.mp4](data/videos/task8_put_the_bowl_on_the_plate/wrong_task/failure_ep3.mp4) | 🔴 **Failure** | `wrong_task` | `open the top drawer and put the bowl inside` |
@@ -211,5 +215,3 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | [success_seed42_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep1.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
 | [success_seed42_ep2.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep2.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
 | [success_seed42_ep3.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep3.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
-| `videos/task8_put_the_bowl_on_the_plate/para_object/failure_ep1.mp4` | Failure | `put the soup bowl on the plate` |
-| `videos/task8_put_the_bowl_on_the_plate/para_object/success_ep1.mp4` | Success | `put the bowl on the dinner plate` |
