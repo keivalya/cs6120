@@ -1,6 +1,6 @@
 \documentclass[11pt]{article}
 
-\usepackage[review]{acl2023}
+\usepackage[]{acl2023}
 
 \usepackage{times}
 \usepackage{latexsym}
@@ -27,9 +27,9 @@
 
 \title{Determining Language Grounding Failures in Vision-Language-Action Models}
 
-\author{Stephen An \quad Rukmini Menon \quad Keivalya Pandya \quad Shyam Sreenivasan \\
-  Northeastern University \\
-  \texttt{\{an.st, menon.ru, pandya.k, sreenivasan.sh\}@northeastern.edu}}
+\author{Stephen An, Rukmini Menon, Keivalya Pandya, Shyam Sreenivasan \\
+  Northeastern University\\\small{\texttt{\{an.st, menon.ru, pandya.k, sreenivasan.sh\}@northeastern.edu}}}
+  
 
 \begin{document}
 \maketitle
@@ -69,7 +69,14 @@ We evaluate three open-source checkpoints that instantiate the primary architect
 These three models span a $16\times$ parameter range and three distinct action parameterizations (flow-matching, discretized tokens, and continuous L1 regression), allowing us to test whether language grounding behavior generalizes across architectures.
 
 \subsection{Benchmarks}
-We conduct all evaluations within the LIBERO benchmarking framework \citep{liu2023libero}. LIBERO contains four distinct task suites: \texttt{Spatial}, \texttt{Object}, \texttt{Goal}, and \texttt{Long}. We focus exclusively on \texttt{LIBERO-Goal} because its ten tasks share an identical initial scene layout and object inventory. In \texttt{LIBERO-Goal}, the initial visual state $S_0$ does not disambiguate the goal, making the instruction the sole distinguishing input.
+We conduct all evaluations within the LIBERO benchmarking framework \citep{liu2023libero}. LIBERO contains four distinct task suites: \texttt{Spatial}, \texttt{Object}, \texttt{Goal}, and \texttt{Long}. We focus exclusively on \texttt{LIBERO-Goal} because its ten tasks share an identical initial scene layout and object inventory (Figure~\ref{fig:scene_overview}a). In \texttt{LIBERO-Goal}, the initial visual state $S_0$ does not disambiguate the goal, making the instruction the sole distinguishing input.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/fig_scene_overview.png}
+\caption{\textbf{LIBERO-Goal Environment Setup and Scene-Fixed Causal Isolation Framework.} \textbf{(a)} Top-down visual camera view of initial simulator state $S_0$, depicting fixed tabletop object positions (cabinet, middle drawers, stove knob, bowl, plate, Panda gripper) shared identically across all ten tasks. \textbf{(b)} Conceptual diagram of our scene-fixed causal evaluation protocol: holding state $S_0$ strictly constant while perturbing instruction text to evaluate final simulator goal predicates $\mathcal{A}(S_T)$.}
+\label{fig:scene_overview}
+\end{figure*}
 
 \section{Related Work}
 
@@ -122,7 +129,7 @@ Table~\ref{tab:taxonomy} summarizes the perturbation taxonomy.
         \texttt{para\_object, para\_action,} \texttt{para\_compositional} & Reworded instruction preserving original goal & Policy is brittle to surface form despite unchanged semantics. \\
         \hline
 \end{tabular}
-\caption{The perturbation taxonomy: instruction construction and the specific shortcut hypothesis each condition rules out.}
+\caption{\textbf{Instruction Perturbation Taxonomy.} Classification of experimental conditions applied to canonical task instructions $I_{\text{orig}}$ on fixed initial scene $S_0$. Each perturbation type is designed to isolate and rule out a specific candidate shortcut strategy or ungrounded failure mode in Vision-Language-Action policies.}
 \label{tab:taxonomy}
 \end{table*}
 
@@ -163,7 +170,7 @@ For \texttt{blank} and \texttt{nonsense}, no valid goal is specified. We cross w
         \textbf{$I_{\text{orig}}$ Failed} & \textbf{Uninformative.} Policy incompetent on this scene; excluded from grounding rate. & \textbf{Spurious Success.} Policy achieved a goal without language where original prompt failed. \\
         \hline
     \end{tabular}
-    \caption{The destructive-condition (\texttt{blank}, \texttt{nonsense}) $2\times2$ evaluation matrix.}
+    \caption{\textbf{Destructive-Condition ($2\times2$) Outcome Matrix.} Joint classification of episode outcomes under canonical instruction $I_{\text{orig}}$ versus destructive perturbations (\texttt{blank}, \texttt{nonsense}). Episodes are categorized into Grounded execution, Scene-memorized defaults, Spurious success, or Uninformative baseline failures.}
     \label{tab:destructive-2x2}
 \end{table*}
 
@@ -194,7 +201,7 @@ For \texttt{wrong\_object}, \texttt{wrong\_action}, and \texttt{wrong\_task}, th
     \hline
 \end{tabular}%
 }
-\caption{The misleading-condition (\texttt{wrong\_object}, \texttt{wrong\_action}, \texttt{wrong\_task}) $3\times2$ evaluation matrix.}
+\caption{\textbf{Misleading-Condition ($3\times2$) Outcome Matrix.} Multi-goal evaluation matrix classifying policy trajectories when supplied with misleading instructions $I_{\text{wrong}}$ specifying alternate goal $k_{\text{wrong}} \neq k^*$. Evaluates whether the policy complies with the new instruction (Follow), defaults to scene priors (Ignore), or fails (Confused/Uninformative).}
     \label{tab:follow-ignore-fail}
 \end{table*}
 
@@ -214,28 +221,39 @@ We convert episode classifications into four aggregate metrics:
 \label{sec:experiments}
 
 \subsection{Models and Benchmark}
-We evaluate SmolVLA-450M, OpenVLA-7B, and OpenVLA-OFT-7.5B on the ten tasks of \texttt{LIBERO-Goal} in MuJoCo. All tasks share an identical initial scene layout and object inventory, ensuring that the instruction is the sole distinguishing input.
+We evaluate SmolVLA-450M, OpenVLA-7B, and OpenVLA-OFT-7.5B on the ten tasks of \texttt{LIBERO-Goal} in MuJoCo. All tasks share an identical initial scene layout and object inventory (Figure~\ref{fig:scene_overview}a), ensuring that the instruction is the sole distinguishing input.
 
 \subsection{Scene-Fixed Protocol}
 For each (task, episode) pair, we hold the initial simulator state $S_0$ strictly constant across all instruction conditions: $S_0(I_{\text{orig}}) \equiv S_0(I_{\text{pert}})$. We audit this invariant by hashing simulator state arrays (\texttt{qpos}, \texttt{qvel}) immediately after environment reset. As detailed in Section~\ref{sec:scenefixed-audit}, un-audited evaluations frequently violate this invariant due to simulator generator drift across process resets.
 
 \subsection{Data Collection and Implementation}
-Each rollout logs a structured record containing model checkpoint hash, task ID, condition, seed, initial-state hash, achieved task set $\mathcal{A}(S_T)$, and end-effector kinematics. Rollouts run for $T=300$ steps under seeds 7 and 42. Simulator evaluations execute sequentially with one EGL rendering context per process to prevent rendering context crashes.
+Each rollout logs a structured record containing model checkpoint hash, task ID, condition, initial-state hash, achieved task set $\mathcal{A}(S_T)$, and end-effector kinematics. Rollouts run for $T=300$ max steps across independent randomized evaluations. Simulator evaluations execute sequentially with one EGL rendering context per process to prevent rendering context crashes.
 
 \section{Results and Analysis}
 
 \subsection{RQ1: Language is Causally Load-Bearing and Scale-Invariant}
-Table~\ref{tab:rq1_causal} presents Task Success Rate (TSR), Causal Sensitivity Score (CSS), and Original-Action Rate (OAR) under structural and semantic perturbations.
+Table~\ref{tab:rq1_causal} presents Task Success Rate (TSR) and Causal Sensitivity Score (CSS) across all evaluated model architectures. The columns in Table~\ref{tab:rq1_causal} correspond to specific instruction conditions designed to isolate different aspects of policy behavior:
+\begin{itemize}
+    \item \textbf{Baseline (\texttt{original}):} The canonical, un-edited instruction $I_{\text{orig}}$ for the task (e.g., ``turn on the stove'').
+    \item \textbf{Blank:} The empty string prompt $I = \text{""}$, testing whether policies require language input or execute tasks autonomously via visual scene priors.
+    \item \textbf{Nonsense:} Length-matched out-of-domain random words (e.g., ``triangle banana purple''), testing whether policies parse semantic structure or merely require token presence.
+    \item \textbf{Wrong Action:} Misleading prompt replacing the action verb with another action verb in the scene (e.g., ``push the stove knob'' instead of ``turn on the stove knob'').
+    \item \textbf{Wrong Object:} Misleading prompt replacing the target object noun with another object present in the scene (e.g., ``turn on the plate'' instead of ``turn on the stove'').
+    \item \textbf{Wrong Task:} Misleading prompt replacing the entire instruction with a valid, executable instruction for a \emph{completely different task} that exists within the same initial scene layout $S_0$ (for example, supplying ``put the bowl on the plate'' when the scene target is ``open the middle drawer of the cabinet''). A drop to $0.0\%$ success under \texttt{Wrong Task} confirms that policies do not execute the original task when explicitly commanded to perform an alternative task in the workspace.
+    \item \textbf{Repeated:} Length-control prompt concatenating the canonical instruction with itself (e.g., ``turn on the stove turn on the stove''), verifying stability under longer input sequences.
+    \item \textbf{Parenthetical Values (CSS):} Values in parentheses for destructive conditions (\texttt{blank}, \texttt{nonsense}) denote the \textbf{Causal Sensitivity Score} ($\text{CSS} \in [0, 1]$), where $\text{CSS} = 1.00$ indicates total collapse of performance upon removing language.
+\end{itemize}
 
 \begin{table*}[t]
 \centering
 \small
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq1_causal}}
-\caption{TSR under structural and semantic perturbations on \texttt{LIBERO-Goal}, with CSS in parentheses for destructive conditions. \rqOneNNote\ \sceneNote}
+\caption{\textbf{Task Success Rate (TSR) and Causal Sensitivity Score (CSS) across Model Scales.} Comprehensive evaluation of SmolVLA-450M, OpenVLA-7B, and OpenVLA-OFT-7.5B under structural and semantic instruction perturbations on \texttt{LIBERO-Goal}. Columns evaluate: \textbf{Baseline} ($I_{\text{orig}}$), \textbf{Blank} (empty prompt), \textbf{Nonsense} (out-of-domain tokens), \textbf{Wrong Action} (verb swap), \textbf{Wrong Object} (noun swap), \textbf{Wrong Task} (full instruction swap to an alternate task in scene $S_0$), and \textbf{Repeated} (length control). Causal Sensitivity Scores ($\text{CSS} \in [0, 1]$) in parentheses demonstrate that language is causally load-bearing and scale-invariant across a $16\times$ parameter range. \rqOneNNote\ \sceneNote}
 \label{tab:rq1_causal}
 \end{table*}
 
 Destructive conditions (\texttt{blank}, \texttt{nonsense}) collapse task success across all architectures. SmolVLA-450M drops to $0.0\%$ success ($\text{CSS}=1.00$). OpenVLA-7B drops to $0.0\%$ under \texttt{blank} ($\text{CSS}=1.00$). OpenVLA-OFT retains a minor residue ($\oftBlank\%$ under \texttt{blank}, $\text{CSS}=\oftCssBlank$), which we attribute to visual shortcuts enabled by its wrist camera and proprioception inputs. Crucially, causal sensitivity is flat across model scale: CSS remains near $1.00$ from $0.45$B to $7.5$B parameters.
+
 
 \subsection{RQ2: Information Structure Confounds Word-Class Grounding}
 \label{sec:info}
@@ -254,7 +272,7 @@ All ten noun sets are unique across tasks, resolving all $3.32$ bits of task ide
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig_information.png}
-\caption{\texttt{LIBERO-Goal} information structure. \textbf{(a)} Nouns resolve all $3.32$ bits of task identity; verbs leave $1.55$ bits unresolved. \textbf{(b)} Verbs partition six tasks into a single uninformative \texttt{put} cluster.}
+\caption{\textbf{Information Content of \texttt{LIBERO-Goal} Instructions.} \textbf{(a)} Conditional task entropy $H(\text{task} \mid W)$ under a uniform prior ($3.32$ bits total). Object nouns uniquely identify all ten tasks ($H=0.00$ bits), rendering verbs redundant. \textbf{(b)} Verb frequency breakdown: the verb \texttt{put} dominates 6 out of 10 task instructions, creating an uninformative verb cluster.}
 \label{fig:information}
 \end{figure}
 
@@ -270,14 +288,14 @@ To test this entropy account, we perform a removal test: rather than substitutin
 \centering
 \small
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq_ablation}}
-\caption{Word-class removal test ($n=200$ per cell). \rqAblationNote}
+\caption{\textbf{Word-Class Removal Test.} Comparison of Task Success Rate (TSR) and drop ($\Delta$TSR) when deleting action verbs ($0$ bits destroyed) versus masking object nouns ($3.32$ bits destroyed) on OpenVLA-7B and OpenVLA-OFT-7.5B ($n=200$ per cell, $p$-values computed via McNemar's test over matched initial scenes $S_0$). \rqAblationNote}
 \label{tab:rq_ablation}
 \end{table}
 
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{fig_removal.png}
-\caption{Removal test on OpenVLA-OFT. Deleting the verb costs $\oftVerbDrop$ points ($p=0.34$), while masking nouns costs $\oftNounMask$ points.}
+\caption{\textbf{Word-Class Removal Impact on OpenVLA-OFT-7.5B.} Task Success Rate drop (percentage points) under complete verb deletion ($1.1$ words removed, $0$ bits destroyed) versus noun masking ($2.4$ words removed, $3.32$ bits destroyed) compared to destructive blank prompt ($7.2$ words removed). Deleting the verb causes an insignificant $2.0$ pp drop ($p=0.34$), whereas masking nouns collapses performance by $73.5$ pp.}
 \label{fig:removal}
 \end{figure}
 
@@ -290,14 +308,14 @@ We separate the ten verb substitutions into the 3 genuine antonym pairs (\texttt
 \centering
 \small
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq2_wordclass}}
-\caption{TSR drop under verb substitution split by task identity change ($p$-value from McNemar test over matched pairs).}
+\caption{\textbf{Verb Substitution Split: Antonyms vs. Near-Synonyms.} Task Success Rate drop ($\Delta$TSR) and McNemar statistical significance ($p$-values) when splitting verb substitutions into contrastive antonym pairs ($n=60$) versus near-synonym control pairs ($n=140$). OpenVLA-7B exhibits significant verb sensitivity ($31.7$ pp drop, $p<10^{-5}$) only when verbs define distinct task goals.}
 \label{tab:rq2_wordclass}
 \end{table}
 
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{fig_verbsplit.png}
-\caption{Verb substitution split into antonyms ($n=60$) versus near-synonyms ($n=140$). OpenVLA-7B drops $31.7$ points on antonyms ($p<10^{-5}$).}
+\caption{\textbf{Task Success Rate Drop Under Contrastive Antonym vs. Near-Synonym Verb Substitutions.} Performance change ($\Delta\text{TSR}$) on matched pairs for SmolVLA, OpenVLA-7B, and OpenVLA-OFT-7.5B. OpenVLA-7B exhibits a highly significant $31.7$ pp drop ($p<10^{-5}$) on genuine antonym pairs (\texttt{open}$\leftrightarrow$\texttt{close}, \texttt{turn on}$\leftrightarrow$\texttt{turn off}), proving that it reads verbs when the benchmark requires it.}
 \label{fig:verbsplit}
 \end{figure}
 
@@ -306,22 +324,29 @@ Splitting the probe reverses the conclusion for OpenVLA-7B. Evaluating the suite
 \subsection{Paraphrase Robustness and Kinematics}
 Table~\ref{tab:rq2_para} reports PRIDE paraphrase scores. Robustness scales with parameter count: SmolVLA scores PRIDE $2.7$, OpenVLA-7B scores $33.3$, and OpenVLA-OFT achieves $65.8$. All models follow the same vulnerability ordering: object paraphrases degrade performance least, while compositional paraphrases degrade performance most.
 
-\begin{table}[tb]
+\begin{table*}[tb]
 \centering
 \small
-\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq2_para}}
-\caption{Paraphrase robustness scored via PRIDE.}
+\input{tables/rq2_para}
+\caption{\textbf{Paraphrase Robustness and PRIDE Metric Suite.} Comprehensive evaluation of paraphrase sensitivity across Object, Action, and Compositional rewording axes ($n=4092$ for SmolVLA, $n=450$ for OpenVLA/OpenVLA-OFT). PRIDE scores combine task success with keyword and structural similarity distance ($\text{PD} = 1 - 0.5(\text{SK} + \text{ST})$), demonstrating that robustness scales monotonically with model capacity.}
 \label{tab:rq2_para}
-\end{table}
+\end{table*}
 
-Kinematic analysis ($t_{\text{div}}$, threshold $5$\,cm) confirms these findings: under \texttt{blank} instructions, trajectories depart from canonical paths within 1--2 steps. Under \texttt{wrong\_action}, trajectories follow canonical paths for 6--11 steps before diverging, matching the timing expected when nouns specify target approach location and verbs specify manipulation manner.
+Kinematic analysis ($t_{\text{div}}$, threshold $5$\,cm) confirms these findings: under \texttt{blank} instructions, trajectories depart from canonical paths within 1--2 steps. Under \texttt{wrong\_action}, trajectories follow canonical paths for 6--11 steps before diverging, matching the timing expected when nouns specify target approach location and verbs specify manipulation manner. Qualitative rollout snapshots across key timesteps ($t=0, 75, 150, 225, 300$) are visualized in Figure~\ref{fig:qualitative_grid}.
+
+\begin{figure*}[tb]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/fig_qualitative_grid.png}
+\caption{\textbf{Qualitative Rollout Snapshot Comparison Across Timesteps.} Temporal frame snapshots ($t=0, 75, 150, 225, 300$) of MuJoCo simulator rollouts under canonical, destructive (\texttt{blank}, \texttt{nonsense}), and misleading (\texttt{wrong\_task}) instructions on \texttt{LIBERO-Goal}. Highlights physical divergence behavior, in-place hesitation, and task switching.}
+\label{fig:qualitative_grid}
+\end{figure*}
 
 \section{Discussion and Conclusion}
 We evaluated three VLA architectures under a scene-fixed causal protocol to determine the nature of language grounding failures. Our findings establish three key conclusions:
 
-1. **Language is causally necessary:** Completely removing language collapses task success across all scales, disproving the notion that VLAs operate as purely visual policies on shared-scene benchmarks.
-2. **Benchmark information redundancy creates apparent verb blindness:** In \texttt{LIBERO-Goal}, nouns uniquely determine task identity. Models ignore verbs because verbs are redundant, not because models are incapable of verb grounding.
-3. **VLAs ground verbs when prompts are contrastive:** On true verb antonyms, OpenVLA-7B exhibits strong verb sensitivity ($31.7$-point drop, $p<10^{-5}$).
+1. \textbf{Language is causally necessary:} Completely removing language collapses task success across all scales, disproving the notion that VLAs operate as purely visual policies on shared-scene benchmarks.
+2. \textbf{Benchmark information redundancy creates apparent verb blindness:} In \texttt{LIBERO-Goal}, nouns uniquely determine task identity. Models ignore verbs because verbs are redundant, not because models are incapable of verb grounding.
+3. \textbf{VLAs ground verbs when prompts are contrastive:} On true verb antonyms, OpenVLA-7B exhibits strong verb sensitivity ($31.7$-point drop, $p<10^{-5}$).
 
 We recommend that future VLA benchmarks measure and report instruction set information content before drawing word-class grounding conclusions.
 
@@ -329,7 +354,8 @@ We recommend that future VLA benchmarks measure and report instruction set infor
 Our study has several scope bounds: (1) \textbf{Single benchmark suite:} Causal isolation relies on \texttt{LIBERO-Goal}'s shared initial scene. (2) \textbf{Antonym task coverage:} Only three tasks in \texttt{LIBERO-Goal} afford true verb antonyms ($n=60$ episodes across 3 task templates). (3) \textbf{Simulation scope:} All experiments take place in MuJoCo simulation without real-robot deployment. (4) \textbf{Uniform entropy prior:} Information calculations assume a uniform task distribution, which may differ from model pre-training data distributions.
 
 \section*{Ethics and Reproducibility}
-This work uses simulated environments and open-source model checkpoints. We release per-run manifests (seed, environment locks, state hashes) to ensure full computational reproducibility.
+This work uses simulated environments and open-source model checkpoints. We release per-run manifests (environment locks, state hashes) to ensure full computational reproducibility.
+
 
 \bibliographystyle{acl_natbib}
 \bibliography{custom}
@@ -344,15 +370,15 @@ Table~\ref{tab:rq1_causal_full} provides per-cell episode counts and 95\% Wilson
 \centering
 \small
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq1_causal_full}}
-\caption{Full RQ1 per-cell success rates with 95\% Wilson confidence intervals.}
+\caption{\textbf{Complete Per-Cell RQ1 Experimental Results.} Detailed breakdown of Task Success Rates (TSR), 95\% Wilson score confidence intervals, sample sizes $n$, and Causal Sensitivity Scores (CSS) across all 3 model architectures and 7 instruction conditions on \texttt{LIBERO-Goal}.}
 \label{tab:rq1_causal_full}
 \end{table*}
 
 \begin{table*}[tb]
 \centering
 \small
-\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{\input{tables/rq3_divergence}}
-\caption{Kinematic divergence step $t_{\text{div}}$ and end-effector displacement $e_{10}$.}
+\input{tables/rq3_divergence}
+\caption{\textbf{Kinematic Trajectory Divergence Metrics.} Quantitative trajectory departure steps ($t_{\text{div}}$, threshold $\tau = 5$\,cm) and 10-step end-effector spatial displacement ($e_{10}$ in meters) between canonical and perturbed rollouts sharing identical initial physical simulator states $S_0$.}
 \label{tab:rq3_divergence}
 \end{table*}
 
@@ -369,7 +395,7 @@ Figure~\ref{fig:rq3_divergence} illustrates end-effector divergence $e(t)$ over 
 \begin{figure}[tb]
 \centering
 \includegraphics[width=\linewidth]{rq3_divergence.png}
-\caption{End-effector displacement over rollout timesteps.}
+\caption{\textbf{End-Effector Trajectory Divergence Profiles $e(t)$ Over Rollout Timesteps.} Mean Euclidean distance (meters) between canonical and perturbed end-effector trajectories sharing identical initial state $S_0$. Destructive prompts (\texttt{blank}, \texttt{nonsense}) diverge immediately at $t_{\text{div}} \le 2$ steps, while \texttt{wrong\_action} prompts track canonical trajectories for $6$--$12$ steps during initial target approach before diverging during grasping.}
 \label{fig:rq3_divergence}
 \end{figure}
 
