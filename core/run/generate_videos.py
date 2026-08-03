@@ -40,6 +40,8 @@ def parse_args():
     parser.add_argument("--output_dir", default="data/videos")
     parser.add_argument("--condition", default="original")
     parser.add_argument("--paraphrase_axis", default=None)
+    parser.add_argument("--success_only", action="store_true")
+    parser.add_argument("--seed", type=int, default=100)
     return parser.parse_args()
 
 
@@ -122,15 +124,16 @@ def append_to_global_readme(output_dir: Path, video_path: str, status: str, inst
             fcntl.flock(f, fcntl.LOCK_UN)
 
 
-def run_episode(env, policy, instruction: str, max_steps: int, env_preprocessor, preprocessor, postprocessor, env_postprocessor):
+def run_episode(env, policy, instruction: str, max_steps: int, env_preprocessor, preprocessor, postprocessor, env_postprocessor, ep_idx: int = 0, seed: int = 100):
     """Execute a single episode and return (frames_list, is_success)."""
     try:
+        env.set_attr("init_state_id", ep_idx)
         env.set_attr("task_description", instruction)
     except Exception:
         pass
 
-    obs, _ = env.reset()
     policy.reset()
+    obs, _ = env.reset(seed=seed)
     
     frames = []
     is_success = False
@@ -227,12 +230,14 @@ def main():
     policy_cfg.pretrained_path = hf_repo
     policy_cfg.device = device
     policy = make_policy(cfg=policy_cfg, env_cfg=env_cfg)
+    policy.eval()
 
     vec = make_env(env_cfg, n_envs=1, use_async_envs=False)
     env = vec[args.suite][tid]
 
     preprocessor, postprocessor = make_pre_post_processors(
-        policy.config,
+        policy_cfg=policy_cfg,
+        pretrained_path=hf_repo,
         preprocessor_overrides={"device_processor": {"device": str(policy.config.device)}},
     )
     env_preprocessor, env_postprocessor = make_env_pre_post_processors(env_cfg=env_cfg, policy_cfg=policy_cfg)
@@ -242,21 +247,24 @@ def main():
     target_num = args.num_videos
 
     for ep in range(1, 50):
-        if success_count >= target_num and fail_count >= target_num:
+        if args.success_only and success_count >= target_num:
+            break
+        if not args.success_only and success_count >= target_num and fail_count >= target_num:
             break
 
         # Select prompt
         prompt = instructions[(ep - 1) % len(instructions)]
-        set_seed = 100 + ep
+        set_seed = args.seed + ep
         np.random.seed(set_seed)
         torch.manual_seed(set_seed)
 
-        print(f"[{task_name}] Running episode {ep} (prompt: '{prompt[:30]}...')...", flush=True)
-        frames, is_success = run_episode(env, policy, prompt, args.max_steps, env_preprocessor, preprocessor, postprocessor, env_postprocessor)
+        print(f"[{task_name}] Running episode {ep} (seed: {set_seed}, prompt: '{prompt[:30]}...')...", flush=True)
+        frames, is_success = run_episode(env, policy, prompt, args.max_steps, env_preprocessor, preprocessor, postprocessor, env_postprocessor, ep_idx=ep-1, seed=set_seed)
 
         if is_success and success_count < target_num:
             success_count += 1
-            vid_path = out_folder / f"success_ep{success_count}.mp4"
+            filename = f"success_ep{success_count}.mp4" if args.seed == 100 else f"success_seed{args.seed}_ep{success_count}.mp4"
+            vid_path = out_folder / filename
             writer = imageio.get_writer(vid_path, fps=20)
             for i, f in enumerate(frames):
                 ann = resize_frame(f)
@@ -267,7 +275,8 @@ def main():
 
         elif (not is_success) and fail_count < target_num:
             fail_count += 1
-            vid_path = out_folder / f"failure_ep{fail_count}.mp4"
+            filename = f"failure_ep{fail_count}.mp4" if args.seed == 100 else f"failure_seed{args.seed}_ep{fail_count}.mp4"
+            vid_path = out_folder / filename
             writer = imageio.get_writer(vid_path, fps=20)
             for i, f in enumerate(frames):
                 ann = resize_frame(f)
