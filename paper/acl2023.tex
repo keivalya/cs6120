@@ -54,18 +54,9 @@ Evaluating three model architectures spanning a $16\times$ parameter range on \t
 
 \section{Preliminaries}
 
-\subsection{Vision-Language-Action Models}
-The VLA paradigm originated with RT-1 \citep{brohan2022rt1}, which framed robotic control as a sequence-modeling problem over tokenized actions. RT-2 \citep{brohan2023rt2} showed that web-scale vision-language pre-training transfers into control, yielding emergent semantic understanding, while PaLM-E \citep{driess2023palm} demonstrated that a unified multimodal model benefits from joint training across language, vision, and control. Open X-Embodiment \citep{open_x_embodiment_rt_x_2023} scaled training data across more than a million real trajectories. These foundational works establish an expectation: if a policy inherits a language model's pre-trained semantics, it should condition its physical actions on the instruction. This expectation is precisely what our study puts to the test.
+\subsection{Vision-Language-Action Models \& Checkpoints}
+VLA models extend vision-language models with action heads to output motor controls conditioned on language instructions \citep{brohan2022rt1,brohan2023rt2,driess2023palm,open_x_embodiment_rt_x_2023}. We evaluate three open-source checkpoints spanning a $16\times$ parameter range and three distinct action parameterizations: (1) \textbf{SmolVLA-450M} \citep{shukor2025smolvla}, a compact policy combining SmolVLM2 with a flow-matching action expert; (2) \textbf{OpenVLA-7B} \citep{kim2025openvla}, emitting discretized action tokens from a static camera; and (3) \textbf{OpenVLA-OFT-7.5B} \citep{kim2025oft}, utilizing continuous action chunking via L1 regression, an additional wrist camera, and 8D proprioception.
 
-\subsection{Evaluated Models}
-We evaluate three open-source checkpoints that instantiate the primary architectural choices in current VLA research:
-\begin{enumerate}
-    \item \textbf{SmolVLA-450M} \citep{shukor2025smolvla}: A compact policy combining a SmolVLM2 backbone with a \emph{flow-matching} action expert, serving as our small-scale baseline.
-    \item \textbf{OpenVLA-7B} \citep{kim2025openvla}: The canonical 7B VLA policy built on Prismatic VLM and Llama-2, emitting \emph{discretized} action tokens from a single static camera.
-    \item \textbf{OpenVLA-OFT-7.5B} \citep{kim2025oft}: The Optimized Fine-Tuning recipe utilizing continuous action chunking, an L1-regression loss, an additional wrist camera stream, and 8-dimensional proprioception. (Note that OFT here refers to \emph{Optimized} Fine-Tuning, not orthogonal fine-tuning; the checkpoint is evaluated without FiLM.)
-\end{enumerate}
-
-These three models span a $16\times$ parameter range and three distinct action parameterizations (flow-matching, discretized tokens, and continuous L1 regression), allowing us to test whether language grounding behavior generalizes across architectures.
 
 \subsection{Benchmarks}
 We conduct all evaluations within the LIBERO benchmarking framework \citep{liu2023libero}. LIBERO contains four distinct task suites: \texttt{Spatial}, \texttt{Object}, \texttt{Goal}, and \texttt{Long}. We focus exclusively on \texttt{LIBERO-Goal} because its ten tasks share an identical initial scene layout and object inventory (Figure~\ref{fig:scene_overview}a). In \texttt{LIBERO-Goal}, the initial visual state $S_0$ does not disambiguate the goal, making the instruction the sole distinguishing input.
@@ -146,75 +137,16 @@ where $k \in \{1, \dots, 10\}$. $\mathcal{A}(S_T)$ reveals whether the policy ac
 \subsection{Evaluating Perturbed Instructions via Achieved Goal Sets}
 \label{subsec:evaluating-perturbations}
 
-Using $\mathcal{A}(S_T)$, we establish per-episode classification schemes for destructive and misleading perturbations.
-
-\subsubsection{Destructive Conditions}
-For \texttt{blank} and \texttt{nonsense}, no valid goal is specified. We cross whether $I_{\text{orig}}$ succeeded against whether $\mathcal{A}(S_T) \neq \emptyset$ under the destructive condition (Table~\ref{tab:destructive-2x2}):
+Using $\mathcal{A}(S_T)$, we classify episode outcomes under perturbed prompts:
 \begin{itemize}
-    \item \textbf{Grounded:} $I_{\text{orig}}$ succeeded and $\mathcal{A}(S_T) = \emptyset$. Removing language eliminated success.
-    \item \textbf{Memorization:} $I_{\text{orig}}$ succeeded and $\mathcal{A}(S_T) \neq \emptyset$. The policy completed a task without language.
-    \item \textbf{Spurious Success:} $I_{\text{orig}}$ failed but $\mathcal{A}(S_T) \neq \emptyset$ under destructive prompt.
-    \item \textbf{Uninformative:} $I_{\text{orig}}$ failed and $\mathcal{A}(S_T) = \emptyset$. The policy could not complete the task under any prompt.
+    \item \textbf{Destructive Conditions (\texttt{blank}, \texttt{nonsense}):} An episode is \emph{Grounded} if $I_{\text{orig}}$ succeeds but $\mathcal{A}(S_T) = \emptyset$ (removing language eliminates success). It is categorized as \emph{Memorization} if $\mathcal{A}(S_T) \neq \emptyset$ despite missing language.
+    \item \textbf{Misleading Conditions (\texttt{wrong\_*})}: When $I_{\text{wrong}}$ specifies goal $k_{\text{wrong}} \neq k^*$, we measure whether the policy complies with the new goal (\emph{Follow}, $k_{\text{wrong}} \in \mathcal{A}(S_T)$), defaults to the scene's original goal (\emph{Ignore}, $k^* \in \mathcal{A}(S_T)$), or fails both (\emph{Fail}).
 \end{itemize}
-
-\begin{table*}[t]
-    \centering
-    \small
-    \renewcommand{\arraystretch}{1.25}
-    \begin{tabular}{@{}p{3.0cm}p{5.5cm}p{5.5cm}@{}}
-        \hline
-        & \textbf{No Goal Achieved ($\mathcal{A}(S_T) = \emptyset$)} & \textbf{Some Goal Achieved ($\mathcal{A}(S_T) \neq \emptyset$)} \\
-        \hline
-        \textbf{$I_{\text{orig}}$ Succeeded} & \textbf{Grounded.} Removing language eliminated task success. & \textbf{Memorization.} Policy succeeded without language; driven by scene priors. \\
-        \textbf{$I_{\text{orig}}$ Failed} & \textbf{Uninformative.} Policy incompetent on this scene; excluded from grounding rate. & \textbf{Spurious Success.} Policy achieved a goal without language where original prompt failed. \\
-        \hline
-    \end{tabular}
-    \caption{\textbf{Destructive-Condition ($2\times2$) Outcome Matrix.} Joint classification of episode outcomes under canonical instruction $I_{\text{orig}}$ versus destructive perturbations (\texttt{blank}, \texttt{nonsense}). Episodes are categorized into Grounded execution, Scene-memorized defaults, Spurious success, or Uninformative baseline failures.}
-    \label{tab:destructive-2x2}
-\end{table*}
-
-We define the episode-level Grounding Rate ($\text{GR}$) as:
-\begin{equation}
-\text{GR}(c) = \frac{|\text{Grounded}|}{|\text{Grounded}| + |\text{Mem}| + |\text{Spurious}|}
-\end{equation}
-
-\subsubsection{Misleading Conditions}
-For \texttt{wrong\_object}, \texttt{wrong\_action}, and \texttt{wrong\_task}, the perturbed prompt specifies goal $k_{\text{wrong}} \neq k^*$. We classify final states into three outcomes (Table~\ref{tab:follow-ignore-fail}):
-\begin{itemize}
-    \item \textbf{Follow:} $k_{\text{wrong}} \in \mathcal{A}(S_T)$. The policy executed the newly instructed task (instruction compliance).
-    \item \textbf{Ignore:} $k^* \in \mathcal{A}(S_T)$ and $k_{\text{wrong}} \notin \mathcal{A}(S_T)$. The policy executed the original task despite the altered prompt (scene-prior override).
-    \item \textbf{Fail:} Neither goal achieved.
-\end{itemize}
-
-\begin{table*}[t]
-\centering
-\small
-\resizebox{\linewidth}{!}{%
-\renewcommand{\arraystretch}{1.25}
-\begin{tabular}{@{}p{2.5cm}p{4.5cm}p{4.5cm}p{4.5cm}@{}}
-    \hline
-    & \textbf{Follow ($k_{\text{wrong}} \in \mathcal{A}(S_T)$)} & \textbf{Ignore ($k^* \in \mathcal{A}(S_T)$)} & \textbf{Fail (Neither Goal)} \\
-    \hline
-    \textbf{$I_{\text{orig}}$ Succeeded} & \emph{Instruction-following.} Switched to newly instructed goal when asked. & \emph{Scene-prior override.} Defaulted to original task despite new prompt. & \emph{Confused.} Misleading prompt broke policy without redirection. \\
-    \textbf{$I_{\text{orig}}$ Failed} & \emph{Instruction-following.} Completed new goal despite failing baseline prompt. & \emph{Noisy execution.} Achieved original goal unreliably. & \emph{Uninformative.} Failed task under both conditions. \\
-    \hline
-\end{tabular}%
-}
-\caption{\textbf{Misleading-Condition ($3\times2$) Outcome Matrix.} Multi-goal evaluation matrix classifying policy trajectories when supplied with misleading instructions $I_{\text{wrong}}$ specifying alternate goal $k_{\text{wrong}} \neq k^*$. Evaluates whether the policy complies with the new instruction (Follow), defaults to scene priors (Ignore), or fails (Confused/Uninformative).}
-    \label{tab:follow-ignore-fail}
-\end{table*}
 
 \subsection{Metrics}
 \label{subsec:metrics}
+We convert episode classifications into four aggregate metrics: (1) \textbf{Causal Sensitivity Score (CSS):} For destructive conditions, $\text{CSS}(c) = \frac{\text{TSR}_0 - \text{TSR}(c)}{\max(\text{TSR}_0, \epsilon)}$, where $\text{CSS} \approx 1$ indicates strong causal necessity; (2) \textbf{Original-Action Rate (OAR):} For misleading conditions, $\text{OAR}(c) = \frac{|\text{Ignore}|}{|\text{Follow}| + |\text{Ignore}| + |\text{Fail}|}$, measuring scene-memorization overrides; (3) \textbf{PRIDE Score:} For paraphrases, task success weighted by paraphrase distance \citep{kim2026liberopara}; and (4) \textbf{Failure Locus:} Categorizing failures into \emph{planning} vs. \emph{execution} breakdowns.
 
-We convert episode classifications into four aggregate metrics:
-
-\begin{enumerate}
-    \item \textbf{Causal Sensitivity Score (CSS):} For destructive conditions, $\text{CSS}(c) = \frac{\text{TSR}_0 - \text{TSR}(c)}{\max(\text{TSR}_0, \epsilon)}$. $\text{CSS} \approx 1$ indicates strong causal necessity; $\text{CSS} \approx 0$ indicates language is ignored.
-    \item \textbf{Original-Action Rate (OAR):} For misleading conditions, $\text{OAR}(c) = \frac{|\text{Ignore}|}{|\text{Follow}| + |\text{Ignore}| + |\text{Fail}|}$. High OAR measures scene-memorization overrides.
-    \item \textbf{PRIDE Score:} For paraphrases, we compute task success weighted by linguistic paraphrase distance $\text{PD} = 1 - 0.5(\text{SK} + \text{ST})$, where SK and ST measure keyword and structural similarity \citep{kim2026liberopara}.
-    \item \textbf{Failure Locus:} Failed episodes are categorized into \emph{planning failures} (end-effector never approaches target within distance threshold $\tau$) versus \emph{execution failures} (end-effector reaches target but fails manipulation).
-\end{enumerate}
 
 \section{Experiments}
 \label{sec:experiments}
@@ -231,17 +163,8 @@ Each rollout logs a structured record containing model checkpoint hash, task ID,
 \section{Results and Analysis}
 
 \subsection{RQ1: Language is Causally Load-Bearing and Scale-Invariant}
-Table~\ref{tab:rq1_causal} presents Task Success Rate (TSR) and Causal Sensitivity Score (CSS) across all evaluated model architectures. The columns in Table~\ref{tab:rq1_causal} correspond to specific instruction conditions designed to isolate different aspects of policy behavior:
-\begin{itemize}
-    \item \textbf{Baseline (\texttt{original}):} The canonical, un-edited instruction $I_{\text{orig}}$ for the task (e.g., ``turn on the stove'').
-    \item \textbf{Blank:} The empty string prompt $I = \text{""}$, testing whether policies require language input or execute tasks autonomously via visual scene priors.
-    \item \textbf{Nonsense:} Length-matched out-of-domain random words (e.g., ``triangle banana purple''), testing whether policies parse semantic structure or merely require token presence.
-    \item \textbf{Wrong Action:} Misleading prompt replacing the action verb with another action verb in the scene (e.g., ``push the stove knob'' instead of ``turn on the stove knob'').
-    \item \textbf{Wrong Object:} Misleading prompt replacing the target object noun with another object present in the scene (e.g., ``turn on the plate'' instead of ``turn on the stove'').
-    \item \textbf{Wrong Task:} Misleading prompt replacing the entire instruction with a valid, executable instruction for a \emph{completely different task} that exists within the same initial scene layout $S_0$ (for example, supplying ``put the bowl on the plate'' when the scene target is ``open the middle drawer of the cabinet''). A drop to $0.0\%$ success under \texttt{Wrong Task} confirms that policies do not execute the original task when explicitly commanded to perform an alternative task in the workspace.
-    \item \textbf{Repeated:} Length-control prompt concatenating the canonical instruction with itself (e.g., ``turn on the stove turn on the stove''), verifying stability under longer input sequences.
-    \item \textbf{Parenthetical Values (CSS):} Values in parentheses for destructive conditions (\texttt{blank}, \texttt{nonsense}) denote the \textbf{Causal Sensitivity Score} ($\text{CSS} \in [0, 1]$), where $\text{CSS} = 1.00$ indicates total collapse of performance upon removing language.
-\end{itemize}
+Table~\ref{tab:rq1_causal} presents Task Success Rate (TSR) and Causal Sensitivity Score (CSS) across all evaluated model architectures under canonical (\texttt{original}), destructive (\texttt{blank}, \texttt{nonsense}), misleading (\texttt{wrong\_action}, \texttt{wrong\_object}, \texttt{wrong\_task}), and control (\texttt{repeated}) prompt conditions (column definitions detailed in Table~\ref{tab:rq1_causal} caption).
+
 
 \begin{table*}[t]
 \centering
@@ -399,8 +322,5 @@ Figure~\ref{fig:rq3_divergence} illustrates end-effector divergence $e(t)$ over 
 \label{fig:rq3_divergence}
 \end{figure}
 
-\section{Initial Pilot Experiments on SmolVLA}
-\label{sec:initial-experiments}
-In preliminary experiments on SmolVLA-450M using a 4-task subset of \texttt{LIBERO-Object}, blank instructions dropped success from 100\% (8/8) to 0\% (0/8), while object swaps dropped success to 0\% (0/8), confirming early directional sensitivity before expanding to the full 10-task \texttt{LIBERO-Goal} suite.
-
 \end{document}
+
