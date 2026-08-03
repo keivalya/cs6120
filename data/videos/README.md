@@ -75,13 +75,16 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | :--- | :---: | :---: | :--- |
 | [failure_ep1.mp4](data/videos/task2_put_the_wine_bottle_on_top_of_the_cabinet/original/failure_ep1.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on top of the cabinet` |
 | [failure_ep2.mp4](data/videos/task2_put_the_wine_bottle_on_top_of_the_cabinet/original/failure_ep2.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on top of the cabinet` |
+| [failure_ep3.mp4](data/videos/task2_put_the_wine_bottle_on_top_of_the_cabinet/original/failure_ep3.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on top of the cabinet` |
 | [success_ep1.mp4](data/videos/task2_put_the_wine_bottle_on_top_of_the_cabinet/original/success_ep1.mp4) | 🟢 **Success** | `original` | `put the wine bottle on top of the cabinet` |
 | [success_ep2.mp4](data/videos/task2_put_the_wine_bottle_on_top_of_the_cabinet/original/success_ep2.mp4) | 🟢 **Success** | `original` | `put the wine bottle on top of the cabinet` |
 | [success_ep3.mp4](data/videos/task2_put_the_wine_bottle_on_top_of_the_cabinet/original/success_ep3.mp4) | 🟢 **Success** | `original` | `put the wine bottle on top of the cabinet` |
 
 ### Task 3: `open_the_top_drawer_and_put_the_bowl_inside`
 
-_No rollout videos generated yet for this task._
+| Video File | Outcome Status | Condition | Text Instruction |
+| :--- | :---: | :---: | :--- |
+| [failure_ep1.mp4](data/videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/failure_ep1.mp4) | 🔴 **Failure** | `original` | `open the top drawer and put the bowl inside` |
 
 ### Task 4: `put_the_bowl_on_top_of_the_cabinet`
 
@@ -89,6 +92,7 @@ _No rollout videos generated yet for this task._
 | :--- | :---: | :---: | :--- |
 | [failure_ep1.mp4](data/videos/task4_put_the_bowl_on_top_of_the_cabinet/original/failure_ep1.mp4) | 🔴 **Failure** | `original` | `put the bowl on top of the cabinet` |
 | [failure_ep2.mp4](data/videos/task4_put_the_bowl_on_top_of_the_cabinet/original/failure_ep2.mp4) | 🔴 **Failure** | `original` | `put the bowl on top of the cabinet` |
+| [failure_ep3.mp4](data/videos/task4_put_the_bowl_on_top_of_the_cabinet/original/failure_ep3.mp4) | 🔴 **Failure** | `original` | `put the bowl on top of the cabinet` |
 | [success_ep1.mp4](data/videos/task4_put_the_bowl_on_top_of_the_cabinet/original/success_ep1.mp4) | 🟢 **Success** | `original` | `put the bowl on top of the cabinet` |
 | [success_ep2.mp4](data/videos/task4_put_the_bowl_on_top_of_the_cabinet/original/success_ep2.mp4) | 🟢 **Success** | `original` | `put the bowl on top of the cabinet` |
 | [success_ep3.mp4](data/videos/task4_put_the_bowl_on_top_of_the_cabinet/original/success_ep3.mp4) | 🟢 **Success** | `original` | `put the bowl on top of the cabinet` |
@@ -106,7 +110,9 @@ _No rollout videos generated yet for this task._
 
 ### Task 6: `put_the_cream_cheese_in_the_bowl`
 
-_No rollout videos generated yet for this task._
+| Video File | Outcome Status | Condition | Text Instruction |
+| :--- | :---: | :---: | :--- |
+| [failure_ep1.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/failure_ep1.mp4) | 🔴 **Failure** | `original` | `put the cream cheese in the bowl` |
 
 ### Task 7: `turn_on_the_stove`
 
