@@ -123,6 +123,8 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | [success_ep1.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_ep1.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
 | [success_ep2.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_ep2.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
 | [success_ep3.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_ep3.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
+| [success_seed42_ep1.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_seed42_ep1.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
+| [success_seed42_ep2.mp4](data/videos/task6_put_the_cream_cheese_in_the_bowl/original/success_seed42_ep2.mp4) | 🟢 **Success** | `original` | `put the cream cheese in the bowl` |
 
 ### Task 7: `turn_on_the_stove`
 
@@ -183,8 +185,11 @@ This directory contains rollout videos generated during Vision-Language-Action (
 | :--- | :---: | :---: | :--- |
 | [failure_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_ep1.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
 | [failure_ep2.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_ep2.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
+| [failure_ep3.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_ep3.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
+| [failure_seed42_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/failure_seed42_ep1.mp4) | 🔴 **Failure** | `original` | `put the wine bottle on the rack` |
 | [success_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_ep1.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
 | [success_ep2.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_ep2.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
 | [success_ep3.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_ep3.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
 | [success_seed42_ep1.mp4](data/videos/task9_put_the_wine_bottle_on_the_rack/original/success_seed42_ep1.mp4) | 🟢 **Success** | `original` | `put the wine bottle on the rack` |
-| `videos/task6_put_the_cream_cheese_in_the_bowl/original/success_seed42_ep1.mp4` | Success | `put the cream cheese in the bowl` |
+| `videos/task6_put_the_cream_cheese_in_the_bowl/original/success_seed42_ep3.mp4` | Success | `put the cream cheese in the bowl` |
+| `videos/task3_open_the_top_drawer_and_put_the_bowl_inside/original/failure_seed42_ep1.mp4` | Failure | `open the top drawer and put the bowl inside` |
